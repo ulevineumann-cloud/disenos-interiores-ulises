@@ -25,7 +25,6 @@ const BASIC_PASS = process.env.BASIC_PASS;
 ===================== */
 function basicAuthAll(req, res, next) {
   if (!BASIC_USER || !BASIC_PASS) {
-    // Para que no quede “abierto” sin querer
     return res.status(500).send("Faltan BASIC_USER / BASIC_PASS");
   }
 
@@ -53,12 +52,15 @@ app.use(basicAuthAll);
 /* =====================
    PATHS + STATIC
 ===================== */
+// OJO: ahora public está adentro de backend
 const publicPath = path.join(__dirname, "public");
 const uploadsPath = path.join(__dirname, "uploads");
 
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 
+// Sirve frontend y assets (css/js)
 app.use(express.static(publicPath));
+// Sirve resultados generados
 app.use("/uploads", express.static(uploadsPath));
 
 /* =====================
@@ -82,30 +84,29 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 8 * 1024 * 1024 }, // 8 MB
+  limits: { fileSize: 8 * 1024 * 1024 }, // 8MB
 });
 
 /* =====================
    ROUTES
 ===================== */
-// healthcheck para Render
 app.get("/ping", (req, res) => res.send("pong"));
+
+// Debug opcional (si querés dejarlo, dejalo)
 app.get("/debug-paths", (req, res) => {
   res.json({
     publicPath,
     index: path.join(publicPath, "index.html"),
     indexExists: fs.existsSync(path.join(publicPath, "index.html")),
     cwd: process.cwd(),
-    dirname: __dirname
+    dirname: __dirname,
   });
 });
 
-// Home (tu web)
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicPath, "index.html"));
 });
 
-// Generar (IA)
 app.post("/generar", upload.single("imagen"), async (req, res) => {
   try {
     if (!ENABLE_AI) return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
@@ -165,3 +166,4 @@ app.post("/generar", upload.single("imagen"), async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
+
