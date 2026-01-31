@@ -53,7 +53,7 @@ app.use(basicAuthAll);
 /* =====================
    PATHS + STATIC
 ===================== */
-const publicPath = path.join(__dirname, "..", "public");
+const publicPath = path.join(__dirname, "public");
 const uploadsPath = path.join(__dirname, "uploads");
 
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
