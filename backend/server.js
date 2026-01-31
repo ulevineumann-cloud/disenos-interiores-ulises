@@ -59,6 +59,7 @@ const uploadsPath = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 
 // Sirve frontend y assets (css/js)
+app.use(basicAuthAll);
 app.use(express.static(publicPath));
 // Sirve resultados generados
 app.use("/uploads", express.static(uploadsPath));
