@@ -24,8 +24,9 @@ const BASIC_PASS = process.env.BASIC_PASS;
    BASIC AUTH (PROTEGE TODO)
 ===================== */
 function basicAuthAll(req, res, next) {
+  // Si faltan variables, cortamos (mejor que quede abierto sin querer)
   if (!BASIC_USER || !BASIC_PASS) {
-    return res.status(500).send("Faltan BASIC_USER / BASIC_PASS");
+    return res.status(500).send("Faltan BASIC_USER / BASIC_PASS en Render");
   }
 
   const header = req.headers.authorization || "";
@@ -47,21 +48,24 @@ function basicAuthAll(req, res, next) {
   return res.status(401).send("Credenciales incorrectas");
 }
 
-app.use(basicAuthAll);
-
 /* =====================
-   PATHS + STATIC
+   PATHS
 ===================== */
-// OJO: ahora public está adentro de backend
+// OJO: public está adentro de backend
 const publicPath = path.join(__dirname, "public");
 const uploadsPath = path.join(__dirname, "uploads");
 
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 
-// Sirve frontend y assets (css/js)
+/* =====================
+   🔐 APLICAR CANDADO ANTES DE TODO
+===================== */
 app.use(basicAuthAll);
+
+/* =====================
+   STATIC (después del candado)
+===================== */
 app.use(express.static(publicPath));
-// Sirve resultados generados
 app.use("/uploads", express.static(uploadsPath));
 
 /* =====================
@@ -93,7 +97,6 @@ const upload = multer({
 ===================== */
 app.get("/ping", (req, res) => res.send("pong"));
 
-// Debug opcional (si querés dejarlo, dejalo)
 app.get("/debug-paths", (req, res) => {
   res.json({
     publicPath,
@@ -110,8 +113,12 @@ app.get("/", (req, res) => {
 
 app.post("/generar", upload.single("imagen"), async (req, res) => {
   try {
-    if (!ENABLE_AI) return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
-    if (!openai) return res.status(500).json({ error: "OpenAI no configurado (falta OPENAI_API_KEY)" });
+    if (!ENABLE_AI) {
+      return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
+    }
+    if (!openai) {
+      return res.status(500).json({ error: "OpenAI no configurado (falta OPENAI_API_KEY)" });
+    }
 
     const texto = (req.body.texto || "").trim();
     const imagen = req.file;
@@ -167,4 +174,5 @@ app.post("/generar", upload.single("imagen"), async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
+
 
