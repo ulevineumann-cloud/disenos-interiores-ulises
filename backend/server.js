@@ -98,8 +98,12 @@ const upload = multer({
 app.get("/ping", (req, res) => {
   res.send("pong");
 });
+const publicPath = path.join(__dirname, "..", "public");
+
+app.use(express.static(publicPath));
+
 app.get("/", (req, res) => {
-  res.send("Servidor online ✅ App funcionando");
+  res.sendFile(path.join(publicPath, "index.html"));
 });
 
 // 👉 HOME
