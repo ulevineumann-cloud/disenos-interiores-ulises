@@ -90,6 +90,15 @@ const upload = multer({
 ===================== */
 // healthcheck para Render
 app.get("/ping", (req, res) => res.send("pong"));
+app.get("/debug-paths", (req, res) => {
+  res.json({
+    publicPath,
+    index: path.join(publicPath, "index.html"),
+    indexExists: fs.existsSync(path.join(publicPath, "index.html")),
+    cwd: process.cwd(),
+    dirname: __dirname
+  });
+});
 
 // Home (tu web)
 app.get("/", (req, res) => {
