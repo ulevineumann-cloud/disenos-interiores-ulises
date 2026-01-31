@@ -98,6 +98,9 @@ const upload = multer({
 app.get("/ping", (req, res) => {
   res.send("pong");
 });
+app.get("/", (req, res) => {
+  res.send("Servidor online ✅ App funcionando");
+});
 
 // 👉 HOME
 app.get("/", (req, res) => {
