@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
+const sharp = require("sharp");
 const OpenAI = require("openai");
 const { toFile } = require("openai");
 
@@ -19,7 +20,7 @@ const BASIC_USER = process.env.BASIC_USER;
 const BASIC_PASS = process.env.BASIC_PASS;
 
 /* =====================
-   BASIC AUTH (PROTEGE TODO)
+   BASIC AUTH
 ===================== */
 function basicAuthAll(req, res, next) {
   if (!BASIC_USER || !BASIC_PASS) {
@@ -46,21 +47,13 @@ function basicAuthAll(req, res, next) {
 }
 
 /* =====================
-   PATHS
+   PATHS + STATIC
 ===================== */
 const publicPath = path.join(__dirname, "public");
 const uploadsPath = path.join(__dirname, "uploads");
-
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 
-/* =====================
-   🔐 AUTH FIRST
-===================== */
 app.use(basicAuthAll);
-
-/* =====================
-   STATIC
-===================== */
 app.use(express.static(publicPath));
 app.use("/uploads", express.static(uploadsPath));
 
@@ -68,9 +61,7 @@ app.use("/uploads", express.static(uploadsPath));
    OPENAI CLIENT
 ===================== */
 let openai = null;
-if (ENABLE_AI && OPENAI_API_KEY) {
-  openai = new OpenAI({ apiKey: OPENAI_API_KEY });
-}
+if (ENABLE_AI && OPENAI_API_KEY) openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 /* =====================
    MULTER
@@ -82,124 +73,171 @@ const storage = multer.diskStorage({
     cb(null, `${file.fieldname}_${Date.now()}${ext}`);
   },
 });
+const upload = multer({ storage, limits: { fileSize: 12 * 1024 * 1024 } });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-});
+/* =====================
+   HELPERS
+===================== */
+
+// La máscara que generamos en el front: negro = NO editable (alpha 255), transparente = editable (alpha 0).
+// Buscamos el bounding box de los píxeles editables (alpha == 0).
+async function bboxFromMaskPng(maskPngPath) {
+  const { data, info } = await sharp(maskPngPath)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const W = info.width;
+  const H = info.height;
+
+  let minX = W, minY = H, maxX = -1, maxY = -1;
+
+  // RGBA raw
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      const alpha = data[i + 3];
+      // editable
+      if (alpha === 0) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (maxX < 0 || maxY < 0) return null; // no pintó nada
+
+  // padding para que no “corte” bordes (barandas finas, etc.)
+  const pad = 40;
+  const left = Math.max(0, minX - pad);
+  const top = Math.max(0, minY - pad);
+  const right = Math.min(W - 1, maxX + pad);
+  const bottom = Math.min(H - 1, maxY + pad);
+
+  const width = Math.max(1, right - left + 1);
+  const height = Math.max(1, bottom - top + 1);
+
+  return { left, top, width, height, W, H };
+}
 
 /* =====================
    ROUTES
 ===================== */
 app.get("/ping", (req, res) => res.send("pong"));
 
-app.get("/debug-paths", (req, res) => {
-  res.json({
-    publicPath,
-    index: path.join(publicPath, "index.html"),
-    indexExists: fs.existsSync(path.join(publicPath, "index.html")),
-    cwd: process.cwd(),
-    dirname: __dirname,
-    hasEnableAI: ENABLE_AI,
-    hasOpenAIKey: !!OPENAI_API_KEY,
-    hasBasicUser: !!BASIC_USER,
-    hasBasicPass: !!BASIC_PASS,
-  });
-});
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(publicPath, "index.html"));
-});
-
-/* =====================
-   GENERAR (CON MASK)
-===================== */
 app.post(
   "/generar",
   upload.fields([
     { name: "imagen", maxCount: 1 },
-    { name: "mask", maxCount: 1 }, // <- NUEVO
+    { name: "mask", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
-      if (!ENABLE_AI) {
-        return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
-      }
-      if (!openai) {
-        return res.status(500).json({ error: "OpenAI no configurado (falta OPENAI_API_KEY)" });
-      }
+      if (!ENABLE_AI) return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
+      if (!openai) return res.status(500).json({ error: "Falta OPENAI_API_KEY" });
 
       const texto = (req.body.texto || "").trim();
       const imagen = req.files?.imagen?.[0];
-      const maskFile = req.files?.mask?.[0]; // <- puede venir o no
+      const maskFile = req.files?.mask?.[0];
 
       if (!texto) return res.status(400).json({ error: "Falta descripción" });
       if (!imagen) return res.status(400).json({ error: "Falta imagen" });
+      if (!maskFile) return res.status(400).json({ error: "Falta máscara (pintá la zona a cambiar)" });
 
-      const ok = ["image/jpeg", "image/png", "image/webp"];
-      if (!ok.includes(imagen.mimetype)) {
-        return res.status(400).json({ error: "Formato no soportado. Usá JPG, PNG o WEBP" });
+      // 1) Convertimos la imagen a PNG para trabajar parejo
+      const srcPath = path.join(uploadsPath, imagen.filename);
+      const basePngPath = path.join(uploadsPath, `base_${Date.now()}.png`);
+      await sharp(srcPath).png().toFile(basePngPath);
+
+      // 2) Aseguramos que la máscara tenga MISMO tamaño que la imagen (por si acaso)
+      const meta = await sharp(basePngPath).metadata();
+      const W = meta.width, H = meta.height;
+      if (!W || !H) return res.status(500).json({ error: "No se pudo leer tamaño de imagen" });
+
+      const maskPathIn = path.join(uploadsPath, maskFile.filename);
+      const maskPngPath = path.join(uploadsPath, `mask_${Date.now()}.png`);
+      await sharp(maskPathIn).resize(W, H, { fit: "fill" }).png().toFile(maskPngPath);
+
+      // 3) Sacamos el bounding box de lo “editable” (lo pintado)
+      const box = await bboxFromMaskPng(maskPngPath);
+      if (!box) {
+        return res.status(400).json({ error: "Pintá una zona para editar (si no, la IA no sabe dónde cambiar)." });
       }
 
-      // Prompt “obediente”: cambia SOLO lo pedido y SOLO donde se pueda.
-      const prompt = `
-Sos un editor de imágenes de arquitectura EXTREMADAMENTE PRECISO.
+      // 4) Recortamos SOLO la zona marcada (imagen y máscara)
+      const cropImgPath = path.join(uploadsPath, `crop_img_${Date.now()}.png`);
+      const cropMaskPath = path.join(uploadsPath, `crop_mask_${Date.now()}.png`);
 
-Pedido del usuario:
-"${texto}"
+      await sharp(basePngPath)
+        .extract({ left: box.left, top: box.top, width: box.width, height: box.height })
+        .png()
+        .toFile(cropImgPath);
+
+      await sharp(maskPngPath)
+        .extract({ left: box.left, top: box.top, width: box.width, height: box.height })
+        .png()
+        .toFile(cropMaskPath);
+
+      // 5) Prompt ULTRA local (solo baranda, nada más)
+      const prompt = `
+Sos un editor arquitectónico ultra preciso.
+Objetivo del usuario: "${texto}"
 
 REGLAS OBLIGATORIAS:
-- Cambiar ÚNICAMENTE lo que el usuario pidió.
-- Si hay máscara: editar SOLAMENTE en la zona permitida por la máscara.
-- Mantener intacto todo lo demás: encuadre, perspectiva, geometría, objetos no mencionados, colores globales e iluminación global.
-- Resultado fotorealista. Sin texto, logos ni marcas de agua.
-- Si el pedido es ambiguo: hacer el cambio mínimo.
+- Editar SOLO dentro de la máscara.
+- Fuera de la máscara: NO tocar nada (ni luz global, ni colores globales, ni materiales que no estén en la máscara).
+- Mantener perspectiva, encuadre y realismo fotográfico.
+- Sin texto, sin logos, sin marcas de agua.
+- Cambio mínimo y local: exactamente lo pedido (ej: baranda de vidrio -> hierro).
 `;
 
-      const imagePath = path.join(uploadsPath, imagen.filename);
-      const imageFile = await toFile(fs.createReadStream(imagePath), null, { type: imagen.mimetype });
+      const imageFile = await toFile(fs.createReadStream(cropImgPath), null, { type: "image/png" });
+      const maskToSend = await toFile(fs.createReadStream(cropMaskPath), null, { type: "image/png" });
 
-      // Si llega máscara, la usamos. Si no, edita “a ojo” (menos control).
-      let maskToSend = undefined;
-      if (maskFile) {
-        const maskPath = path.join(uploadsPath, maskFile.filename);
-        maskToSend = await toFile(fs.createReadStream(maskPath), null, { type: "image/png" });
-      }
-
-      const result = await openai.images.edit({
+      // 6) Editamos SOLO el recorte
+      const ai = await openai.images.edit({
         model: "gpt-image-1",
         image: imageFile,
-        mask: maskToSend, // <- CLAVE
+        mask: maskToSend,
         prompt,
-        size: "1024x1024",
+        input_fidelity: "high",
+        size: "auto",
+        quality: "high",
       });
 
-      const base64 = result.data?.[0]?.b64_json;
-      if (!base64) {
-        return res.status(500).json({ error: "La IA no devolvió imagen (b64_json vacío)" });
-      }
+      const b64 = ai.data?.[0]?.b64_json;
+      if (!b64) return res.status(500).json({ error: "La IA no devolvió imagen" });
 
-      const buffer = Buffer.from(base64, "base64");
-      const outputName = `resultado_${Date.now()}.png`;
-      fs.writeFileSync(path.join(uploadsPath, outputName), buffer);
+      const editedCropBuf = Buffer.from(b64, "base64");
 
-      res.json({
+      // 7) Pegamos el recorte editado sobre la imagen original (IDENTICA afuera)
+      const outName = `resultado_${Date.now()}.png`;
+      const outPath = path.join(uploadsPath, outName);
+
+      await sharp(basePngPath)
+        .composite([{ input: editedCropBuf, left: box.left, top: box.top }])
+        .png()
+        .toFile(outPath);
+
+      return res.json({
         recomendacion: `Propuesta generada según:\n"${texto}"`,
-        imagenUrl: `/uploads/${outputName}`,
-        modo: maskFile ? "IA_MASK" : "IA_SIN_MASK",
+        imagenUrl: `/uploads/${outName}`,
+        modo: "IA_MASK_CROP_COMPOSITE",
       });
     } catch (err) {
       console.error("ERROR IA:", err);
       const msg = err?.response?.data?.error?.message || err?.message || "Error interno";
-      res.status(500).json({ error: msg });
+      return res.status(500).json({ error: msg });
     }
   }
 );
 
-/* =====================
-   START
-===================== */
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+
+
+
 
 
 
