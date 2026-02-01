@@ -4,13 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Diseños de interiores Ulises</title>
-
-  <!-- Evita 404 de favicon -->
-  <link rel="icon" href="data:," />
-
   <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
   <div class="bg"></div>
 
@@ -19,7 +14,9 @@
       <div class="logo">U</div>
       <div class="brandText">
         <h1>Diseños de interiores Ulises</h1>
-        <p class="frase">No necesito que sea imposible de copiar, necesito que sea difícil de igualar.</p>
+        <p class="frase">
+          No necesito que sea imposible de copiar, necesito que sea difícil de igualar.
+        </p>
       </div>
     </div>
   </header>
@@ -33,34 +30,33 @@
       <textarea
         id="texto"
         rows="5"
-        placeholder="Ej: Quiero que este living se vea más moderno, luminoso, con madera clara, plantas y un espacio para estudiar."
+        placeholder="Ej: Quiero que este living se vea más moderno, luminoso, con madera clara y plantas."
       ></textarea>
 
       <div class="row">
         <label class="fileBtn" for="imagen">Seleccionar imagen</label>
         <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
-        <button id="generar" class="primary" type="button">Diseñar</button>
+        <button id="generar" class="primary">Diseñar</button>
       </div>
 
       <p id="estado" class="estado"></p>
-      <div id="loader" class="loader" style="display:none;"></div>
+      <div id="loader" class="loader"></div>
 
-      <!-- ESTE ID TIENE QUE EXISTIR porque tu script lo usa -->
+      <!-- 👇 ESTE ES EL QUE FALTABA -->
       <p id="modoInfo" class="muted small"></p>
 
       <div class="previewBox">
         <div class="previewTitle">Vista previa</div>
-        <img id="preview" alt="Vista previa" style="display:none;" />
+        <img id="preview" alt="Vista previa" />
       </div>
     </section>
 
     <section class="card">
       <h2>Resultado</h2>
-
       <div class="grid">
         <div class="panel">
           <h3>Recomendación</h3>
-          <p id="recomendacion" class="textoResultado">Acá va a aparecer la recomendación.</p>
+          <p id="recomendacion" class="textoResultado">—</p>
         </div>
 
         <div class="panel">
@@ -69,18 +65,14 @@
           <div class="antesDespues">
             <div>
               <div class="tag">Original</div>
-              <img id="imagenOriginal" class="imgResultado" alt="Imagen original" style="display:none;" />
+              <img id="imagenOriginal" class="imgResultado" />
             </div>
 
             <div>
               <div class="tag">Resultado</div>
-              <img id="imagenResultado" class="imgResultado" alt="Imagen resultante" style="display:none;" />
+              <img id="imagenResultado" class="imgResultado" />
             </div>
           </div>
-
-          <p class="muted small">
-            *Por ahora es demo (el resultado puede ser copia). Después conectamos IA real para transformarla.*
-          </p>
         </div>
       </div>
     </section>
@@ -93,6 +85,7 @@
   <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
