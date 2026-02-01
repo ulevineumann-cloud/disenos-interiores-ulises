@@ -61,7 +61,7 @@ if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 app.use(basicAuthAll);
 
 /* =====================
-   STATIC (después del candado)
+   STATIC
 ===================== */
 app.use(express.static(publicPath));
 app.use("/uploads", express.static(uploadsPath));
@@ -114,7 +114,7 @@ app.get("/", (req, res) => {
 });
 
 /* =====================
-   IA GENERAR
+   IA GENERAR (MODO QUIRÚRGICO)
 ===================== */
 app.post("/generar", upload.single("imagen"), async (req, res) => {
   try {
@@ -140,23 +140,24 @@ app.post("/generar", upload.single("imagen"), async (req, res) => {
         .json({ error: "Formato no soportado. Usá JPG, PNG o WEBP" });
     }
 
-    // ✅ PROMPT MÁS “INTELIGENTE” (CAMBIOS MÁS FUERTES)
+    // ✅ PROMPT “QUIRÚRGICO”: cambia SOLO lo pedido
     const prompt = `
-Sos un arquitecto y diseñador de interiores profesional.
+Sos un editor de imágenes de arquitectura EXTREMADAMENTE PRECISO.
 
-Objetivo del usuario:
+Pedido del usuario:
 "${texto}"
 
-Instrucciones MUY IMPORTANTES:
-- Realizá cambios visibles y claros en el diseño (no mínimos)
-- Modificá materiales, colores, iluminación y estilo
-- Mantener la estructura general, pero permitir rediseño completo del estilo
-- Si el usuario pide modernizar: líneas limpias, colores neutros, materiales contemporáneos (madera clara, metal, vidrio, microcemento)
-- Si hay balcones, fachadas o barandas: rediseñalos de forma notable y coherente
-- El resultado debe verse claramente diferente al original, sin perder realismo
-- Realismo fotográfico / render arquitectónico profesional
-- Mejor iluminación (natural y artificial equilibrada)
-- No agregar textos, logos ni marcas de agua
+REGLAS OBLIGATORIAS (prioridad máxima):
+- Cambiar ÚNICAMENTE lo que el usuario pidió.
+- No modificar nada más: NO tocar iluminación general, NO recolorear toda la imagen, NO cambiar encuadre, NO cambiar perspectiva, NO agregar ni quitar objetos que no fueron pedidos.
+- Mantener exactamente: piso, techo, paredes no mencionadas, ventanas, muebles y objetos NO mencionados.
+- Mantener la geometría y proporciones exactas del edificio/ambiente.
+- Realismo fotográfico (resultado natural).
+- NO agregar texto, logos ni marcas de agua.
+- Si el pedido es ambiguo, hacer el cambio mínimo.
+
+IMPORTANTE:
+El resto de la imagen debe quedar lo más idéntico posible al original.
 `;
 
     const imagePath = path.join(uploadsPath, imagen.filename);
@@ -183,7 +184,7 @@ Instrucciones MUY IMPORTANTES:
     res.json({
       recomendacion: `Propuesta generada según:\n"${texto}"`,
       imagenUrl: `/uploads/${outputName}`,
-      modo: "IA_REAL",
+      modo: "IA_REAL_QUIRURGICO",
     });
   } catch (err) {
     console.error("ERROR IA:", err);
@@ -198,6 +199,7 @@ Instrucciones MUY IMPORTANTES:
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
+
 
 
 
