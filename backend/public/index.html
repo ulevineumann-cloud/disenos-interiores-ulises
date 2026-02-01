@@ -25,13 +25,13 @@
 
     <section class="card">
       <h2>Tu pedido</h2>
-      <p class="muted">Subí una foto, escribí el pedido y <b>pintá</b> la zona a cambiar.</p>
+      <p class="muted">Subí una foto del ambiente/edificio y escribí qué querés cambiar.</p>
 
       <label class="label" for="texto">Descripción</label>
       <textarea
         id="texto"
         rows="4"
-        placeholder="Ej: Cambiar SOLO la baranda del balcón a hierro negro."
+        placeholder="Ej: Cambiar la baranda de vidrio por baranda de hierro negro vertical, sin modificar el resto."
       ></textarea>
 
       <div class="row">
@@ -40,38 +40,14 @@
         <button id="generar" class="primary" type="button">Diseñar</button>
       </div>
 
-      <div class="tools">
-        <div class="tool">
-          <span class="muted">Pincel</span>
-          <input id="brush" type="range" min="8" max="80" value="26" />
-          <span id="brushVal" class="muted">26</span>
-        </div>
-
-        <div class="tool">
-          <button id="btnErase" class="ghost" type="button">Borrar</button>
-          <button id="btnClear" class="ghost" type="button">Limpiar máscara</button>
-        </div>
-
-        <div class="tool">
-          <label class="chk">
-            <input id="chkMask" type="checkbox" checked />
-            Usar máscara (recomendado)
-          </label>
-        </div>
-      </div>
-
       <p id="estado" class="estado"></p>
       <div id="loader" class="loader"></div>
       <p id="modoInfo" class="muted small"></p>
-    </section>
 
-    <section class="card">
-      <h2>Marcá la zona a cambiar</h2>
-      <div class="paintBox">
+      <div class="previewBox">
+        <div class="previewTitle">Vista previa</div>
         <img id="preview" alt="Vista previa" />
-        <canvas id="paint"></canvas>
       </div>
-      <p class="muted small">Pintá en rojo la zona editable. Todo lo demás queda igual.</p>
     </section>
 
     <section class="card">
@@ -100,6 +76,7 @@
   </main>
 </body>
 </html>
+
 
 
 
