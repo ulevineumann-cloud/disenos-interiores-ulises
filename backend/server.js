@@ -105,7 +105,8 @@ async function bboxFromMaskPng(maskPngPath) {
 
   if (maxX < 0 || maxY < 0) return null;
 
-  const pad = 40;
+  // padding más chico para que el parche sea mínimo
+  const pad = 18;
   const left = Math.max(0, minX - pad);
   const top = Math.max(0, minY - pad);
   const right = Math.min(W - 1, maxX + pad);
@@ -115,6 +116,32 @@ async function bboxFromMaskPng(maskPngPath) {
   const height = Math.max(1, bottom - top + 1);
 
   return { left, top, width, height, W, H };
+}
+
+// Crea una “máscara alpha” para pegar SOLO lo editable, con borde suave
+async function buildFeatherAlphaMask(cropMaskPath, w, h) {
+  // alpha original: editable=0, noeditable=255 -> invertimos para que editable=255
+  const alpha = await sharp(cropMaskPath)
+    .ensureAlpha()
+    .extractChannel(3)
+    .negate()       // 0->255, 255->0
+    .blur(2.2)      // feather del borde
+    .toBuffer();
+
+  // convertimos a RGBA blanco con ese alpha (para usar dest-in)
+  const maskRgba = await sharp({
+    create: {
+      width: w,
+      height: h,
+      channels: 3,
+      background: { r: 255, g: 255, b: 255 },
+    },
+  })
+    .joinChannel(alpha) // alpha channel
+    .png()
+    .toBuffer();
+
+  return maskRgba;
 }
 
 /* =====================
@@ -175,17 +202,17 @@ app.post(
         .png()
         .toFile(cropMaskPath);
 
-      // 5) prompt local
+      // 5) prompt ultra local
       const prompt = `
-Sos un editor arquitectónico ultra preciso.
+Editor arquitectónico ultra preciso.
 Objetivo del usuario: "${texto}"
 
-REGLAS OBLIGATORIAS:
+REGLAS:
 - Editar SOLO dentro de la máscara.
 - Fuera de la máscara: NO tocar nada.
-- Mantener perspectiva, encuadre y realismo fotográfico.
+- Mantener perspectiva, encuadre, materiales y luz global.
 - Sin texto, sin logos, sin marcas de agua.
-- Cambio mínimo y local: exactamente lo pedido (ej: baranda de vidrio -> hierro).
+- Cambio mínimo y local (ej: baranda de vidrio -> hierro).
 `;
 
       const imageFile = await toFile(fs.createReadStream(cropImgPath), null, { type: "image/png" });
@@ -205,27 +232,35 @@ REGLAS OBLIGATORIAS:
       const b64 = ai.data?.[0]?.b64_json;
       if (!b64) return res.status(500).json({ error: "La IA no devolvió imagen" });
 
+      // 7) normalizamos tamaño del recorte editado
       const editedCropBuf = Buffer.from(b64, "base64");
-
-      // ✅ FIX CLAVE: asegurar que el recorte editado tenga EXACTAMENTE el tamaño del recorte original
       const editedCropFixed = await sharp(editedCropBuf)
         .png()
         .resize(box.width, box.height, { fit: "fill" })
         .toBuffer();
 
-      // 7) pegar en la base
+      // ✅ 8) APLICAMOS ALPHA según máscara (para que NO sea un rectángulo)
+      const alphaMask = await buildFeatherAlphaMask(cropMaskPath, box.width, box.height);
+
+      const editedCropMasked = await sharp(editedCropFixed)
+        .ensureAlpha()
+        .composite([{ input: alphaMask, blend: "dest-in" }]) // conserva SOLO donde alpha=1
+        .png()
+        .toBuffer();
+
+      // 9) pegamos sobre la base
       const outName = `resultado_${Date.now()}.png`;
       const outPath = path.join(uploadsPath, outName);
 
       await sharp(basePngPath)
-        .composite([{ input: editedCropFixed, left: box.left, top: box.top }])
+        .composite([{ input: editedCropMasked, left: box.left, top: box.top }])
         .png()
         .toFile(outPath);
 
       return res.json({
         recomendacion: `Propuesta generada según:\n"${texto}"`,
         imagenUrl: `/uploads/${outName}`,
-        modo: "IA_MASK_CROP_COMPOSITE_FIX",
+        modo: "IA_MASK_CROP_FEATHER_COMPOSITE",
       });
     } catch (err) {
       console.error("ERROR IA:", err);
