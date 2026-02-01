@@ -78,9 +78,7 @@ const upload = multer({ storage, limits: { fileSize: 12 * 1024 * 1024 } });
 /* =====================
    HELPERS
 ===================== */
-
-// La máscara que generamos en el front: negro = NO editable (alpha 255), transparente = editable (alpha 0).
-// Buscamos el bounding box de los píxeles editables (alpha == 0).
+// Mask: negro opaco = NO editable; transparente (alpha 0) = editable
 async function bboxFromMaskPng(maskPngPath) {
   const { data, info } = await sharp(maskPngPath)
     .ensureAlpha()
@@ -92,12 +90,10 @@ async function bboxFromMaskPng(maskPngPath) {
 
   let minX = W, minY = H, maxX = -1, maxY = -1;
 
-  // RGBA raw
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const i = (y * W + x) * 4;
       const alpha = data[i + 3];
-      // editable
       if (alpha === 0) {
         if (x < minX) minX = x;
         if (y < minY) minY = y;
@@ -107,9 +103,8 @@ async function bboxFromMaskPng(maskPngPath) {
     }
   }
 
-  if (maxX < 0 || maxY < 0) return null; // no pintó nada
+  if (maxX < 0 || maxY < 0) return null;
 
-  // padding para que no “corte” bordes (barandas finas, etc.)
   const pad = 40;
   const left = Math.max(0, minX - pad);
   const top = Math.max(0, minY - pad);
@@ -146,12 +141,12 @@ app.post(
       if (!imagen) return res.status(400).json({ error: "Falta imagen" });
       if (!maskFile) return res.status(400).json({ error: "Falta máscara (pintá la zona a cambiar)" });
 
-      // 1) Convertimos la imagen a PNG para trabajar parejo
+      // 1) base a PNG
       const srcPath = path.join(uploadsPath, imagen.filename);
       const basePngPath = path.join(uploadsPath, `base_${Date.now()}.png`);
       await sharp(srcPath).png().toFile(basePngPath);
 
-      // 2) Aseguramos que la máscara tenga MISMO tamaño que la imagen (por si acaso)
+      // 2) mask al mismo tamaño que base
       const meta = await sharp(basePngPath).metadata();
       const W = meta.width, H = meta.height;
       if (!W || !H) return res.status(500).json({ error: "No se pudo leer tamaño de imagen" });
@@ -160,13 +155,13 @@ app.post(
       const maskPngPath = path.join(uploadsPath, `mask_${Date.now()}.png`);
       await sharp(maskPathIn).resize(W, H, { fit: "fill" }).png().toFile(maskPngPath);
 
-      // 3) Sacamos el bounding box de lo “editable” (lo pintado)
+      // 3) bbox de lo pintado
       const box = await bboxFromMaskPng(maskPngPath);
       if (!box) {
         return res.status(400).json({ error: "Pintá una zona para editar (si no, la IA no sabe dónde cambiar)." });
       }
 
-      // 4) Recortamos SOLO la zona marcada (imagen y máscara)
+      // 4) recorte imagen y máscara
       const cropImgPath = path.join(uploadsPath, `crop_img_${Date.now()}.png`);
       const cropMaskPath = path.join(uploadsPath, `crop_mask_${Date.now()}.png`);
 
@@ -180,14 +175,14 @@ app.post(
         .png()
         .toFile(cropMaskPath);
 
-      // 5) Prompt ULTRA local (solo baranda, nada más)
+      // 5) prompt local
       const prompt = `
 Sos un editor arquitectónico ultra preciso.
 Objetivo del usuario: "${texto}"
 
 REGLAS OBLIGATORIAS:
 - Editar SOLO dentro de la máscara.
-- Fuera de la máscara: NO tocar nada (ni luz global, ni colores globales, ni materiales que no estén en la máscara).
+- Fuera de la máscara: NO tocar nada.
 - Mantener perspectiva, encuadre y realismo fotográfico.
 - Sin texto, sin logos, sin marcas de agua.
 - Cambio mínimo y local: exactamente lo pedido (ej: baranda de vidrio -> hierro).
@@ -196,7 +191,7 @@ REGLAS OBLIGATORIAS:
       const imageFile = await toFile(fs.createReadStream(cropImgPath), null, { type: "image/png" });
       const maskToSend = await toFile(fs.createReadStream(cropMaskPath), null, { type: "image/png" });
 
-      // 6) Editamos SOLO el recorte
+      // 6) IA SOLO sobre el recorte
       const ai = await openai.images.edit({
         model: "gpt-image-1",
         image: imageFile,
@@ -212,19 +207,25 @@ REGLAS OBLIGATORIAS:
 
       const editedCropBuf = Buffer.from(b64, "base64");
 
-      // 7) Pegamos el recorte editado sobre la imagen original (IDENTICA afuera)
+      // ✅ FIX CLAVE: asegurar que el recorte editado tenga EXACTAMENTE el tamaño del recorte original
+      const editedCropFixed = await sharp(editedCropBuf)
+        .png()
+        .resize(box.width, box.height, { fit: "fill" })
+        .toBuffer();
+
+      // 7) pegar en la base
       const outName = `resultado_${Date.now()}.png`;
       const outPath = path.join(uploadsPath, outName);
 
       await sharp(basePngPath)
-        .composite([{ input: editedCropBuf, left: box.left, top: box.top }])
+        .composite([{ input: editedCropFixed, left: box.left, top: box.top }])
         .png()
         .toFile(outPath);
 
       return res.json({
         recomendacion: `Propuesta generada según:\n"${texto}"`,
         imagenUrl: `/uploads/${outName}`,
-        modo: "IA_MASK_CROP_COMPOSITE",
+        modo: "IA_MASK_CROP_COMPOSITE_FIX",
       });
     } catch (err) {
       console.error("ERROR IA:", err);
@@ -235,6 +236,7 @@ REGLAS OBLIGATORIAS:
 );
 
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+
 
 
 
