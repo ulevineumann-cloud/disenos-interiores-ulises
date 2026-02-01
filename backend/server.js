@@ -24,7 +24,6 @@ const BASIC_PASS = process.env.BASIC_PASS;
    BASIC AUTH (PROTEGE TODO)
 ===================== */
 function basicAuthAll(req, res, next) {
-  // Si faltan variables, cortamos (mejor que quede abierto sin querer)
   if (!BASIC_USER || !BASIC_PASS) {
     return res.status(500).send("Faltan BASIC_USER / BASIC_PASS en Render");
   }
@@ -51,9 +50,8 @@ function basicAuthAll(req, res, next) {
 /* =====================
    PATHS
 ===================== */
-// OJO: public está adentro de backend
-const publicPath = path.join(__dirname, "public");
-const uploadsPath = path.join(__dirname, "uploads");
+const publicPath = path.join(__dirname, "public");   // backend/public
+const uploadsPath = path.join(__dirname, "uploads"); // backend/uploads
 
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 
@@ -104,6 +102,10 @@ app.get("/debug-paths", (req, res) => {
     indexExists: fs.existsSync(path.join(publicPath, "index.html")),
     cwd: process.cwd(),
     dirname: __dirname,
+    hasEnableAI: ENABLE_AI,
+    hasOpenAIKey: !!OPENAI_API_KEY,
+    hasBasicUser: !!BASIC_USER,
+    hasBasicPass: !!BASIC_PASS,
   });
 });
 
@@ -111,13 +113,18 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(publicPath, "index.html"));
 });
 
+/* =====================
+   IA GENERAR
+===================== */
 app.post("/generar", upload.single("imagen"), async (req, res) => {
   try {
     if (!ENABLE_AI) {
       return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
     }
     if (!openai) {
-      return res.status(500).json({ error: "OpenAI no configurado (falta OPENAI_API_KEY)" });
+      return res
+        .status(500)
+        .json({ error: "OpenAI no configurado (falta OPENAI_API_KEY)" });
     }
 
     const texto = (req.body.texto || "").trim();
@@ -128,20 +135,34 @@ app.post("/generar", upload.single("imagen"), async (req, res) => {
 
     const ok = ["image/jpeg", "image/png", "image/webp"];
     if (!ok.includes(imagen.mimetype)) {
-      return res.status(400).json({ error: "Formato no soportado. Usá JPG, PNG o WEBP" });
+      return res
+        .status(400)
+        .json({ error: "Formato no soportado. Usá JPG, PNG o WEBP" });
     }
 
-    const prompt = [
-      `Transformá este ambiente según el pedido del usuario: "${texto}"`,
-      "Reglas:",
-      "- Mantener el mismo ambiente",
-      "- Estilo realista",
-      "- Mejor iluminación",
-      "- No agregar textos ni marcas de agua",
-    ].join("\n");
+    // ✅ PROMPT MÁS “INTELIGENTE” (CAMBIOS MÁS FUERTES)
+    const prompt = `
+Sos un arquitecto y diseñador de interiores profesional.
+
+Objetivo del usuario:
+"${texto}"
+
+Instrucciones MUY IMPORTANTES:
+- Realizá cambios visibles y claros en el diseño (no mínimos)
+- Modificá materiales, colores, iluminación y estilo
+- Mantener la estructura general, pero permitir rediseño completo del estilo
+- Si el usuario pide modernizar: líneas limpias, colores neutros, materiales contemporáneos (madera clara, metal, vidrio, microcemento)
+- Si hay balcones, fachadas o barandas: rediseñalos de forma notable y coherente
+- El resultado debe verse claramente diferente al original, sin perder realismo
+- Realismo fotográfico / render arquitectónico profesional
+- Mejor iluminación (natural y artificial equilibrada)
+- No agregar textos, logos ni marcas de agua
+`;
 
     const imagePath = path.join(uploadsPath, imagen.filename);
-    const imageFile = await toFile(fs.createReadStream(imagePath), null, { type: imagen.mimetype });
+    const imageFile = await toFile(fs.createReadStream(imagePath), null, {
+      type: imagen.mimetype,
+    });
 
     const result = await openai.images.edit({
       model: "gpt-image-1",
@@ -150,9 +171,12 @@ app.post("/generar", upload.single("imagen"), async (req, res) => {
       size: "1024x1024",
     });
 
-    const base64 = result.data[0].b64_json;
-    const buffer = Buffer.from(base64, "base64");
+    const base64 = result.data?.[0]?.b64_json;
+    if (!base64) {
+      return res.status(500).json({ error: "La IA no devolvió imagen (b64_json vacío)" });
+    }
 
+    const buffer = Buffer.from(base64, "base64");
     const outputName = `resultado_${Date.now()}.png`;
     fs.writeFileSync(path.join(uploadsPath, outputName), buffer);
 
@@ -174,5 +198,6 @@ app.post("/generar", upload.single("imagen"), async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
+
 
 
