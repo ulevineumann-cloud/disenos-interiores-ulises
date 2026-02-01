@@ -1,4 +1,5 @@
 * { box-sizing: border-box; }
+
 :root{
   --bg: #0b1220;
   --card: rgba(255,255,255,.08);
@@ -29,9 +30,7 @@ body{
   pointer-events: none;
 }
 
-.top{
-  padding: 22px 0 10px;
-}
+.top{ padding: 22px 0 10px; }
 
 .wrap{
   width: min(980px, 92vw);
@@ -64,6 +63,7 @@ body{
   font-size: 20px;
   letter-spacing: .2px;
 }
+
 .frase{
   margin: 4px 0 0;
   color: var(--muted);
@@ -102,10 +102,7 @@ textarea{
   color: var(--text);
   outline: none;
 }
-
-textarea:focus{
-  border-color: rgba(255,255,255,.28);
-}
+textarea:focus{ border-color: rgba(255,255,255,.28); }
 
 .row{
   display:flex;
@@ -115,9 +112,7 @@ textarea:focus{
   flex-wrap: wrap;
 }
 
-input[type="file"]{
-  display:none;
-}
+input[type="file"]{ display:none; }
 
 .fileBtn{
   display:inline-flex;
@@ -130,10 +125,7 @@ input[type="file"]{
   cursor:pointer;
   user-select:none;
 }
-
-.fileBtn:hover{
-  border-color: rgba(255,255,255,.28);
-}
+.fileBtn:hover{ border-color: rgba(255,255,255,.28); }
 
 button{
   padding: 10px 14px;
@@ -143,10 +135,7 @@ button{
   color: var(--text);
   cursor: pointer;
 }
-
-button:hover{
-  border-color: rgba(255,255,255,.28);
-}
+button:hover{ border-color: rgba(255,255,255,.28); }
 
 .primary{
   background: linear-gradient(135deg, rgba(120,90,255,.55), rgba(0,210,255,.35));
@@ -158,61 +147,30 @@ button:hover{
   margin: 10px 0 0;
   color: var(--muted);
   min-height: 18px;
+  font-size: 14px;
+  opacity: .9;
 }
 
-.grid{
-  display:grid;
-  gap: 14px;
-  grid-template-columns: 1fr 1fr;
-}
-
-@media (max-width: 850px){
-  .grid{ grid-template-columns: 1fr; }
-}
-
-.panel{
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-  background: rgba(10,16,28,.35);
-}
-
-.textoResultado{
-  margin: 0;
-  color: var(--text);
-  line-height: 1.4;
-  white-space: pre-wrap;
-}
-
-.imgResultado{
-  width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
+/* Loader */
+.loader{
+  display: none;
   margin-top: 10px;
-  display:none; /* resultado arranca oculto */
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.12);
+  overflow: hidden;
 }
-
-/* ✅ preview SIEMPRE visible en el modo máscara */
-#preview{
-  width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.14);
-  margin-top: 10px;
-  display:block;
+.loader::after{
+  content: "";
+  display: block;
+  height: 100%;
+  width: 35%;
+  background: linear-gradient(90deg, rgba(120,170,255,.15), rgba(120,170,255,.85), rgba(120,170,255,.15));
+  animation: loadmove 1s infinite linear;
 }
-
-.previewBox{
-  margin-top: 12px;
-  padding: 12px;
-  border-radius: 14px;
-  border: 1px dashed rgba(255,255,255,.18);
-  background: rgba(10,16,28,.25);
-}
-
-.previewTitle{
-  font-size: 13px;
-  color: var(--muted);
-  margin-bottom: 8px;
+@keyframes loadmove{
+  from { transform: translateX(-120%); }
+  to   { transform: translateX(320%); }
 }
 
 .footer{
@@ -222,128 +180,7 @@ button:hover{
   margin-top: 12px;
 }
 
-.textoResultado, #recomendacion {
-  white-space: pre-wrap;
-  line-height: 1.5;
-}
-.antesDespues{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 10px;
-}
-
-@media (max-width: 850px){
-  .antesDespues{ grid-template-columns: 1fr; }
-}
-
-.tag{
-  display: inline-block;
-  font-size: 12px;
-  color: rgba(234,240,255,.8);
-  border: 1px solid rgba(255,255,255,.18);
-  padding: 4px 10px;
-  border-radius: 999px;
-  margin-bottom: 8px;
-  background: rgba(10,16,28,.25);
-}
-/* Texto de recomendación prolijo */
-.textoResultado, #recomendacion {
-  white-space: pre-wrap;
-  line-height: 1.55;
-}
-
-/* Antes/Después */
-.antesDespues{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 10px;
-}
-@media (max-width: 850px){
-  .antesDespues{ grid-template-columns: 1fr; }
-}
-.tag{
-  display: inline-block;
-  font-size: 12px;
-  color: rgba(234,240,255,.85);
-  border: 1px solid rgba(255,255,255,.18);
-  padding: 4px 10px;
-  border-radius: 999px;
-  margin-bottom: 8px;
-  background: rgba(10,16,28,.25);
-}
-
-/* 🔥 Efecto “transformación” DEMO (se lo aplicamos al Resultado) */
-.imgResultado.demo-transform {
-  filter: brightness(1.08) contrast(1.12) saturate(1.12);
-}
-/* Mensajitos y loader */
-.estado {
-  margin-top: 10px;
-  font-size: 14px;
-  opacity: .9;
-}
-.loader {
-  display: none;
-  margin-top: 10px;
-  height: 6px;
-  border-radius: 999px;
-  background: rgba(255,255,255,.12);
-  overflow: hidden;
-}
-.loader::after {
-  content: "";
-  display: block;
-  height: 100%;
-  width: 35%;
-  background: linear-gradient(90deg, rgba(120,170,255,.15), rgba(120,170,255,.85), rgba(120,170,255,.15));
-  animation: loadmove 1s infinite linear;
-}
-@keyframes loadmove {
-  from { transform: translateX(-120%); }
-  to   { transform: translateX(320%); }
-}
-
-/* Antes/Después más pro */
-.antesDespues{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-top: 10px;
-}
-@media (max-width: 850px){
-  .antesDespues{ grid-template-columns: 1fr; }
-}
-.tag{
-  display: inline-block;
-  font-size: 12px;
-  color: rgba(234,240,255,.9);
-  border: 1px solid rgba(255,255,255,.18);
-  padding: 4px 10px;
-  border-radius: 999px;
-  margin-bottom: 8px;
-  background: rgba(10,16,28,.25);
-}
-.imgResultado{
-  width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,.12);
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
-  background: rgba(255,255,255,.04);
-}
-
-/* Resultado “wow” (demo visual) */
-.imgResultado.demo-transform {
-  filter: brightness(1.08) contrast(1.12) saturate(1.12);
-}
-
-/* Texto de recomendación prolijo */
-.textoResultado, #recomendacion {
-  white-space: pre-wrap;
-  line-height: 1.55;
-}
-/* ====== MODO MÁSCARA (pincel) ====== */
+/* ====== TOOLS máscara ====== */
 .tools{
   display:flex;
   gap:12px;
@@ -351,7 +188,7 @@ button:hover{
   align-items:center;
   margin-top:12px;
 }
-.tool{display:flex;gap:10px;align-items:center}
+.tool{ display:flex; gap:10px; align-items:center; }
 .ghost{
   padding: 10px 14px;
   border-radius: 14px;
@@ -360,13 +197,13 @@ button:hover{
   color: var(--text);
   cursor: pointer;
 }
-.chk{display:flex;gap:8px;align-items:center;color:var(--muted)}
+.chk{ display:flex; gap:8px; align-items:center; color: var(--muted); }
 
-/* Caja donde está la imagen y arriba el canvas para pintar */
+/* ====== PAINT BOX (preview + canvas) ====== */
 .paintBox{
-  position: relative;
+  position: relative;                 /* CLAVE */
   width: 100%;
-  min-height: 260px;
+  max-height: 420px;                  /* 🔥 achica original */
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(10,16,28,.25);
@@ -379,19 +216,71 @@ button:hover{
   width: 100%;
   height: auto;
   display: block;
-  margin: 0; /* dentro de paintBox */
+  margin: 0;
   border: 0;
   border-radius: 0;
+  max-height: 420px;                  /* 🔥 achica original */
+  object-fit: contain;
 }
 
-/* Canvas encima para dibujar máscara */
+/* Canvas encima */
 #paint{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
+  z-index: 10;
   touch-action:none;
   cursor: crosshair;
+}
+
+/* ====== RESULTADO EN BLOQUES + CHICO ====== */
+.resultGrid{
+  display:grid;
+  gap:14px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 850px){
+  .resultGrid{ grid-template-columns: 1fr 1fr; align-items:start; }
+}
+
+.panel{
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(10,16,28,.35);
+}
+
+.reco{
+  white-space: pre-wrap;
+  line-height: 1.55;
+  margin: 0;
+  max-height: 300px;         /* 🔥 recomendación no infinita */
+  overflow: auto;
+  background: rgba(10,16,28,.25);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.imgWrap{
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(10,16,28,.25);
+  padding: 10px;
+}
+
+.imgResultadoSmall{
+  width: 100%;
+  height: auto;
+  max-height: 360px;         /* 🔥 resultado más chico */
+  object-fit: contain;
+  display: block;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  background: rgba(255,255,255,.04);
 }
 
 
