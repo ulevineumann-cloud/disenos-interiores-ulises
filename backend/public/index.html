@@ -1,97 +1,99 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Diseños de interiores Ulises</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Diseños de interiores Ulises</title>
 
-    <!-- Evita 404 de favicon -->
-    <link rel="icon" href="data:," />
+  <!-- Evita 404 de favicon -->
+  <link rel="icon" href="data:," />
 
-    <link rel="stylesheet" href="style.css" />
-  </head>
+  <link rel="stylesheet" href="style.css" />
+</head>
 
-  <body>
-    <div class="bg"></div>
+<body>
+  <div class="bg"></div>
 
-    <header class="top">
-      <div class="brand">
-        <div class="logo">U</div>
-        <div class="brandText">
-          <h1>Diseños de interiores Ulises</h1>
-          <p class="frase">No necesito que sea imposible de copiar, necesito que sea difícil de igualar.</p>
-        </div>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">U</div>
+      <div class="brandText">
+        <h1>Diseños de interiores Ulises</h1>
+        <p class="frase">No necesito que sea imposible de copiar, necesito que sea difícil de igualar.</p>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <main class="wrap">
-      <section class="card">
-        <h2>Tu pedido</h2>
-        <p class="muted">Escribí libremente lo que querés, y subí una foto del ambiente.</p>
+  <main class="wrap">
+    <section class="card">
+      <h2>Tu pedido</h2>
+      <p class="muted">Escribí libremente lo que querés, y subí una foto del ambiente.</p>
 
-        <label class="label" for="texto">Descripción</label>
-        <textarea
-          id="texto"
-          rows="5"
-          placeholder="Ej: Quiero que este living se vea más moderno, luminoso, con madera clara, plantas y un espacio para estudiar."
-        ></textarea>
+      <label class="label" for="texto">Descripción</label>
+      <textarea
+        id="texto"
+        rows="5"
+        placeholder="Ej: Quiero que este living se vea más moderno, luminoso, con madera clara, plantas y un espacio para estudiar."
+      ></textarea>
 
-        <div class="row">
-          <label class="fileBtn" for="imagen">Seleccionar imagen</label>
-          <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
-          <button id="generar" class="primary" type="button">Diseñar</button>
+      <div class="row">
+        <label class="fileBtn" for="imagen">Seleccionar imagen</label>
+        <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
+        <button id="generar" class="primary" type="button">Diseñar</button>
+      </div>
+
+      <p id="estado" class="estado"></p>
+      <div id="loader" class="loader" style="display:none;"></div>
+
+      <!-- ESTE ID TIENE QUE EXISTIR porque tu script lo usa -->
+      <p id="modoInfo" class="muted small"></p>
+
+      <div class="previewBox">
+        <div class="previewTitle">Vista previa</div>
+        <img id="preview" alt="Vista previa" style="display:none;" />
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Resultado</h2>
+
+      <div class="grid">
+        <div class="panel">
+          <h3>Recomendación</h3>
+          <p id="recomendacion" class="textoResultado">Acá va a aparecer la recomendación.</p>
         </div>
 
-        <p id="estado" class="estado"></p>
-        <p id="modoInfo" class="modo"></p>
+        <div class="panel">
+          <h3>Antes / Después</h3>
 
-        <div id="loader" class="loader" style="display:none;" aria-hidden="true"></div>
-
-        <div class="previewBox">
-          <div class="previewTitle">Vista previa</div>
-          <img id="preview" alt="Vista previa" style="display:none;" />
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Resultado</h2>
-
-        <div class="grid">
-          <div class="panel">
-            <h3>Recomendación</h3>
-            <p id="recomendacion" class="textoResultado">Acá va a aparecer la recomendación.</p>
-          </div>
-
-          <div class="panel">
-            <h3>Antes / Después</h3>
-
-            <div class="antesDespues">
-              <div>
-                <div class="tag">Original</div>
-                <img id="imagenOriginal" class="imgResultado" alt="Imagen original" style="display:none;" />
-              </div>
-
-              <div>
-                <div class="tag">Resultado</div>
-                <img id="imagenResultado" class="imgResultado" alt="Imagen resultante" style="display:none;" />
-              </div>
+          <div class="antesDespues">
+            <div>
+              <div class="tag">Original</div>
+              <img id="imagenOriginal" class="imgResultado" alt="Imagen original" style="display:none;" />
             </div>
 
-            <p class="muted small">
-              *Por ahora es demo (el resultado puede ser copia). Después conectamos IA real para transformarla.*
-            </p>
+            <div>
+              <div class="tag">Resultado</div>
+              <img id="imagenResultado" class="imgResultado" alt="Imagen resultante" style="display:none;" />
+            </div>
           </div>
+
+          <p class="muted small">
+            *Por ahora es demo (el resultado puede ser copia). Después conectamos IA real para transformarla.*
+          </p>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <footer class="footer">
-        Proyecto experimental de diseño con inteligencia artificial
-      </footer>
-    </main>
+    <footer class="footer">
+      Proyecto experimental de diseño con inteligencia artificial
+    </footer>
+  </main>
 
-    <script src="script.js"></script>
-  </body>
+  <script src="script.js"></script>
+</body>
 </html>
+
 
 
 
