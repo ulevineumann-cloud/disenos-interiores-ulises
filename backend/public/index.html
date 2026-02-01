@@ -4,87 +4,83 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Diseños de interiores Ulises</title>
+  <link rel="icon" href="data:," />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="bg"></div>
-
-  <header class="top">
-    <div class="brand">
-      <div class="logo">U</div>
-      <div class="brandText">
-        <h1>Diseños de interiores Ulises</h1>
-        <p class="frase">
-          No necesito que sea imposible de copiar, necesito que sea difícil de igualar.
-        </p>
-      </div>
-    </div>
-  </header>
-
   <main class="wrap">
-    <section class="card">
-      <h2>Tu pedido</h2>
-      <p class="muted">Escribí libremente lo que querés, y subí una foto del ambiente.</p>
+    <header class="top">
+      <h1>Diseños de interiores Ulises</h1>
+      <p class="muted">Subí una foto, escribí el pedido y <b>pintá</b> dónde querés el cambio.</p>
+    </header>
 
-      <label class="label" for="texto">Descripción</label>
-      <textarea
-        id="texto"
-        rows="5"
-        placeholder="Ej: Quiero que este living se vea más moderno, luminoso, con madera clara y plantas."
-      ></textarea>
+    <section class="card">
+      <label class="lbl" for="texto">Pedido</label>
+      <textarea id="texto" rows="4" placeholder="Ej: Cambiar SOLO la baranda del balcón a hierro negro."></textarea>
 
       <div class="row">
         <label class="fileBtn" for="imagen">Seleccionar imagen</label>
-        <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
-        <button id="generar" class="primary">Diseñar</button>
+        <input id="imagen" type="file" accept="image/jpeg,image/png,image/webp" />
+        <button id="generar" class="primary" type="button">Diseñar</button>
+      </div>
+
+      <div class="tools">
+        <div class="tool">
+          <span class="muted">Pincel</span>
+          <input id="brush" type="range" min="8" max="80" value="26" />
+          <span id="brushVal" class="muted">26</span>
+        </div>
+
+        <div class="tool">
+          <button id="btnErase" class="ghost" type="button">Borrar</button>
+          <button id="btnClear" class="ghost" type="button">Limpiar máscara</button>
+        </div>
+
+        <div class="tool">
+          <label class="chk">
+            <input id="chkMask" type="checkbox" checked />
+            Usar máscara (recomendado)
+          </label>
+        </div>
       </div>
 
       <p id="estado" class="estado"></p>
-      <div id="loader" class="loader"></div>
+      <p id="modoInfo" class="muted"></p>
+      <div id="loader" class="loader" style="display:none;"></div>
+    </section>
 
-      <!-- 👇 ESTE ES EL QUE FALTABA -->
-      <p id="modoInfo" class="muted small"></p>
+    <section class="card">
+      <h2>Marcá la zona a cambiar</h2>
 
-      <div class="previewBox">
-        <div class="previewTitle">Vista previa</div>
+      <div class="paintBox">
         <img id="preview" alt="Vista previa" />
+        <canvas id="paint"></canvas>
       </div>
+
+      <p class="muted small">
+        Pintá arriba de la imagen la zona donde querés el cambio. Lo pintado será “editable”.
+      </p>
     </section>
 
     <section class="card">
       <h2>Resultado</h2>
       <div class="grid">
-        <div class="panel">
+        <div>
           <h3>Recomendación</h3>
-          <p id="recomendacion" class="textoResultado">—</p>
+          <pre id="recomendacion" class="reco">—</pre>
         </div>
-
-        <div class="panel">
-          <h3>Antes / Después</h3>
-
-          <div class="antesDespues">
-            <div>
-              <div class="tag">Original</div>
-              <img id="imagenOriginal" class="imgResultado" />
-            </div>
-
-            <div>
-              <div class="tag">Resultado</div>
-              <img id="imagenResultado" class="imgResultado" />
-            </div>
-          </div>
+        <div>
+          <h3>Imagen</h3>
+          <img id="imagenResultado" class="img" alt="Resultado" style="display:none;" />
         </div>
       </div>
     </section>
 
-    <footer class="footer">
-      Proyecto experimental de diseño con inteligencia artificial
-    </footer>
+    <script src="script.js"></script>
   </main>
-
-  <script src="script.js"></script>
 </body>
 </html>
+
 
 
 
