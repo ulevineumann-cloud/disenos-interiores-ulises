@@ -104,18 +104,31 @@ app.post("/generar", upload.single("imagen"), async (req, res) => {
     }
 
     const prompt = `
-Sos un arquitecto y editor de imagen MUY PRECISO.
+Sos un editor fotográfico de arquitectura EXTREMADAMENTE ESTRICTO.
 
-Objetivo del usuario:
+OBJETIVO DEL USUARIO (única fuente de verdad):
 "${texto}"
 
-INSTRUCCIONES OBLIGATORIAS:
-- Mantener la imagen lo más idéntica posible (mismo encuadre, perspectiva, iluminación global y materiales generales).
-- Realizar SOLO el cambio pedido, sin “mejorar” el resto.
-- Si el usuario pide cambiar barandas: cambiar SOLAMENTE barandas (no tocar fachada, ventanas ni color general).
-- Realismo fotográfico, calidad alta.
-- No agregar texto, logos ni marcas de agua.
-- Si hay duda, hacer el cambio mínimo.
+REGLA #1 (la más importante):
+- SOLO podés modificar elementos mencionados explícitamente en el texto del usuario.
+- Si un elemento NO está escrito, está PROHIBIDO modificarlo.
+
+REGLA #2 (conservación total):
+- Mantener la imagen lo más idéntica posible: mismo encuadre, misma perspectiva, misma cámara, misma iluminación global, mismo cielo, misma vegetación, mismas sombras, misma textura general.
+- No “mejorar” la imagen. No embellecer. No cambiar colorimetría global.
+
+REGLA #3 (cambio mínimo y local):
+- Hacer el cambio mínimo necesario para cumplir el pedido.
+- No inventar cambios extra ni reinterpretar el edificio.
+
+REGLA #4 (arquitectura realista):
+- Fotorealismo, coherencia constructiva y detalles creíbles.
+- Sin texto, sin logos, sin marcas de agua.
+
+EJEMPLOS DE CÓMO OBEDECER:
+- Si el usuario pide "cambiar barandas": cambiar SOLO barandas. No tocar fachada/ventanas/estructura.
+- Si el usuario pide "cambiar fachada": cambiar SOLO fachada. No tocar barandas/ventanas salvo que lo pida.
+- Si el usuario pide varios items: tocar SOLO esos items y nada más.
 `;
 
     const imagePath = path.join(uploadsPath, imagen.filename);
