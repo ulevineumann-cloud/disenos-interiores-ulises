@@ -7,20 +7,36 @@
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
+  <div class="bg"></div>
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">U</div>
+      <div class="brandText">
+        <h1>Diseños de interiores Ulises</h1>
+        <p class="frase">No necesito que sea imposible de copiar, necesito que sea difícil de igualar.</p>
+      </div>
+    </div>
+  </header>
+
   <main class="wrap">
-    <header class="top">
-      <h1>Diseños de interiores Ulises</h1>
-      <p class="muted">Subí una foto, escribí el pedido y <b>pintá</b> dónde querés el cambio.</p>
-    </header>
 
     <section class="card">
-      <label class="lbl" for="texto">Pedido</label>
-      <textarea id="texto" rows="4" placeholder="Ej: Cambiar SOLO la baranda del balcón a hierro negro."></textarea>
+      <h2>Tu pedido</h2>
+      <p class="muted">Subí una foto, escribí el pedido y <b>pintá</b> la zona a cambiar.</p>
+
+      <label class="label" for="texto">Descripción</label>
+      <textarea
+        id="texto"
+        rows="4"
+        placeholder="Ej: Cambiar SOLO la baranda del balcón a hierro negro."
+      ></textarea>
 
       <div class="row">
         <label class="fileBtn" for="imagen">Seleccionar imagen</label>
-        <input id="imagen" type="file" accept="image/jpeg,image/png,image/webp" />
+        <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
         <button id="generar" class="primary" type="button">Diseñar</button>
       </div>
 
@@ -45,41 +61,46 @@
       </div>
 
       <p id="estado" class="estado"></p>
-      <p id="modoInfo" class="muted"></p>
-      <div id="loader" class="loader" style="display:none;"></div>
+      <div id="loader" class="loader"></div>
+      <p id="modoInfo" class="muted small"></p>
     </section>
 
     <section class="card">
-      <h2>Vista previa y máscara</h2>
-
+      <h2>Marcá la zona a cambiar</h2>
       <div class="paintBox">
         <img id="preview" alt="Vista previa" />
         <canvas id="paint"></canvas>
       </div>
-
-      <p class="muted small">
-        Si no ves la foto acá, es porque el CSS/preview no está bien. Con estos archivos se ve sí o sí.
-      </p>
+      <p class="muted small">Pintá en rojo la zona editable. Todo lo demás queda igual.</p>
     </section>
 
     <section class="card">
       <h2>Resultado</h2>
-      <div class="grid">
-        <div>
+
+      <div class="resultGrid">
+        <div class="panel">
           <h3>Recomendación</h3>
           <pre id="recomendacion" class="reco">—</pre>
         </div>
-        <div>
-          <h3>Imagen</h3>
-          <img id="imagenResultado" class="img" alt="Resultado" style="display:none;" />
+
+        <div class="panel">
+          <h3>Imagen resultante</h3>
+          <div class="imgWrap">
+            <img id="imagenResultado" class="imgResultadoSmall" alt="Resultado" style="display:none;" />
+          </div>
         </div>
       </div>
     </section>
+
+    <footer class="footer">
+      Proyecto experimental de diseño con inteligencia artificial
+    </footer>
 
     <script src="script.js"></script>
   </main>
 </body>
 </html>
+
 
 
 

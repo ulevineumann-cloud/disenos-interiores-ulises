@@ -201,17 +201,15 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 
 /* ====== PAINT BOX (preview + canvas) ====== */
 .paintBox{
-  position: relative;                 /* CLAVE */
+  position: relative;
   width: 100%;
-  max-height: 420px;                  /* 🔥 achica original */
+  max-height: 420px;
   border-radius: 14px;
   border: 1px solid rgba(255,255,255,.14);
   background: rgba(10,16,28,.25);
   overflow: hidden;
   margin-top: 10px;
 }
-
-/* Imagen visible */
 .paintBox #preview{
   width: 100%;
   height: auto;
@@ -219,11 +217,9 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   margin: 0;
   border: 0;
   border-radius: 0;
-  max-height: 420px;                  /* 🔥 achica original */
+  max-height: 420px;
   object-fit: contain;
 }
-
-/* Canvas encima */
 #paint{
   position:absolute;
   inset:0;
@@ -255,7 +251,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   white-space: pre-wrap;
   line-height: 1.55;
   margin: 0;
-  max-height: 300px;         /* 🔥 recomendación no infinita */
+  max-height: 300px;
   overflow: auto;
   background: rgba(10,16,28,.25);
   border: 1px solid rgba(255,255,255,.14);
@@ -274,7 +270,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 .imgResultadoSmall{
   width: 100%;
   height: auto;
-  max-height: 360px;         /* 🔥 resultado más chico */
+  max-height: 360px;
   object-fit: contain;
   display: block;
   border-radius: 12px;
@@ -282,6 +278,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   box-shadow: 0 10px 30px rgba(0,0,0,.25);
   background: rgba(255,255,255,.04);
 }
+
 
 
 

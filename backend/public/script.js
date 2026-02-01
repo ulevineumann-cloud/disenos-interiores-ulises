@@ -26,6 +26,7 @@ let eraseMode = false;
 
 const pctx = paint.getContext("2d", { willReadFrequently: true });
 
+// máscara real (misma resolución que la imagen)
 const maskCanvas = document.createElement("canvas");
 const mctx = maskCanvas.getContext("2d", { willReadFrequently: true });
 
@@ -40,12 +41,15 @@ function niceError(msg) {
   alert(msg);
 }
 
-function setBrushUI() { brushVal.textContent = String(brush.value); }
+function setBrushUI() {
+  brushVal.textContent = String(brush.value);
+}
 setBrushUI();
 brush.addEventListener("input", setBrushUI);
 
 btnErase.addEventListener("click", () => {
   eraseMode = !eraseMode;
+  // Si eraseMode está activo, el botón dice “Pintar” (para volver al modo pintar)
   btnErase.textContent = eraseMode ? "Pintar" : "Borrar";
 });
 
@@ -55,6 +59,7 @@ btnClear.addEventListener("click", () => {
 });
 
 function clearMask() {
+  // negro opaco = NO editable
   mctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
   mctx.fillStyle = "rgba(0,0,0,1)";
   mctx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
@@ -107,7 +112,7 @@ function applyStroke(mx, my, radius) {
   if (!imgNaturalW || !imgNaturalH) return;
 
   if (!eraseMode) {
-    // Pintar => zona editable (transparente)
+    // Pintar => transparente (editable)
     mctx.save();
     mctx.globalCompositeOperation = "destination-out";
     mctx.beginPath();
@@ -148,9 +153,6 @@ inputImagen.addEventListener("change", () => {
   if (!file) return;
 
   const url = URL.createObjectURL(file);
-
-  // 🔥 fuerza visible SIEMPRE
-  preview.style.display = "block";
 
   preview.onload = () => {
     imgNaturalW = preview.naturalWidth;
@@ -196,6 +198,7 @@ boton.addEventListener("click", async () => {
 
   try {
     setLoading(true);
+    estado.textContent = "Generando…";
 
     const formData = new FormData();
     formData.append("texto", texto);
@@ -216,9 +219,10 @@ boton.addEventListener("click", async () => {
     if (!res.ok) throw new Error(data?.error || `Servidor respondió ${res.status}`);
 
     recomendacionEl.textContent = data.recomendacion || "Listo ✅";
-    modoInfo.textContent = data.modo === "IA_MASK"
-      ? "🟢 Modo máscara (solo cambia lo pintado)"
-      : "🟡 Sin máscara";
+    modoInfo.textContent =
+      data.modo === "IA_MASK"
+        ? "🟢 Modo máscara (solo cambia lo pintado)"
+        : "🟡 Sin máscara (menos control)";
 
     if (data.imagenUrl) {
       imagenResultadoEl.src = `${data.imagenUrl}?v=${Date.now()}`;
@@ -233,6 +237,7 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
 
 
 
