@@ -26,7 +26,6 @@ let eraseMode = false;
 
 const pctx = paint.getContext("2d", { willReadFrequently: true });
 
-// Canvas “mask real” (misma resolución que la imagen)
 const maskCanvas = document.createElement("canvas");
 const mctx = maskCanvas.getContext("2d", { willReadFrequently: true });
 
@@ -41,9 +40,7 @@ function niceError(msg) {
   alert(msg);
 }
 
-function setBrushUI() {
-  brushVal.textContent = String(brush.value);
-}
+function setBrushUI() { brushVal.textContent = String(brush.value); }
 setBrushUI();
 brush.addEventListener("input", setBrushUI);
 
@@ -58,19 +55,16 @@ btnClear.addEventListener("click", () => {
 });
 
 function clearMask() {
-  // máscara: fondo negro opaco (NO editable)
   mctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
   mctx.fillStyle = "rgba(0,0,0,1)";
   mctx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
 }
 
 function resizeCanvasesToImage() {
-  // canvas visible (tamaño mostrado)
   const rect = preview.getBoundingClientRect();
   paint.width = Math.max(1, Math.floor(rect.width));
   paint.height = Math.max(1, Math.floor(rect.height));
 
-  // máscara real (tamaño natural de la imagen)
   maskCanvas.width = imgNaturalW;
   maskCanvas.height = imgNaturalH;
   clearMask();
@@ -78,24 +72,17 @@ function resizeCanvasesToImage() {
 }
 
 function renderOverlay() {
-  // dibuja overlay rojo donde la máscara es "editable"
-  // editable = transparencia en la máscara (alpha=0)
   pctx.clearRect(0, 0, paint.width, paint.height);
-
   if (!imgNaturalW || !imgNaturalH) return;
 
-  // crear mini preview del maskCanvas a tamaño visible
-  // pintamos rojo semitransparente donde alpha=0
   const scaleX = paint.width / imgNaturalW;
   const scaleY = paint.height / imgNaturalH;
 
-  // leemos pixeles de maskCanvas (caro, pero ok para 1024)
   const imgData = mctx.getImageData(0, 0, imgNaturalW, imgNaturalH);
   const data = imgData.data;
 
-  // dibujamos por bloques (más rápido): 4px
   const step = 4;
-  pctx.fillStyle = "rgba(255, 60, 90, 0.35)";
+  pctx.fillStyle = "rgba(255, 60, 90, 0.40)";
   for (let y = 0; y < imgNaturalH; y += step) {
     for (let x = 0; x < imgNaturalW; x += step) {
       const i = (y * imgNaturalW + x) * 4;
@@ -111,24 +98,16 @@ function getPosOnCanvas(evt) {
   const rect = paint.getBoundingClientRect();
   const x = (evt.clientX - rect.left) / rect.width;
   const y = (evt.clientY - rect.top) / rect.height;
-
-  // coordenadas en imagen natural (maskCanvas)
   const mx = Math.max(0, Math.min(imgNaturalW, Math.round(x * imgNaturalW)));
   const my = Math.max(0, Math.min(imgNaturalH, Math.round(y * imgNaturalH)));
   return { mx, my };
 }
 
 function applyStroke(mx, my, radius) {
-  // Regla de máscara (estilo “edits” clásico):
-  // - Negro opaco = mantener
-  // - Transparente = zona editable
-  //
-  // Si pintamos => hacemos transparente (editable)
-  // Si borramos => volvemos a negro opaco (no editable)
   if (!imgNaturalW || !imgNaturalH) return;
 
   if (!eraseMode) {
-    // pintar => borrar alpha (transparentar)
+    // Pintar => zona editable (transparente)
     mctx.save();
     mctx.globalCompositeOperation = "destination-out";
     mctx.beginPath();
@@ -136,7 +115,7 @@ function applyStroke(mx, my, radius) {
     mctx.fill();
     mctx.restore();
   } else {
-    // borrar => volver a negro
+    // Borrar => vuelve a negro (no editable)
     mctx.save();
     mctx.globalCompositeOperation = "source-over";
     mctx.fillStyle = "rgba(0,0,0,1)";
@@ -155,36 +134,33 @@ paint.addEventListener("pointerdown", (e) => {
   applyStroke(mx, my, Number(brush.value));
   renderOverlay();
 });
-
 paint.addEventListener("pointermove", (e) => {
   if (!drawing) return;
   const { mx, my } = getPosOnCanvas(e);
   applyStroke(mx, my, Number(brush.value));
   renderOverlay();
 });
-
-paint.addEventListener("pointerup", () => {
-  drawing = false;
-});
-paint.addEventListener("pointercancel", () => {
-  drawing = false;
-});
+paint.addEventListener("pointerup", () => { drawing = false; });
+paint.addEventListener("pointercancel", () => { drawing = false; });
 
 inputImagen.addEventListener("change", () => {
   const file = inputImagen.files?.[0];
   if (!file) return;
 
   const url = URL.createObjectURL(file);
+
+  // 🔥 fuerza visible SIEMPRE
+  preview.style.display = "block";
+
   preview.onload = () => {
     imgNaturalW = preview.naturalWidth;
     imgNaturalH = preview.naturalHeight;
-    // Esperamos un tick para que el layout termine
     setTimeout(resizeCanvasesToImage, 0);
   };
+
   preview.src = url;
 });
 
-// si cambia tamaño ventana, recalcular canvas visible
 window.addEventListener("resize", () => {
   if (!imgNaturalW) return;
   resizeCanvasesToImage();
@@ -197,10 +173,8 @@ async function maskBlobPNG() {
 }
 
 function maskHasEdits() {
-  // si toda la máscara está opaca, no hay zona editable
   const imgData = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
   const data = imgData.data;
-  // buscamos algún alpha=0
   for (let i = 3; i < data.length; i += 4) {
     if (data[i] === 0) return true;
   }
@@ -220,45 +194,31 @@ boton.addEventListener("click", async () => {
   if (!texto) return niceError("Escribí lo que querés cambiar.");
   if (!imagen) return niceError("Seleccioná una imagen.");
 
-  const okTypes = ["image/jpeg", "image/png", "image/webp"];
-  if (!okTypes.includes(imagen.type)) {
-    return niceError("Formato no soportado. Usá JPG, PNG o WEBP.");
-  }
-
   try {
     setLoading(true);
-
-    estado.textContent = "Preparando envío…";
 
     const formData = new FormData();
     formData.append("texto", texto);
     formData.append("imagen", imagen);
 
-    // máscara opcional
     if (chkMask.checked) {
-      if (!imgNaturalW) return niceError("Cargá una imagen primero (esperá que aparezca la vista previa).");
+      if (!imgNaturalW) return niceError("Esperá que cargue la vista previa.");
       if (!maskHasEdits()) return niceError("Pintá una zona para editar (si no, la IA no sabe dónde cambiar).");
-
       const mb = await maskBlobPNG();
       formData.append("mask", mb, "mask.png");
     }
-
-    estado.textContent = "Generando…";
 
     const res = await fetch("/generar", { method: "POST", body: formData });
 
     let data = {};
     try { data = await res.json(); } catch {}
 
-    if (!res.ok) {
-      throw new Error(data?.error || `Servidor respondió ${res.status}`);
-    }
+    if (!res.ok) throw new Error(data?.error || `Servidor respondió ${res.status}`);
 
     recomendacionEl.textContent = data.recomendacion || "Listo ✅";
-    modoInfo.textContent =
-      data.modo === "IA_MASK"
-        ? "🟢 Modo máscara (solo cambia lo pintado)"
-        : "🟡 Sin máscara (menos control)";
+    modoInfo.textContent = data.modo === "IA_MASK"
+      ? "🟢 Modo máscara (solo cambia lo pintado)"
+      : "🟡 Sin máscara";
 
     if (data.imagenUrl) {
       imagenResultadoEl.src = `${data.imagenUrl}?v=${Date.now()}`;
@@ -273,6 +233,7 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
 
 
 
