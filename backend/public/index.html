@@ -25,19 +25,34 @@
 
     <section class="card">
       <h2>Tu pedido</h2>
-      <p class="muted">Subí una foto del ambiente/edificio y escribí qué querés cambiar.</p>
+      <p class="muted">Subí una foto y escribí qué querés cambiar. Podés usar el modo Paint si querés marcar una zona exacta.</p>
 
       <label class="label" for="texto">Descripción</label>
       <textarea
         id="texto"
         rows="4"
-        placeholder="Ej: Cambiar la baranda de vidrio por baranda de hierro negro vertical, sin modificar el resto."
+        placeholder='Ej: "Cambiar SOLO la baranda de vidrio por baranda de hierro negro vertical. Mantener todo lo demás igual."'
       ></textarea>
 
       <div class="row">
         <label class="fileBtn" for="imagen">Seleccionar imagen</label>
         <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
         <button id="generar" class="primary" type="button">Diseñar</button>
+      </div>
+
+      <div class="row rowTight">
+        <label class="chk">
+          <input id="usePaint" type="checkbox" />
+          Usar Paint (marcar zona exacta)
+        </label>
+
+        <div class="toolMini" id="paintTools" style="display:none;">
+          <span class="muted">Pincel</span>
+          <input id="brush" type="range" min="6" max="70" value="22" />
+          <span id="brushVal" class="muted">22</span>
+          <button id="btnErase" class="ghost" type="button">Borrar</button>
+          <button id="btnClear" class="ghost" type="button">Limpiar</button>
+        </div>
       </div>
 
       <p id="estado" class="estado"></p>
@@ -48,6 +63,26 @@
         <div class="previewTitle">Vista previa</div>
         <img id="preview" alt="Vista previa" />
       </div>
+    </section>
+
+    <!-- BLOQUE PAINT -->
+    <section class="card" id="paintSection" style="display:none;">
+      <h2>Paint</h2>
+
+      <div id="paintAviso" class="paintAviso">
+        <div class="paintAvisoTitle">⚠️ Importante</div>
+        <div class="paintAvisoText">
+          La IA <b>solo</b> va a modificar lo que pintes. Todo lo que <b>NO</b> pintes se mantiene igual.
+          Pintá con cuidado la zona exacta que querés cambiar.
+        </div>
+      </div>
+
+      <div class="paintBox">
+        <img id="paintBase" alt="Imagen para pintar" />
+        <canvas id="paintCanvas"></canvas>
+      </div>
+
+      <p class="muted small">Tip: pintá solo el objeto/zona a cambiar (ej: baranda/cama/sillón). Si pintás de más, la IA puede tocar de más.</p>
     </section>
 
     <section class="card">
@@ -76,6 +111,7 @@
   </main>
 </body>
 </html>
+
 
 
 
