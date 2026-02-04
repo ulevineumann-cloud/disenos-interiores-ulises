@@ -9,7 +9,11 @@ const imagenResultadoEl = document.getElementById("imagenResultado");
 const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
 
+// Nuevo selector
+const btnModeSimple = document.getElementById("btnModeSimple");
+const btnModePaint = document.getElementById("btnModePaint");
 const usePaint = document.getElementById("usePaint");
+
 const paintSection = document.getElementById("paintSection");
 const paintTools = document.getElementById("paintTools");
 
@@ -171,19 +175,28 @@ function maskBlobPNG() {
   });
 }
 
-function updatePaintUI() {
-  const on = usePaint.checked;
-  paintSection.style.display = on ? "block" : "none";
-  paintTools.style.display = on ? "flex" : "none";
+function setMode(paintOn) {
+  usePaint.checked = !!paintOn;
+
+  // UI
+  btnModeSimple.classList.toggle("active", !paintOn);
+  btnModePaint.classList.toggle("active", paintOn);
+
+  btnModeSimple.setAttribute("aria-selected", String(!paintOn));
+  btnModePaint.setAttribute("aria-selected", String(!!paintOn));
+
+  paintSection.style.display = paintOn ? "block" : "none";
+  paintTools.style.display = paintOn ? "flex" : "none";
+
+  // si prenden paint y ya hay imagen cargada, ajustamos canvas
+  if (paintOn && imgNaturalW) setTimeout(resizeCanvasesToImage, 0);
 }
 
-usePaint.addEventListener("change", () => {
-  updatePaintUI();
-  // si activan paint después de cargar imagen, rearmamos tamaños
-  if (usePaint.checked && imgNaturalW) setTimeout(resizeCanvasesToImage, 0);
-});
+btnModeSimple.addEventListener("click", () => setMode(false));
+btnModePaint.addEventListener("click", () => setMode(true));
 
-updatePaintUI();
+// modo default
+setMode(false);
 
 inputImagen.addEventListener("change", () => {
   const file = inputImagen.files?.[0];
@@ -264,6 +277,7 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
 
 
 

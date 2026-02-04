@@ -324,6 +324,48 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   touch-action:none;
   cursor: crosshair;
 }
+/* ====== MODO SIMPLE / PAINT (toggle) ====== */
+.modeBar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top: 12px;
+}
+
+.modeTitle{
+  margin: 0;
+}
+
+.modeToggle{
+  display:inline-flex;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(10,16,28,.35);
+  border-radius: 14px;
+  overflow:hidden;
+}
+
+.modeBtn{
+  appearance:none;
+  border: 0;
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+  opacity: .75;
+}
+
+.modeBtn:hover{
+  opacity: 1;
+  background: rgba(255,255,255,.06);
+}
+
+.modeBtn.active{
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(120,90,255,.55), rgba(0,210,255,.25));
+  border-right: 1px solid rgba(255,255,255,.10);
+}
 
 
 

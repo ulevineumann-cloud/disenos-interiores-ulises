@@ -25,7 +25,7 @@
 
     <section class="card">
       <h2>Tu pedido</h2>
-      <p class="muted">Subí una foto y escribí qué querés cambiar. Podés usar el modo Paint si querés marcar una zona exacta.</p>
+      <p class="muted">Subí una foto y escribí qué querés cambiar. Si querés marcar una zona exacta, usá Modo Paint.</p>
 
       <label class="label" for="texto">Descripción</label>
       <textarea
@@ -40,19 +40,30 @@
         <button id="generar" class="primary" type="button">Diseñar</button>
       </div>
 
-      <div class="row rowTight">
-        <label class="chk">
-          <input id="usePaint" type="checkbox" />
-          Usar Paint (marcar zona exacta)
-        </label>
+      <!-- Selector de modo (nuevo) -->
+      <div class="modeBar">
+        <div class="modeTitle muted small">Modo</div>
 
-        <div class="toolMini" id="paintTools" style="display:none;">
-          <span class="muted">Pincel</span>
-          <input id="brush" type="range" min="6" max="70" value="22" />
-          <span id="brushVal" class="muted">22</span>
-          <button id="btnErase" class="ghost" type="button">Borrar</button>
-          <button id="btnClear" class="ghost" type="button">Limpiar</button>
+        <div class="modeToggle" role="tablist" aria-label="Modo de edición">
+          <button id="btnModeSimple" class="modeBtn active" type="button" role="tab" aria-selected="true">
+            🟢 Simple
+          </button>
+          <button id="btnModePaint" class="modeBtn" type="button" role="tab" aria-selected="false">
+            🟡 Paint
+          </button>
         </div>
+
+        <!-- input oculto: lo usamos en JS -->
+        <input id="usePaint" type="checkbox" style="display:none;" />
+      </div>
+
+      <!-- herramientas paint -->
+      <div class="toolMini" id="paintTools" style="display:none;">
+        <span class="muted">Pincel</span>
+        <input id="brush" type="range" min="6" max="70" value="22" />
+        <span id="brushVal" class="muted">22</span>
+        <button id="btnErase" class="ghost" type="button">Borrar</button>
+        <button id="btnClear" class="ghost" type="button">Limpiar</button>
       </div>
 
       <p id="estado" class="estado"></p>
@@ -82,7 +93,7 @@
         <canvas id="paintCanvas"></canvas>
       </div>
 
-      <p class="muted small">Tip: pintá solo el objeto/zona a cambiar (ej: baranda/cama/sillón). Si pintás de más, la IA puede tocar de más.</p>
+      <p class="muted small">Tip: pintá solo el objeto/zona a cambiar. Si pintás de más, la IA puede tocar de más.</p>
     </section>
 
     <section class="card">
@@ -111,6 +122,7 @@
   </main>
 </body>
 </html>
+
 
 
 
