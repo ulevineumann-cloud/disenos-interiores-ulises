@@ -2,7 +2,6 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
-const sharp = require("sharp");
 const OpenAI = require("openai");
 const { toFile } = require("openai");
 
@@ -53,8 +52,10 @@ const publicPath = path.join(__dirname, "public");
 const uploadsPath = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 
-app.use(basicAuthAll);
+// ✅ Estáticos públicos (landing usa esto también)
 app.use(express.static(publicPath));
+
+// ✅ Resultados públicos (no gastan plata; solo son imágenes ya generadas)
 app.use("/uploads", express.static(uploadsPath));
 
 /* =====================
@@ -70,7 +71,7 @@ const storage = multer.diskStorage({
   destination: uploadsPath,
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname || "").toLowerCase() || ".png";
-    cb(null, `${file.fieldname}_${Date.now()}${ext}`);
+    cb(null, `img_${Date.now()}${ext}`);
   },
 });
 
@@ -84,52 +85,46 @@ const upload = multer({
 ===================== */
 app.get("/ping", (req, res) => res.send("pong"));
 
+/**
+ * ✅ LANDING PÚBLICA (indexable por Google)
+ */
 app.get("/", (req, res) => {
+  res.sendFile(path.join(publicPath, "landing.html"));
+});
+
+/**
+ * ✅ APP PRIVADA (con contraseña)
+ * - además le ponemos noindex para que Google NO indexe /app
+ */
+app.get("/app", basicAuthAll, (req, res) => {
+  res.setHeader("X-Robots-Tag", "noindex, nofollow");
   res.sendFile(path.join(publicPath, "index.html"));
 });
 
-app.post(
-  "/generar",
-  upload.fields([
-    { name: "imagen", maxCount: 1 },
-    { name: "mask", maxCount: 1 }, // opcional (solo si paint activado)
-  ]),
-  async (req, res) => {
-    try {
-      if (!ENABLE_AI) return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
-      if (!openai) return res.status(500).json({ error: "Falta OPENAI_API_KEY" });
+/**
+ * ✅ GENERAR (caro) PROTEGIDO con contraseña
+ */
+app.post("/generar", basicAuthAll, upload.fields([{ name: "imagen", maxCount: 1 }, { name: "mask", maxCount: 1 }]), async (req, res) => {
+  try {
+    if (!ENABLE_AI) return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
+    if (!openai) return res.status(500).json({ error: "Falta OPENAI_API_KEY" });
 
-      const texto = (req.body.texto || "").trim();
-      const imagen = req.files?.imagen?.[0];
-      const maskFile = req.files?.mask?.[0]; // puede venir o no
+    const texto = (req.body.texto || "").trim();
+    const imagen = req.files?.imagen?.[0];
+    const mask = req.files?.mask?.[0] || null;
 
-      if (!texto) return res.status(400).json({ error: "Falta descripción" });
-      if (!imagen) return res.status(400).json({ error: "Falta imagen" });
+    if (!texto) return res.status(400).json({ error: "Falta descripción" });
+    if (!imagen) return res.status(400).json({ error: "Falta imagen" });
 
-      const ok = ["image/jpeg", "image/png", "image/webp"];
-      if (!ok.includes(imagen.mimetype)) {
-        return res.status(400).json({ error: "Formato no soportado. Usá JPG, PNG o WEBP" });
-      }
+    const ok = ["image/jpeg", "image/png", "image/webp"];
+    if (!ok.includes(imagen.mimetype)) {
+      return res.status(400).json({ error: "Formato no soportado. Usá JPG, PNG o WEBP" });
+    }
+    if (mask && !["image/png"].includes(mask.mimetype)) {
+      return res.status(400).json({ error: "Mask inválida (debe ser PNG)" });
+    }
 
-      // 1) Convertimos la imagen a PNG (más estable para edits)
-      const imgInPath = path.join(uploadsPath, imagen.filename);
-      const basePngPath = path.join(uploadsPath, `base_${Date.now()}.png`);
-      await sharp(imgInPath).png().toFile(basePngPath);
-
-      const meta = await sharp(basePngPath).metadata();
-      const W = meta.width, H = meta.height;
-      if (!W || !H) return res.status(500).json({ error: "No se pudo leer tamaño de imagen" });
-
-      // 2) Si hay mask: la convertimos a PNG y la ajustamos al mismo tamaño
-      let maskPngPath = null;
-      if (maskFile) {
-        const maskInPath = path.join(uploadsPath, maskFile.filename);
-        maskPngPath = path.join(uploadsPath, `mask_${Date.now()}.png`);
-        await sharp(maskInPath).resize(W, H, { fit: "fill" }).png().toFile(maskPngPath);
-      }
-
-      // 3) Prompt (dos variantes: con paint / sin paint)
-      const promptSinPaint = `
+    const prompt = `
 Sos un editor fotográfico de arquitectura EXTREMADAMENTE ESTRICTO.
 
 OBJETIVO DEL USUARIO (única fuente de verdad):
@@ -150,66 +145,56 @@ REGLA #3 (cambio mínimo y local):
 REGLA #4 (arquitectura realista):
 - Fotorealismo, coherencia constructiva y detalles creíbles.
 - Sin texto, sin logos, sin marcas de agua.
+
+EJEMPLOS DE CÓMO OBEDECER:
+- Si el usuario pide "cambiar barandas": cambiar SOLO barandas. No tocar fachada/ventanas/estructura.
+- Si el usuario pide "cambiar fachada": cambiar SOLO fachada. No tocar barandas/ventanas salvo que lo pida.
+- Si el usuario pide varios items: tocar SOLO esos items y nada más.
 `;
 
-      const promptConPaint = `
-Sos un editor fotográfico de arquitectura ULTRA OBEDIENTE.
+    // imagen original
+    const imagePath = path.join(uploadsPath, imagen.filename);
+    const imageFile = await toFile(fs.createReadStream(imagePath), null, { type: imagen.mimetype });
 
-OBJETIVO DEL USUARIO:
-"${texto}"
-
-REGLA ABSOLUTA (paint):
-- SOLO podés modificar lo que esté DENTRO de la máscara.
-- Todo lo que NO esté en la máscara está PROHIBIDO tocarlo (ni color, ni luz, ni materiales, ni objetos, ni sombras).
-
-REGLA DE MÍNIMO CAMBIO:
-- Dentro de la máscara, hacé el cambio mínimo para cumplir el pedido del usuario.
-- No agregues “mejoras” extra.
-
-CALIDAD:
-- Fotorealista, sin texto/logos/marcas de agua.
-`;
-
-      const prompt = maskPngPath ? promptConPaint : promptSinPaint;
-
-      const imageFile = await toFile(fs.createReadStream(basePngPath), null, { type: "image/png" });
-
-      let maskToSend = undefined;
-      if (maskPngPath) {
-        maskToSend = await toFile(fs.createReadStream(maskPngPath), null, { type: "image/png" });
-      }
-
-      // 4) Edit
-      const result = await openai.images.edit({
-        model: "gpt-image-1",
-        image: imageFile,
-        mask: maskToSend,
-        prompt,
-        input_fidelity: "high",
-        size: "auto",
-        quality: "high",
-      });
-
-      const base64 = result.data?.[0]?.b64_json;
-      if (!base64) return res.status(500).json({ error: "La IA no devolvió imagen" });
-
-      const outputName = `resultado_${Date.now()}.png`;
-      fs.writeFileSync(path.join(uploadsPath, outputName), Buffer.from(base64, "base64"));
-
-      res.json({
-        recomendacion: `Propuesta generada según:\n"${texto}"`,
-        imagenUrl: `/uploads/${outputName}`,
-        modo: maskPngPath ? "IA_CON_PAINT_MASK" : "IA_SIN_PAINT",
-      });
-    } catch (err) {
-      console.error("ERROR IA:", err);
-      const msg = err?.response?.data?.error?.message || err?.message || "Error interno";
-      res.status(500).json({ error: msg });
+    // mask opcional
+    let maskFile = null;
+    if (mask) {
+      const maskPath = path.join(uploadsPath, mask.filename);
+      maskFile = await toFile(fs.createReadStream(maskPath), null, { type: mask.mimetype });
     }
+
+    const params = {
+      model: "gpt-image-1",
+      image: imageFile,
+      prompt,
+      input_fidelity: "high",
+      size: "auto",
+      quality: "high",
+    };
+    if (maskFile) params.mask = maskFile;
+
+    const result = await openai.images.edit(params);
+
+    const base64 = result.data?.[0]?.b64_json;
+    if (!base64) return res.status(500).json({ error: "La IA no devolvió imagen" });
+
+    const outputName = `resultado_${Date.now()}.png`;
+    fs.writeFileSync(path.join(uploadsPath, outputName), Buffer.from(base64, "base64"));
+
+    res.json({
+      recomendacion: `Propuesta generada según:\n"${texto}"`,
+      imagenUrl: `/uploads/${outputName}`,
+      modo: maskFile ? "IA_CON_MASK_HIGH_FIDELITY" : "IA_SIN_MASK_HIGH_FIDELITY",
+    });
+  } catch (err) {
+    console.error("ERROR IA:", err);
+    const msg = err?.response?.data?.error?.message || err?.message || "Error interno";
+    res.status(500).json({ error: msg });
   }
-);
+});
 
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+
 
 
 
