@@ -394,7 +394,39 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   opacity: 1;
   border-color: rgba(255,255,255,.28);
 }
+/* ====== VIDEO ====== */
+.videoBlock{
+  margin-top: 12px;
+}
 
+.videoRow{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+
+.ghostLink{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(10,16,28,.55);
+  color: var(--text);
+  text-decoration:none;
+  cursor:pointer;
+}
+
+.videoPreview{
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(10,16,28,.25);
+  max-height: 360px;
+}
 
 
 

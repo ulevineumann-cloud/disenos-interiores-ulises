@@ -136,8 +136,21 @@
 
         <div class="panel">
           <h3>Imagen resultante</h3>
+
           <div class="imgWrap">
             <img id="imagenResultado" class="imgResultadoSmall" alt="Resultado" style="display:none;" />
+          </div>
+
+          <!-- 🎬 VIDEO (nuevo) -->
+          <div class="videoBlock">
+            <div class="videoRow">
+              <button id="btnVideo" class="ghost" type="button" disabled>🎬 Generar video (Original → Resultado)</button>
+              <a id="downloadVideo" class="ghostLink" download="transicion.webm" style="display:none;">⬇️ Descargar video</a>
+            </div>
+
+            <p id="videoInfo" class="muted small" style="margin:8px 0 0;"></p>
+
+            <video id="videoPreview" class="videoPreview" controls playsinline style="display:none;"></video>
           </div>
         </div>
       </div>
@@ -151,6 +164,7 @@
   </main>
 </body>
 </html>
+
 
 
 

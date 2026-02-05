@@ -8,8 +8,16 @@ const imagenResultadoEl = document.getElementById("imagenResultado");
 
 const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
-
 const textoEl = document.getElementById("texto");
+
+// Video UI
+const btnVideo = document.getElementById("btnVideo");
+const downloadVideo = document.getElementById("downloadVideo");
+const videoPreview = document.getElementById("videoPreview");
+const videoInfo = document.getElementById("videoInfo");
+
+let originalObjectUrl = "";
+let resultadoUrlFinal = "";
 
 // Presets
 document.querySelectorAll("[data-preset]").forEach(btn => {
@@ -57,6 +65,15 @@ function setLoading(on) {
 function niceError(msg) {
   estado.textContent = "Error ❌";
   alert(msg);
+}
+
+function resetVideoUI() {
+  btnVideo.disabled = true;
+  downloadVideo.style.display = "none";
+  downloadVideo.removeAttribute("href");
+  videoPreview.style.display = "none";
+  videoPreview.removeAttribute("src");
+  videoInfo.textContent = "";
 }
 
 function setBrushUI() {
@@ -211,7 +228,14 @@ inputImagen.addEventListener("change", () => {
   const file = inputImagen.files?.[0];
   if (!file) return;
 
-  preview.src = URL.createObjectURL(file);
+  resetVideoUI();
+  resultadoUrlFinal = "";
+
+  // liberar URL previa si existía
+  if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
+  originalObjectUrl = URL.createObjectURL(file);
+
+  preview.src = originalObjectUrl;
   preview.style.display = "block";
 
   paintBase.onload = () => {
@@ -219,13 +243,133 @@ inputImagen.addEventListener("change", () => {
     imgNaturalH = paintBase.naturalHeight;
     if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
   };
-  paintBase.src = preview.src;
+  paintBase.src = originalObjectUrl;
 });
 
 window.addEventListener("resize", () => {
   if (!imgNaturalW) return;
   if (!usePaint.checked) return;
   resizeCanvasesToImage();
+});
+
+/* =========================
+   🎬 VIDEO (crossfade)
+========================= */
+function loadImg(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.crossOrigin = "anonymous";
+    img.src = src;
+  });
+}
+
+function easeInOut(t) {
+  return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+async function generarVideoTransicion(originalSrc, resultadoSrc) {
+  // canvas “offscreen”
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  const imgA = await loadImg(originalSrc);
+  const imgB = await loadImg(resultadoSrc);
+
+  // elegimos tamaño de salida (máx 1080px ancho)
+  const maxW = 1080;
+  const w = Math.min(maxW, imgA.naturalWidth || imgA.width);
+  const h = Math.round((w / (imgA.naturalWidth || imgA.width)) * (imgA.naturalHeight || imgA.height));
+
+  canvas.width = w;
+  canvas.height = h;
+
+  const fps = 30;
+  const seconds = 2.2; // duración
+  const frames = Math.floor(fps * seconds);
+
+  const stream = canvas.captureStream(fps);
+  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+    ? "video/webm;codecs=vp9"
+    : "video/webm";
+
+  const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
+  const chunks = [];
+
+  recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+
+  const done = new Promise((resolve) => {
+    recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
+  });
+
+  recorder.start();
+
+  for (let i = 0; i < frames; i++) {
+    const t = i / (frames - 1);
+    const k = easeInOut(t);
+
+    // fondo (por si hay “barras”)
+    ctx.fillStyle = "#0b1220";
+    ctx.fillRect(0, 0, w, h);
+
+    // dibujar original (ligero zoom out) y luego crossfade
+    const zoomA = 1.02 - 0.02 * k;
+    const zoomB = 1.00 + 0.02 * k;
+
+    function drawCover(img, zoom, alpha) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+
+      // cover
+      const scale = Math.max(w / iw, h / ih) * zoom;
+      const dw = iw * scale;
+      const dh = ih * scale;
+      const dx = (w - dw) / 2;
+      const dy = (h - dh) / 2;
+
+      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.restore();
+    }
+
+    drawCover(imgA, zoomA, 1);
+    drawCover(imgB, zoomB, k);
+
+    // esperar al siguiente frame
+    await new Promise(r => setTimeout(r, 1000 / fps));
+  }
+
+  recorder.stop();
+  return await done;
+}
+
+btnVideo.addEventListener("click", async () => {
+  if (!originalObjectUrl || !resultadoUrlFinal) return;
+
+  try {
+    btnVideo.disabled = true;
+    videoInfo.textContent = "Generando video…";
+
+    const blob = await generarVideoTransicion(originalObjectUrl, resultadoUrlFinal);
+    const url = URL.createObjectURL(blob);
+
+    downloadVideo.href = url;
+    downloadVideo.style.display = "inline-flex";
+
+    videoPreview.src = url;
+    videoPreview.style.display = "block";
+
+    videoInfo.textContent = "Listo ✅ (formato .webm)";
+  } catch (e) {
+    console.error(e);
+    videoInfo.textContent = "Error generando el video ❌";
+    alert("No se pudo generar el video en este navegador. Probá con Chrome.");
+  } finally {
+    btnVideo.disabled = false;
+  }
 });
 
 boton.addEventListener("click", async () => {
@@ -237,6 +381,9 @@ boton.addEventListener("click", async () => {
   modoInfo.textContent = "";
   imagenResultadoEl.style.display = "none";
   imagenResultadoEl.src = "";
+
+  resetVideoUI();
+  resultadoUrlFinal = "";
 
   if (!texto) return niceError("Escribí qué querés cambiar.");
   if (!imagen) return niceError("Seleccioná una imagen.");
@@ -267,8 +414,14 @@ boton.addEventListener("click", async () => {
     modoInfo.textContent = data.modo ? `Modo: ${data.modo}` : "";
 
     if (data.imagenUrl) {
-      imagenResultadoEl.src = `${data.imagenUrl}?v=${Date.now()}`;
+      const url = `${data.imagenUrl}?v=${Date.now()}`;
+      imagenResultadoEl.src = url;
       imagenResultadoEl.style.display = "block";
+
+      // habilitar video
+      resultadoUrlFinal = url;
+      btnVideo.disabled = false;
+      videoInfo.textContent = "Podés generar el video de transición.";
     }
 
     estado.textContent = "Listo ✅";
@@ -279,6 +432,7 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
 
 
 
