@@ -10,6 +10,14 @@ const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
 const textoEl = document.getElementById("texto");
 const proyectoEl = document.getElementById("proyecto");
+const projHint = document.getElementById("projHint");
+
+// Sidebar UI
+const btnNewProject = document.getElementById("btnNewProject");
+const projectSearch = document.getElementById("projectSearch");
+const projectList = document.getElementById("projectList");
+const btnToggleSidebar = document.getElementById("btnToggleSidebar");
+const sidebarEl = document.getElementById("sidebar");
 
 // Video UI
 const btnVideo = document.getElementById("btnVideo");
@@ -20,17 +28,30 @@ const videoInfo = document.getElementById("videoInfo");
 // ZIP UI
 const btnZip = document.getElementById("btnZip");
 
-// Historial UI
-const historyList = document.getElementById("historyList");
-const btnClearHistory = document.getElementById("btnClearHistory");
-
 // Estado actual
 let originalObjectUrl = "";
 let resultadoUrlFinal = "";
 let videoBlobUrl = "";
 let currentOriginalThumb = "";
 
-// Presets
+/* =========================
+   SIDEBAR COLLAPSE (save state)
+========================= */
+const SIDEBAR_KEY = "ulises_sidebar_collapsed_v1";
+
+function setSidebarCollapsed(on){
+  sidebarEl.classList.toggle("collapsed", !!on);
+  localStorage.setItem(SIDEBAR_KEY, on ? "1" : "0");
+}
+btnToggleSidebar.addEventListener("click", () => {
+  const isCollapsed = sidebarEl.classList.contains("collapsed");
+  setSidebarCollapsed(!isCollapsed);
+});
+setSidebarCollapsed(localStorage.getItem(SIDEBAR_KEY) === "1");
+
+/* =========================
+   PRESETS
+========================= */
 document.querySelectorAll("[data-preset]").forEach(btn => {
   btn.addEventListener("click", () => {
     textoEl.value = btn.getAttribute("data-preset") || "";
@@ -39,7 +60,9 @@ document.querySelectorAll("[data-preset]").forEach(btn => {
   });
 });
 
-// Selector modo
+/* =========================
+   MODO SIMPLE / PAINT
+========================= */
 const btnModeSimple = document.getElementById("btnModeSimple");
 const btnModePaint = document.getElementById("btnModePaint");
 const usePaint = document.getElementById("usePaint");
@@ -66,31 +89,6 @@ const pctx = paintCanvas.getContext("2d", { willReadFrequently: true });
 // máscara real
 const maskCanvas = document.createElement("canvas");
 const mctx = maskCanvas.getContext("2d", { willReadFrequently: true });
-
-function setLoading(on) {
-  loader.style.display = on ? "block" : "none";
-  boton.disabled = on;
-  boton.textContent = on ? "Diseñando..." : "Diseñar";
-}
-
-function niceError(msg) {
-  estado.textContent = "Error ❌";
-  alert(msg);
-}
-
-function resetVideoUI() {
-  btnVideo.disabled = true;
-  btnZip.disabled = true;
-
-  downloadVideo.style.display = "none";
-  downloadVideo.removeAttribute("href");
-
-  videoPreview.style.display = "none";
-  videoPreview.removeAttribute("src");
-
-  videoInfo.textContent = "";
-  videoBlobUrl = "";
-}
 
 function setBrushUI() { brushVal.textContent = String(brush.value); }
 setBrushUI();
@@ -178,18 +176,21 @@ function applyStroke(mx, my, radius) {
 paintCanvas.addEventListener("pointerdown", (e) => {
   if (!imgNaturalW) return;
   if (!usePaint.checked) return;
+
   drawing = true;
   paintCanvas.setPointerCapture(e.pointerId);
   const { mx, my } = getPosOnCanvas(e);
   applyStroke(mx, my, Number(brush.value));
   renderOverlay();
 });
+
 paintCanvas.addEventListener("pointermove", (e) => {
   if (!drawing) return;
   const { mx, my } = getPosOnCanvas(e);
   applyStroke(mx, my, Number(brush.value));
   renderOverlay();
 });
+
 paintCanvas.addEventListener("pointerup", () => { drawing = false; });
 paintCanvas.addEventListener("pointercancel", () => { drawing = false; });
 
@@ -227,6 +228,323 @@ function setMode(paintOn) {
 btnModeSimple.addEventListener("click", () => setMode(false));
 btnModePaint.addEventListener("click", () => setMode(true));
 setMode(false);
+
+/* =========================
+   STORAGE (PROJECTS + VERSIONS)
+========================= */
+const PROJECTS_KEY = "ulises_projects_v1";
+const CURRENT_PROJECT_KEY = "ulises_current_project_id_v1";
+
+// historial viejo (si existe)
+const OLD_HISTORY_KEY = "ulises_history_v2";
+const MIGRATED_FLAG = "ulises_migrated_history_to_projects_v1";
+
+function uid() {
+  return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+}
+
+function safeJsonParse(raw, fallback) {
+  try { return JSON.parse(raw); } catch { return fallback; }
+}
+
+function loadProjects() {
+  const raw = localStorage.getItem(PROJECTS_KEY);
+  const arr = raw ? safeJsonParse(raw, []) : [];
+  return Array.isArray(arr) ? arr : [];
+}
+
+function saveProjects(list) {
+  localStorage.setItem(PROJECTS_KEY, JSON.stringify(list));
+}
+
+function getCurrentProjectId() {
+  return localStorage.getItem(CURRENT_PROJECT_KEY) || "";
+}
+
+function setCurrentProjectId(id) {
+  localStorage.setItem(CURRENT_PROJECT_KEY, id);
+}
+
+function findProjectById(list, id) {
+  return list.find(p => p.id === id) || null;
+}
+
+function formatDate(ts) {
+  try { return new Date(ts).toLocaleString(); } catch { return ""; }
+}
+
+function escapeHtml(s) {
+  return String(s || "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+/* ===== Migration (old history -> projects) ===== */
+function migrateOldHistoryOnce() {
+  if (localStorage.getItem(MIGRATED_FLAG) === "1") return;
+
+  const oldRaw = localStorage.getItem(OLD_HISTORY_KEY);
+  if (!oldRaw) { localStorage.setItem(MIGRATED_FLAG, "1"); return; }
+
+  const oldArr = safeJsonParse(oldRaw, []);
+  if (!Array.isArray(oldArr) || !oldArr.length) { localStorage.setItem(MIGRATED_FLAG, "1"); return; }
+
+  const projects = loadProjects();
+
+  const groups = new Map();
+  for (const it of oldArr) {
+    const name = (it.projectName || "").trim() || "Proyecto sin nombre";
+    if (!groups.has(name)) groups.set(name, []);
+    groups.get(name).push(it);
+  }
+
+  for (const [name, items] of groups.entries()) {
+    const pid = uid();
+    const createdAt = Math.min(...items.map(x => x.ts || Date.now()));
+    const updatedAt = Math.max(...items.map(x => x.ts || Date.now()));
+
+    const versions = items
+      .sort((a,b) => (a.ts||0) - (b.ts||0))
+      .map(x => ({
+        id: uid(),
+        ts: x.ts || Date.now(),
+        prompt: x.prompt || "",
+        mode: x.mode || "SIMPLE",
+        originalThumb: x.originalThumb || "",
+        resultUrl: x.resultUrl || "",
+      }));
+
+    projects.unshift({
+      id: pid,
+      name,
+      createdAt,
+      updatedAt,
+      favorite: false,
+      versions,
+    });
+  }
+
+  saveProjects(projects);
+  localStorage.setItem(MIGRATED_FLAG, "1");
+}
+
+/* ===== Sidebar render ===== */
+function projectThumb(p) {
+  const last = p.versions?.[0] ? p.versions[0] : (p.versions?.[p.versions.length - 1] || null);
+  return (last?.originalThumb || "") || "";
+}
+
+function lastMeta(p) {
+  const count = p.versions?.length || 0;
+  const up = p.updatedAt ? formatDate(p.updatedAt) : "";
+  return { count, up };
+}
+
+function sortProjects(list) {
+  return [...list].sort((a,b) => {
+    const fa = a.favorite ? 1 : 0;
+    const fb = b.favorite ? 1 : 0;
+    if (fa !== fb) return fb - fa;
+    return (b.updatedAt || 0) - (a.updatedAt || 0);
+  });
+}
+
+function renderSidebar() {
+  const q = (projectSearch.value || "").trim().toLowerCase();
+  const currentId = getCurrentProjectId();
+
+  let projects = sortProjects(loadProjects());
+
+  if (q) {
+    projects = projects.filter(p => (p.name || "").toLowerCase().includes(q));
+  }
+
+  if (!projects.length) {
+    projectList.innerHTML = `<div class="muted small">Todavía no hay proyectos.</div>`;
+    return;
+  }
+
+  projectList.innerHTML = projects.map(p => {
+    const active = p.id === currentId ? "active" : "";
+    const { count, up } = lastMeta(p);
+    const thumb = projectThumb(p);
+
+    return `
+      <div class="projRow ${active}" data-id="${p.id}">
+        <img class="projThumb" src="${thumb}" alt="thumb" onerror="this.style.display='none'"/>
+        <div class="projMain">
+          <p class="projName">${escapeHtml(p.name || "Proyecto sin nombre")}</p>
+          <div class="projMeta">
+            <span class="projBadge">${count} versión${count===1?"":"es"}</span>
+            ${up ? `<span class="projBadge">${escapeHtml(up)}</span>` : ``}
+            ${p.favorite ? `<span class="projBadge">⭐</span>` : ``}
+          </div>
+        </div>
+        <div class="projBtns">
+          <button class="sbMiniBtn projFav" type="button" title="Favorito">${p.favorite ? "⭐" : "☆"}</button>
+          <button class="sbMiniBtn projDel" type="button" title="Borrar">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // click seleccionar
+  projectList.querySelectorAll(".projRow").forEach(row => {
+    row.addEventListener("click", (e) => {
+      const id = row.getAttribute("data-id");
+      if (!id) return;
+      if (e.target?.classList?.contains("projFav") || e.target?.classList?.contains("projDel")) return;
+      selectProject(id);
+    });
+  });
+
+  // favorito
+  projectList.querySelectorAll(".projFav").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const row = btn.closest(".projRow");
+      const id = row?.getAttribute("data-id");
+      if (!id) return;
+
+      const list = loadProjects();
+      const p = findProjectById(list, id);
+      if (!p) return;
+
+      p.favorite = !p.favorite;
+      saveProjects(list);
+      renderSidebar();
+    });
+  });
+
+  // borrar
+  projectList.querySelectorAll(".projDel").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const row = btn.closest(".projRow");
+      const id = row?.getAttribute("data-id");
+      if (!id) return;
+
+      if (!confirm("¿Borrar este proyecto y todas sus versiones?")) return;
+
+      let list = loadProjects().filter(p => p.id !== id);
+      saveProjects(list);
+
+      if (getCurrentProjectId() === id) {
+        setCurrentProjectId(list[0]?.id || "");
+      }
+      syncCurrentProjectUI();
+      renderSidebar();
+    });
+  });
+}
+
+function selectProject(id) {
+  setCurrentProjectId(id);
+  syncCurrentProjectUI();
+  renderSidebar();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function ensureSomeProject() {
+  const list = loadProjects();
+  if (list.length) {
+    if (!getCurrentProjectId()) setCurrentProjectId(list[0].id);
+    return;
+  }
+  const p = {
+    id: uid(),
+    name: "Proyecto sin nombre",
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    favorite: false,
+    versions: []
+  };
+  saveProjects([p]);
+  setCurrentProjectId(p.id);
+}
+
+function syncCurrentProjectUI() {
+  const list = loadProjects();
+  const p = findProjectById(list, getCurrentProjectId());
+
+  if (!p) {
+    projHint.textContent = "";
+    return;
+  }
+
+  if (!(proyectoEl.value || "").trim()) {
+    proyectoEl.value = p.name || "";
+  }
+
+  const count = p.versions?.length || 0;
+  projHint.textContent = `Proyecto activo: "${p.name || "Proyecto sin nombre"}" · ${count} versión${count===1?"":"es"}`;
+}
+
+/* ===== Crear nuevo proyecto ===== */
+btnNewProject.addEventListener("click", () => {
+  const name = prompt("Nombre del proyecto:", "Nuevo proyecto");
+  if (name === null) return;
+
+  const clean = (name || "").trim() || "Proyecto sin nombre";
+  const list = loadProjects();
+
+  const p = {
+    id: uid(),
+    name: clean,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    favorite: false,
+    versions: []
+  };
+
+  list.unshift(p);
+  saveProjects(list);
+  setCurrentProjectId(p.id);
+
+  // limpiar inputs para empezar “desde cero”
+  textoEl.value = "";
+  recomendacionEl.textContent = "—";
+  imagenResultadoEl.style.display = "none";
+  imagenResultadoEl.src = "";
+  resultadoUrlFinal = "";
+  resetVideoUI();
+
+  proyectoEl.value = clean;
+  syncCurrentProjectUI();
+  renderSidebar();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+projectSearch.addEventListener("input", renderSidebar);
+
+/* =========================
+   GENERALES
+========================= */
+function setLoading(on) {
+  loader.style.display = on ? "block" : "none";
+  boton.disabled = on;
+  boton.textContent = on ? "Diseñando..." : "Diseñar";
+}
+
+function niceError(msg) {
+  estado.textContent = "Error ❌";
+  alert(msg);
+}
+
+function resetVideoUI() {
+  btnVideo.disabled = true;
+  btnZip.disabled = true;
+
+  downloadVideo.style.display = "none";
+  downloadVideo.removeAttribute("href");
+
+  videoPreview.style.display = "none";
+  videoPreview.removeAttribute("src");
+
+  videoInfo.textContent = "";
+  videoBlobUrl = "";
+}
 
 /* Thumbnail */
 function fileToThumbDataUrl(file, maxW = 420) {
@@ -455,124 +773,12 @@ btnZip.addEventListener("click", async () => {
   }
 });
 
-/* HISTORIAL (lista pro) */
-const HISTORY_KEY = "ulises_history_v2";
-
-function loadHistory() {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory(list) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
-}
-
-function formatDate(ts) {
-  try { return new Date(ts).toLocaleString(); }
-  catch { return String(ts); }
-}
-
-function escapeHtml(s) {
-  return String(s || "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;");
-}
-
-function renderHistory() {
-  const items = loadHistory();
-
-  if (!items.length) {
-    historyList.innerHTML = `<p class="muted">Todavía no hay proyectos guardados.</p>`;
-    return;
-  }
-
-  historyList.innerHTML = items.map(it => {
-    const p = (it.prompt || "").trim();
-    const short = p.length > 140 ? p.slice(0, 140) + "…" : p;
-    const title = (it.projectName || "").trim() || "Proyecto sin nombre";
-
-    return `
-      <div class="histRow" data-id="${it.id}">
-        <div class="histThumbs">
-          <img class="histImg" src="${it.originalThumb || ""}" alt="Original" />
-          <img class="histImg" src="${it.resultUrl || ""}" alt="Resultado" />
-        </div>
-
-        <div class="histInfo">
-          <div class="histTopLine">
-            <p class="histTitle">${escapeHtml(title)}</p>
-            <div class="histMeta">
-              <span class="histDate">${escapeHtml(formatDate(it.ts))}</span>
-              <span class="histMode">${escapeHtml(it.mode || "—")}</span>
-            </div>
-          </div>
-          <p class="histPrompt">${escapeHtml(short)}</p>
-        </div>
-
-        <div class="histBtns">
-          <button class="ghost btnMini histUse" type="button">↩️ Usar</button>
-          <button class="ghost btnMini histOpen" type="button">🖼️ Abrir</button>
-          <button class="ghost btnMini histDelete" type="button">🗑️</button>
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  historyList.querySelectorAll(".histUse").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const row = e.target.closest(".histRow");
-      const id = row?.getAttribute("data-id");
-      const it = loadHistory().find(x => x.id === id);
-      if (!it) return;
-
-      proyectoEl.value = it.projectName || "";
-      textoEl.value = it.prompt || "";
-      setMode(false);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    });
-  });
-
-  historyList.querySelectorAll(".histOpen").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const row = e.target.closest(".histRow");
-      const id = row?.getAttribute("data-id");
-      const it = loadHistory().find(x => x.id === id);
-      if (!it?.resultUrl) return;
-      window.open(it.resultUrl, "_blank");
-    });
-  });
-
-  historyList.querySelectorAll(".histDelete").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      const row = e.target.closest(".histRow");
-      const id = row?.getAttribute("data-id");
-      if (!id) return;
-      const items = loadHistory().filter(x => x.id !== id);
-      saveHistory(items);
-      renderHistory();
-    });
-  });
-}
-
-btnClearHistory.addEventListener("click", () => {
-  if (!confirm("¿Borrar todo el historial?")) return;
-  localStorage.removeItem(HISTORY_KEY);
-  renderHistory();
-});
-
-renderHistory();
-
-/* GENERAR */
+/* =========================
+   GENERAR -> guarda versión en proyecto
+========================= */
 boton.addEventListener("click", async () => {
   const texto = (textoEl.value || "").trim();
   const imagen = inputImagen.files?.[0];
-  const nombreProyecto = (proyectoEl.value || "").trim();
 
   estado.textContent = "";
   recomendacionEl.textContent = "—";
@@ -585,6 +791,16 @@ boton.addEventListener("click", async () => {
 
   if (!texto) return niceError("Escribí qué querés cambiar.");
   if (!imagen) return niceError("Seleccioná una imagen.");
+
+  const projects = loadProjects();
+  const pid = getCurrentProjectId();
+  const proj = findProjectById(projects, pid);
+  if (!proj) return niceError("No hay proyecto activo. Creá uno con “Nuevo proyecto”.");
+
+  const nameInput = (proyectoEl.value || "").trim();
+  if (nameInput && nameInput !== proj.name) {
+    proj.name = nameInput;
+  }
 
   try {
     setLoading(true);
@@ -623,20 +839,22 @@ boton.addEventListener("click", async () => {
       btnZip.disabled = false;
       videoInfo.textContent = "Podés generar el video o descargar el pack ZIP.";
 
-      const entry = {
-        id: String(Date.now()),
+      const version = {
+        id: uid(),
         ts: Date.now(),
-        projectName: nombreProyecto,
         prompt: texto,
         mode: paintOn ? "PAINT" : "SIMPLE",
         originalThumb: currentOriginalThumb || "",
         resultUrl: data.imagenUrl,
       };
 
-      const list = loadHistory();
-      list.unshift(entry);
-      saveHistory(list.slice(0, 30));
-      renderHistory();
+      proj.versions = Array.isArray(proj.versions) ? proj.versions : [];
+      proj.versions.unshift(version);
+      proj.updatedAt = Date.now();
+
+      saveProjects(projects);
+      syncCurrentProjectUI();
+      renderSidebar();
     }
 
     estado.textContent = "Listo ✅";
@@ -647,6 +865,13 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
+/* ===== INIT ===== */
+migrateOldHistoryOnce();
+ensureSomeProject();
+syncCurrentProjectUI();
+renderSidebar();
+
 
 
 

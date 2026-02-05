@@ -11,185 +11,213 @@
 <body>
   <div class="bg"></div>
 
-  <header class="top">
-    <div class="brand">
-      <div class="logo">U</div>
-      <div class="brandText">
-        <h1>Diseños de interiores Ulises</h1>
-        <p class="frase">No necesito que sea imposible de copiar, necesito que sea difícil de igualar.</p>
-      </div>
-    </div>
-  </header>
+  <div class="appShell">
 
-  <main class="wrap">
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sbTop">
+        <div class="sbBrand">
+          <div class="sbLogo">U</div>
 
-    <section class="card">
-      <h2>Tu pedido</h2>
-      <p class="muted">
-        Subí una foto y escribí qué querés cambiar o agregar. Verifica que lo que escribas este detallado y claro.
-        Si querés marcar una zona exacta, usá Modo Paint.
-      </p>
-
-      <label class="label" for="proyecto">Nombre del proyecto</label>
-      <input id="proyecto" class="textInput" type="text" maxlength="60" placeholder="Ej: Barandas hierro - Casa Nordelta" />
-
-      <label class="label" for="texto">Descripción</label>
-      <textarea
-        id="texto"
-        rows="4"
-        placeholder='Ej: "Cambiar SOLO la baranda de vidrio por baranda de hierro negro vertical. Mantener todo lo demás igual."'
-      ></textarea>
-
-      <!-- Presets -->
-      <div class="presetBar">
-        <div class="presetTitle muted small">Presets rápidos</div>
-        <div class="presetChips">
-          <button class="chip" type="button"
-            data-preset='Cambiar SOLO la baranda de vidrio por baranda de hierro negro vertical. Mantener todo lo demás exactamente igual.'>
-            Barandas hierro
-          </button>
-
-          <button class="chip" type="button"
-            data-preset='Cambiar SOLO la cama por una cama moderna minimalista (madera clara), con proporciones realistas. Mantener todo lo demás exactamente igual.'>
-            Cama moderna
-          </button>
-
-          <button class="chip" type="button"
-            data-preset='Cambiar SOLO las carpinterías (marcos de ventanas/puertas) a color negro mate. Mantener todo lo demás exactamente igual.'>
-            Carpintería negra
-          </button>
-
-          <button class="chip" type="button"
-            data-preset='Cambiar SOLO el color de la fachada a blanco roto mate, sin tocar ventanas ni barandas. Mantener todo lo demás exactamente igual.'>
-            Fachada clara
-          </button>
-
-          <button class="chip" type="button"
-            data-preset='Cambiar SOLO la iluminación a cálida y más suave (sin cambiar muebles ni colores de paredes). Mantener todo lo demás exactamente igual.'>
-            Luz cálida
-          </button>
-        </div>
-      </div>
-
-      <div class="row">
-        <label class="fileBtn" for="imagen">Seleccionar imagen</label>
-        <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
-        <button id="generar" class="primary" type="button">Diseñar</button>
-      </div>
-
-      <!-- Selector de modo -->
-      <div class="modeBar">
-        <div class="modeTitle muted small">Modo</div>
-
-        <div class="modeToggle" role="tablist" aria-label="Modo de edición">
-          <button id="btnModeSimple" class="modeBtn active" type="button" role="tab" aria-selected="true">
-            🟢 Simple
-          </button>
-          <button id="btnModePaint" class="modeBtn" type="button" role="tab" aria-selected="false">
-            🟡 Paint
-          </button>
-        </div>
-
-        <input id="usePaint" type="checkbox" style="display:none;" />
-      </div>
-
-      <div class="toolMini" id="paintTools" style="display:none;">
-        <span class="muted">Pincel</span>
-        <input id="brush" type="range" min="6" max="70" value="22" />
-        <span id="brushVal" class="muted">22</span>
-        <button id="btnErase" class="ghost" type="button">Borrar</button>
-        <button id="btnClear" class="ghost" type="button">Limpiar</button>
-      </div>
-
-      <p id="estado" class="estado"></p>
-      <div id="loader" class="loader"></div>
-      <p id="modoInfo" class="muted small"></p>
-
-      <div class="previewBox">
-        <div class="previewTitle">Vista previa</div>
-        <img id="preview" alt="Vista previa" />
-      </div>
-    </section>
-
-    <!-- BLOQUE PAINT -->
-    <section class="card" id="paintSection" style="display:none;">
-      <h2>Paint</h2>
-
-      <div id="paintAviso" class="paintAviso">
-        <div class="paintAvisoTitle">⚠️ Importante</div>
-        <div class="paintAvisoText">
-          La IA <b>solo</b> va a modificar lo que pintes. Todo lo que <b>NO</b> pintes se mantiene igual.
-          Pintá con cuidado la zona exacta que querés cambiar.
-        </div>
-      </div>
-
-      <div class="paintBox">
-        <img id="paintBase" alt="Imagen para pintar" />
-        <canvas id="paintCanvas"></canvas>
-      </div>
-
-      <p class="muted small">Tip: pintá solo el objeto/zona a cambiar. Si pintás de más, la IA puede tocar de más.</p>
-    </section>
-
-    <section class="card">
-      <h2>Resultado</h2>
-
-      <div class="resultGrid">
-        <div class="panel">
-          <h3>Recomendación</h3>
-          <pre id="recomendacion" class="reco">—</pre>
-        </div>
-
-        <div class="panel">
-          <h3>Imagen resultante</h3>
-
-          <div class="imgWrap">
-            <img id="imagenResultado" class="imgResultadoSmall" alt="Resultado" style="display:none;" />
+          <div class="sbText">
+            <div class="sbTitle">PROYECTOS</div>
+            <div class="sbSub">Ulises · Diseño Interior</div>
           </div>
 
-          <div class="videoBlock">
-            <div class="videoRow">
-              <button id="btnVideo" class="ghost" type="button" disabled>🎬 Generar video (Original → Resultado)</button>
-              <a id="downloadVideo" class="ghostLink" download="transicion.webm" style="display:none;">⬇️ Descargar video</a>
-              <button id="btnZip" class="ghost" type="button" disabled>📦 Descargar pack (ZIP)</button>
+          <button id="btnToggleSidebar" class="sbMiniBtn sbToggle" type="button" title="Ocultar/Mostrar panel">
+            ⬅️
+          </button>
+        </div>
+
+        <div class="sbActions">
+          <button id="btnNewProject" class="sbBtnPrimary" type="button">➕ Nuevo proyecto</button>
+        </div>
+
+        <div class="sbSearch">
+          <input id="projectSearch" type="text" placeholder="Buscar proyecto…" />
+        </div>
+      </div>
+
+      <div class="sbListWrap">
+        <div id="projectList" class="projectList">
+          <div class="muted small">Todavía no hay proyectos.</div>
+        </div>
+      </div>
+
+      <div class="sbBottom">
+        <div class="sbHelp">
+          <div class="sbHelpTitle">ℹ️ Tip rápido</div>
+          <div class="sbHelpText">
+            Escribí <b>solo</b> lo que querés cambiar. Si usás Paint, pintá la zona exacta.
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <div class="mainCol">
+      <header class="top">
+        <div class="brand">
+          <div class="logo">U</div>
+          <div class="brandText">
+            <h1>Diseños de interiores Ulises</h1>
+            <p class="frase">No necesito que sea imposible de copiar, necesito que sea difícil de igualar.</p>
+          </div>
+        </div>
+      </header>
+
+      <main class="wrap">
+        <section class="card">
+          <h2>Tu pedido</h2>
+          <p class="muted">
+            Subí una foto y escribí qué querés cambiar o agregar. Verifica que lo que escribas este detallado y claro.
+            Si querés marcar una zona exacta, usá Modo Paint.
+          </p>
+
+          <label class="label" for="proyecto">Nombre del proyecto</label>
+          <input id="proyecto" class="textInput" type="text" maxlength="60" placeholder="Ej: Barandas hierro - Casa Nordelta" />
+          <p id="projHint" class="muted small" style="margin:6px 0 0;"></p>
+
+          <label class="label" for="texto">Descripción</label>
+          <textarea
+            id="texto"
+            rows="4"
+            placeholder='Ej: "Cambiar SOLO la baranda de vidrio por baranda de hierro negro vertical. Mantener todo lo demás igual."'
+          ></textarea>
+
+          <!-- Presets -->
+          <div class="presetBar">
+            <div class="presetTitle muted small">Presets rápidos</div>
+            <div class="presetChips">
+              <button class="chip" type="button"
+                data-preset='Cambiar SOLO la baranda de vidrio por baranda de hierro negro vertical. Mantener todo lo demás exactamente igual.'>
+                Barandas hierro
+              </button>
+
+              <button class="chip" type="button"
+                data-preset='Cambiar SOLO la cama por una cama moderna minimalista (madera clara), con proporciones realistas. Mantener todo lo demás exactamente igual.'>
+                Cama moderna
+              </button>
+
+              <button class="chip" type="button"
+                data-preset='Cambiar SOLO las carpinterías (marcos de ventanas/puertas) a color negro mate. Mantener todo lo demás exactamente igual.'>
+                Carpintería negra
+              </button>
+
+              <button class="chip" type="button"
+                data-preset='Cambiar SOLO el color de la fachada a blanco roto mate, sin tocar ventanas ni barandas. Mantener todo lo demás exactamente igual.'>
+                Fachada clara
+              </button>
+
+              <button class="chip" type="button"
+                data-preset='Cambiar SOLO la iluminación a cálida y más suave (sin cambiar muebles ni colores de paredes). Mantener todo lo demás exactamente igual.'>
+                Luz cálida
+              </button>
+            </div>
+          </div>
+
+          <div class="row">
+            <label class="fileBtn" for="imagen">Seleccionar imagen</label>
+            <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
+            <button id="generar" class="primary" type="button">Diseñar</button>
+          </div>
+
+          <!-- Selector de modo -->
+          <div class="modeBar">
+            <div class="modeTitle muted small">Modo</div>
+
+            <div class="modeToggle" role="tablist" aria-label="Modo de edición">
+              <button id="btnModeSimple" class="modeBtn active" type="button" role="tab" aria-selected="true">
+                🟢 Simple
+              </button>
+              <button id="btnModePaint" class="modeBtn" type="button" role="tab" aria-selected="false">
+                🟡 Paint
+              </button>
             </div>
 
-            <p id="videoInfo" class="muted small" style="margin:8px 0 0;"></p>
-            <video id="videoPreview" class="videoPreview" controls playsinline style="display:none;"></video>
+            <input id="usePaint" type="checkbox" style="display:none;" />
           </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- 🗂️ HISTORIAL (LISTA PRO) -->
-    <section class="card">
-      <div class="histHeader">
-        <div>
-          <h2 style="margin:0;">Proyectos</h2>
-          <p class="muted small" style="margin:6px 0 0;">
-            Guardado local en este dispositivo. Tocá “Usar” para recuperar el nombre + el pedido.
-          </p>
-        </div>
+          <div class="toolMini" id="paintTools" style="display:none;">
+            <span class="muted">Pincel</span>
+            <input id="brush" type="range" min="6" max="70" value="22" />
+            <span id="brushVal" class="muted">22</span>
+            <button id="btnErase" class="ghost" type="button">Borrar</button>
+            <button id="btnClear" class="ghost" type="button">Limpiar</button>
+          </div>
 
-        <div class="histActions">
-          <button id="btnClearHistory" class="ghost" type="button">🗑️ Borrar todo</button>
-        </div>
-      </div>
+          <p id="estado" class="estado"></p>
+          <div id="loader" class="loader"></div>
+          <p id="modoInfo" class="muted small"></p>
 
-      <div id="historyList" class="historyList">
-        <p class="muted">Todavía no hay proyectos guardados.</p>
-      </div>
-    </section>
+          <div class="previewBox">
+            <div class="previewTitle">Vista previa</div>
+            <img id="preview" alt="Vista previa" />
+          </div>
+        </section>
 
-    <footer class="footer">
-      Proyecto experimental de diseño con inteligencia artificial
-    </footer>
+        <!-- BLOQUE PAINT -->
+        <section class="card" id="paintSection" style="display:none;">
+          <h2>Paint</h2>
 
-    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-    <script src="script.js"></script>
-  </main>
+          <div id="paintAviso" class="paintAviso">
+            <div class="paintAvisoTitle">⚠️ Importante</div>
+            <div class="paintAvisoText">
+              La IA <b>solo</b> va a modificar lo que pintes. Todo lo que <b>NO</b> pintes se mantiene igual.
+              Pintá con cuidado la zona exacta que querés cambiar.
+            </div>
+          </div>
+
+          <div class="paintBox">
+            <img id="paintBase" alt="Imagen para pintar" />
+            <canvas id="paintCanvas"></canvas>
+          </div>
+
+          <p class="muted small">Tip: pintá solo el objeto/zona a cambiar. Si pintás de más, la IA puede tocar de más.</p>
+        </section>
+
+        <section class="card">
+          <h2>Resultado</h2>
+
+          <div class="resultGrid">
+            <div class="panel">
+              <h3>Recomendación</h3>
+              <pre id="recomendacion" class="reco">—</pre>
+            </div>
+
+            <div class="panel">
+              <h3>Imagen resultante</h3>
+
+              <div class="imgWrap">
+                <img id="imagenResultado" class="imgResultadoSmall" alt="Resultado" style="display:none;" />
+              </div>
+
+              <div class="videoBlock">
+                <div class="videoRow">
+                  <button id="btnVideo" class="ghost" type="button" disabled>🎬 Generar video (Original → Resultado)</button>
+                  <a id="downloadVideo" class="ghostLink" download="transicion.webm" style="display:none;">⬇️ Descargar video</a>
+                  <button id="btnZip" class="ghost" type="button" disabled>📦 Descargar pack (ZIP)</button>
+                </div>
+
+                <p id="videoInfo" class="muted small" style="margin:8px 0 0;"></p>
+                <video id="videoPreview" class="videoPreview" controls playsinline style="display:none;"></video>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <footer class="footer">
+          Proyecto experimental de diseño con inteligencia artificial
+        </footer>
+
+        <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+        <script src="script.js"></script>
+      </main>
+    </div>
+  </div>
 </body>
 </html>
+
 
 
 
