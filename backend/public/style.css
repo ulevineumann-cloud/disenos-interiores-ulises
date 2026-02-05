@@ -110,7 +110,6 @@ textarea:focus{ border-color: rgba(255,255,255,.28); }
   margin-top: 12px;
   flex-wrap: wrap;
 }
-.rowTight{ margin-top: 10px; }
 
 input[type="file"]{ display:none; }
 
@@ -251,22 +250,73 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   background: rgba(255,255,255,.04);
 }
 
-/* ====== CHECK + herramientas paint ====== */
-.chk{
+/* ====== PRESETS ====== */
+.presetBar{ margin-top: 12px; }
+.presetChips{
   display:flex;
-  gap:8px;
-  align-items:center;
-  color: var(--muted);
-  user-select:none;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top: 8px;
+}
+.chip{
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(10,16,28,.35);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor:pointer;
+  font-weight: 800;
+  font-size: 13px;
+  opacity: .9;
+}
+.chip:hover{
+  opacity: 1;
+  border-color: rgba(255,255,255,.28);
 }
 
+/* ====== MODO SIMPLE / PAINT (toggle) ====== */
+.modeBar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top: 12px;
+}
+.modeToggle{
+  display:inline-flex;
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(10,16,28,.35);
+  border-radius: 14px;
+  overflow:hidden;
+}
+.modeBtn{
+  appearance:none;
+  border: 0;
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+  opacity: .75;
+}
+.modeBtn:hover{
+  opacity: 1;
+  background: rgba(255,255,255,.06);
+}
+.modeBtn.active{
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(120,90,255,.55), rgba(0,210,255,.25));
+  border-right: 1px solid rgba(255,255,255,.10);
+}
+
+/* ====== herramientas paint ====== */
 .toolMini{
   display:flex;
   gap:10px;
   align-items:center;
   flex-wrap:wrap;
+  margin-top: 10px;
 }
-
 .ghost{
   padding: 10px 14px;
   border-radius: 14px;
@@ -306,7 +356,6 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   overflow: hidden;
   margin-top: 10px;
 }
-
 #paintBase{
   width: 100%;
   height: auto;
@@ -314,7 +363,6 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   max-height: 480px;
   object-fit: contain;
 }
-
 #paintCanvas{
   position:absolute;
   inset:0;
@@ -324,88 +372,15 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   touch-action:none;
   cursor: crosshair;
 }
-/* ====== MODO SIMPLE / PAINT (toggle) ====== */
-.modeBar{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  flex-wrap:wrap;
-  margin-top: 12px;
-}
 
-.modeTitle{
-  margin: 0;
-}
-
-.modeToggle{
-  display:inline-flex;
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(10,16,28,.35);
-  border-radius: 14px;
-  overflow:hidden;
-}
-
-.modeBtn{
-  appearance:none;
-  border: 0;
-  padding: 10px 14px;
-  background: transparent;
-  color: var(--text);
-  cursor: pointer;
-  font-weight: 800;
-  opacity: .75;
-}
-
-.modeBtn:hover{
-  opacity: 1;
-  background: rgba(255,255,255,.06);
-}
-
-.modeBtn.active{
-  opacity: 1;
-  background: linear-gradient(135deg, rgba(120,90,255,.55), rgba(0,210,255,.25));
-  border-right: 1px solid rgba(255,255,255,.10);
-}
-/* ====== PRESETS ====== */
-.presetBar{
-  margin-top: 12px;
-}
-
-.presetChips{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top: 8px;
-}
-
-.chip{
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(10,16,28,.35);
-  color: var(--text);
-  padding: 8px 12px;
-  border-radius: 999px;
-  cursor:pointer;
-  font-weight: 800;
-  font-size: 13px;
-  opacity: .9;
-}
-
-.chip:hover{
-  opacity: 1;
-  border-color: rgba(255,255,255,.28);
-}
 /* ====== VIDEO ====== */
-.videoBlock{
-  margin-top: 12px;
-}
-
+.videoBlock{ margin-top: 12px; }
 .videoRow{
   display:flex;
   gap:10px;
   flex-wrap:wrap;
   align-items:center;
 }
-
 .ghostLink{
   display:inline-flex;
   align-items:center;
@@ -418,7 +393,6 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   text-decoration:none;
   cursor:pointer;
 }
-
 .videoPreview{
   width: 100%;
   margin-top: 10px;
@@ -427,6 +401,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   background: rgba(10,16,28,.25);
   max-height: 360px;
 }
+
 
 
 

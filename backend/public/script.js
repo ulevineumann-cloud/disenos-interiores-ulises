@@ -16,8 +16,12 @@ const downloadVideo = document.getElementById("downloadVideo");
 const videoPreview = document.getElementById("videoPreview");
 const videoInfo = document.getElementById("videoInfo");
 
+// ZIP UI
+const btnZip = document.getElementById("btnZip");
+
 let originalObjectUrl = "";
 let resultadoUrlFinal = "";
+let videoBlobUrl = "";
 
 // Presets
 document.querySelectorAll("[data-preset]").forEach(btn => {
@@ -69,11 +73,16 @@ function niceError(msg) {
 
 function resetVideoUI() {
   btnVideo.disabled = true;
+  btnZip.disabled = true;
+
   downloadVideo.style.display = "none";
   downloadVideo.removeAttribute("href");
+
   videoPreview.style.display = "none";
   videoPreview.removeAttribute("src");
+
   videoInfo.textContent = "";
+  videoBlobUrl = "";
 }
 
 function setBrushUI() {
@@ -220,8 +229,6 @@ function setMode(paintOn) {
 
 btnModeSimple.addEventListener("click", () => setMode(false));
 btnModePaint.addEventListener("click", () => setMode(true));
-
-// default
 setMode(false);
 
 inputImagen.addEventListener("change", () => {
@@ -231,7 +238,6 @@ inputImagen.addEventListener("change", () => {
   resetVideoUI();
   resultadoUrlFinal = "";
 
-  // liberar URL previa si existía
   if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(file);
 
@@ -270,14 +276,12 @@ function easeInOut(t) {
 }
 
 async function generarVideoTransicion(originalSrc, resultadoSrc) {
-  // canvas “offscreen”
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
 
   const imgA = await loadImg(originalSrc);
   const imgB = await loadImg(resultadoSrc);
 
-  // elegimos tamaño de salida (máx 1080px ancho)
   const maxW = 1080;
   const w = Math.min(maxW, imgA.naturalWidth || imgA.width);
   const h = Math.round((w / (imgA.naturalWidth || imgA.width)) * (imgA.naturalHeight || imgA.height));
@@ -286,7 +290,7 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
   canvas.height = h;
 
   const fps = 30;
-  const seconds = 2.2; // duración
+  const seconds = 2.2;
   const frames = Math.floor(fps * seconds);
 
   const stream = canvas.captureStream(fps);
@@ -309,11 +313,9 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
     const t = i / (frames - 1);
     const k = easeInOut(t);
 
-    // fondo (por si hay “barras”)
     ctx.fillStyle = "#0b1220";
     ctx.fillRect(0, 0, w, h);
 
-    // dibujar original (ligero zoom out) y luego crossfade
     const zoomA = 1.02 - 0.02 * k;
     const zoomB = 1.00 + 0.02 * k;
 
@@ -324,7 +326,6 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
       const iw = img.naturalWidth || img.width;
       const ih = img.naturalHeight || img.height;
 
-      // cover
       const scale = Math.max(w / iw, h / ih) * zoom;
       const dw = iw * scale;
       const dh = ih * scale;
@@ -338,7 +339,6 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
     drawCover(imgA, zoomA, 1);
     drawCover(imgB, zoomB, k);
 
-    // esperar al siguiente frame
     await new Promise(r => setTimeout(r, 1000 / fps));
   }
 
@@ -355,6 +355,7 @@ btnVideo.addEventListener("click", async () => {
 
     const blob = await generarVideoTransicion(originalObjectUrl, resultadoUrlFinal);
     const url = URL.createObjectURL(blob);
+    videoBlobUrl = url;
 
     downloadVideo.href = url;
     downloadVideo.style.display = "inline-flex";
@@ -366,9 +367,69 @@ btnVideo.addEventListener("click", async () => {
   } catch (e) {
     console.error(e);
     videoInfo.textContent = "Error generando el video ❌";
-    alert("No se pudo generar el video en este navegador. Probá con Chrome.");
+    alert("No se pudo generar el video. Probá con Chrome.");
   } finally {
     btnVideo.disabled = false;
+  }
+});
+
+/* =========================
+   📦 ZIP (pack cliente)
+========================= */
+async function fetchAsBlob(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("No se pudo descargar: " + url);
+  return await r.blob();
+}
+
+btnZip.addEventListener("click", async () => {
+  try {
+    btnZip.disabled = true;
+
+    if (!window.JSZip) {
+      alert("Falta JSZip (revisá que agregaste el script del CDN).");
+      return;
+    }
+    if (!originalObjectUrl || !resultadoUrlFinal) {
+      alert("Necesitás una imagen original y un resultado primero.");
+      return;
+    }
+
+    const zip = new JSZip();
+
+    const pedido = (textoEl.value || "").trim();
+    zip.file("pedido.txt", pedido || "(sin texto)");
+
+    const originalBlob = await fetchAsBlob(originalObjectUrl);
+    const resultadoBlob = await fetchAsBlob(resultadoUrlFinal);
+
+    const extOriginal = (originalBlob.type.includes("png")) ? "png"
+      : (originalBlob.type.includes("webp")) ? "webp" : "jpg";
+
+    zip.file(`original.${extOriginal}`, originalBlob);
+    zip.file("resultado.png", resultadoBlob);
+
+    if (videoBlobUrl) {
+      const videoBlob = await fetchAsBlob(videoBlobUrl);
+      zip.file("transicion.webm", videoBlob);
+    }
+
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const zipUrl = URL.createObjectURL(zipBlob);
+
+    const a = document.createElement("a");
+    a.href = zipUrl;
+    a.download = "pack_cliente.zip";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(() => URL.revokeObjectURL(zipUrl), 2000);
+  } catch (e) {
+    console.error(e);
+    alert("No se pudo generar el ZIP. Probá de nuevo.");
+  } finally {
+    btnZip.disabled = false;
   }
 });
 
@@ -418,10 +479,10 @@ boton.addEventListener("click", async () => {
       imagenResultadoEl.src = url;
       imagenResultadoEl.style.display = "block";
 
-      // habilitar video
       resultadoUrlFinal = url;
       btnVideo.disabled = false;
-      videoInfo.textContent = "Podés generar el video de transición.";
+      btnZip.disabled = false;
+      videoInfo.textContent = "Podés generar el video o descargar el pack ZIP.";
     }
 
     estado.textContent = "Listo ✅";
@@ -432,6 +493,7 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
 
 
 
