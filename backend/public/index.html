@@ -34,13 +34,44 @@
         placeholder='Ej: "Cambiar SOLO la baranda de vidrio por baranda de hierro negro vertical. Mantener todo lo demás igual."'
       ></textarea>
 
+      <!-- Presets -->
+      <div class="presetBar">
+        <div class="presetTitle muted small">Presets rápidos</div>
+        <div class="presetChips">
+          <button class="chip" type="button"
+            data-preset='Cambiar SOLO la baranda de vidrio por baranda de hierro negro vertical. Mantener todo lo demás exactamente igual.'>
+            Barandas hierro
+          </button>
+
+          <button class="chip" type="button"
+            data-preset='Cambiar SOLO la cama por una cama moderna minimalista (madera clara), con proporciones realistas. Mantener todo lo demás exactamente igual.'>
+            Cama moderna
+          </button>
+
+          <button class="chip" type="button"
+            data-preset='Cambiar SOLO las carpinterías (marcos de ventanas/puertas) a color negro mate. Mantener todo lo demás exactamente igual.'>
+            Carpintería negra
+          </button>
+
+          <button class="chip" type="button"
+            data-preset='Cambiar SOLO el color de la fachada a blanco roto mate, sin tocar ventanas ni barandas. Mantener todo lo demás exactamente igual.'>
+            Fachada clara
+          </button>
+
+          <button class="chip" type="button"
+            data-preset='Cambiar SOLO la iluminación a cálida y más suave (sin cambiar muebles ni colores de paredes). Mantener todo lo demás exactamente igual.'>
+            Luz cálida
+          </button>
+        </div>
+      </div>
+
       <div class="row">
         <label class="fileBtn" for="imagen">Seleccionar imagen</label>
         <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
         <button id="generar" class="primary" type="button">Diseñar</button>
       </div>
 
-      <!-- Selector de modo (nuevo) -->
+      <!-- Selector de modo -->
       <div class="modeBar">
         <div class="modeTitle muted small">Modo</div>
 
@@ -53,11 +84,9 @@
           </button>
         </div>
 
-        <!-- input oculto: lo usamos en JS -->
         <input id="usePaint" type="checkbox" style="display:none;" />
       </div>
 
-      <!-- herramientas paint -->
       <div class="toolMini" id="paintTools" style="display:none;">
         <span class="muted">Pincel</span>
         <input id="brush" type="range" min="6" max="70" value="22" />
@@ -122,6 +151,7 @@
   </main>
 </body>
 </html>
+
 
 
 

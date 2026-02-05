@@ -9,7 +9,18 @@ const imagenResultadoEl = document.getElementById("imagenResultado");
 const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
 
-// Nuevo selector
+const textoEl = document.getElementById("texto");
+
+// Presets
+document.querySelectorAll("[data-preset]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    textoEl.value = btn.getAttribute("data-preset") || "";
+    textoEl.focus();
+    textoEl.setSelectionRange(textoEl.value.length, textoEl.value.length);
+  });
+});
+
+// Selector modo
 const btnModeSimple = document.getElementById("btnModeSimple");
 const btnModePaint = document.getElementById("btnModePaint");
 const usePaint = document.getElementById("usePaint");
@@ -178,7 +189,6 @@ function maskBlobPNG() {
 function setMode(paintOn) {
   usePaint.checked = !!paintOn;
 
-  // UI
   btnModeSimple.classList.toggle("active", !paintOn);
   btnModePaint.classList.toggle("active", paintOn);
 
@@ -188,25 +198,22 @@ function setMode(paintOn) {
   paintSection.style.display = paintOn ? "block" : "none";
   paintTools.style.display = paintOn ? "flex" : "none";
 
-  // si prenden paint y ya hay imagen cargada, ajustamos canvas
   if (paintOn && imgNaturalW) setTimeout(resizeCanvasesToImage, 0);
 }
 
 btnModeSimple.addEventListener("click", () => setMode(false));
 btnModePaint.addEventListener("click", () => setMode(true));
 
-// modo default
+// default
 setMode(false);
 
 inputImagen.addEventListener("change", () => {
   const file = inputImagen.files?.[0];
   if (!file) return;
 
-  // preview normal
   preview.src = URL.createObjectURL(file);
   preview.style.display = "block";
 
-  // base del paint
   paintBase.onload = () => {
     imgNaturalW = paintBase.naturalWidth;
     imgNaturalH = paintBase.naturalHeight;
@@ -222,7 +229,7 @@ window.addEventListener("resize", () => {
 });
 
 boton.addEventListener("click", async () => {
-  const texto = (document.getElementById("texto").value || "").trim();
+  const texto = (textoEl.value || "").trim();
   const imagen = inputImagen.files?.[0];
 
   estado.textContent = "";
@@ -233,11 +240,6 @@ boton.addEventListener("click", async () => {
 
   if (!texto) return niceError("Escribí qué querés cambiar.");
   if (!imagen) return niceError("Seleccioná una imagen.");
-
-  const okTypes = ["image/jpeg", "image/png", "image/webp"];
-  if (!okTypes.includes(imagen.type)) {
-    return niceError("Formato no soportado. Usá JPG, PNG o WEBP.");
-  }
 
   try {
     setLoading(true);
@@ -277,6 +279,7 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
 
 
 
