@@ -16,8 +16,16 @@ const projHint = document.getElementById("projHint");
 const btnNewProject = document.getElementById("btnNewProject");
 const projectSearch = document.getElementById("projectSearch");
 const projectList = document.getElementById("projectList");
+
+// Sidebar toggle (desktop collapse)
 const btnToggleSidebar = document.getElementById("btnToggleSidebar");
 const sidebarEl = document.getElementById("sidebar");
+const SIDEBAR_KEY = "ulises_sidebar_collapsed_v1";
+
+// Mobile drawer
+const btnOpenSidebar = document.getElementById("btnOpenSidebar");
+const btnCloseSidebar = document.getElementById("btnCloseSidebar");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
 
 // Video UI
 const btnVideo = document.getElementById("btnVideo");
@@ -35,19 +43,66 @@ let videoBlobUrl = "";
 let currentOriginalThumb = "";
 
 /* =========================
-   SIDEBAR COLLAPSE (save state)
+   MOBILE DRAWER HELPERS
 ========================= */
-const SIDEBAR_KEY = "ulises_sidebar_collapsed_v1";
+function isMobile() {
+  return window.matchMedia("(max-width: 980px)").matches;
+}
 
+function openSidebarDrawer() {
+  if (!isMobile()) return;
+  sidebarEl.classList.add("open");
+  sidebarOverlay.classList.add("show");
+  sidebarOverlay.setAttribute("aria-hidden", "false");
+}
+
+function closeSidebarDrawer() {
+  sidebarEl.classList.remove("open");
+  sidebarOverlay.classList.remove("show");
+  sidebarOverlay.setAttribute("aria-hidden", "true");
+}
+
+btnOpenSidebar?.addEventListener("click", openSidebarDrawer);
+btnCloseSidebar?.addEventListener("click", closeSidebarDrawer);
+sidebarOverlay?.addEventListener("click", closeSidebarDrawer);
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeSidebarDrawer();
+});
+
+window.addEventListener("resize", () => {
+  // si salís de mobile a desktop, limpiamos estado drawer/overlay
+  if (!isMobile()) {
+    closeSidebarDrawer();
+  }
+});
+
+/* =========================
+   DESKTOP COLLAPSE (save state)
+========================= */
 function setSidebarCollapsed(on){
+  // en mobile no usamos collapsed (drawer manda)
+  if (isMobile()) return;
   sidebarEl.classList.toggle("collapsed", !!on);
   localStorage.setItem(SIDEBAR_KEY, on ? "1" : "0");
 }
-btnToggleSidebar.addEventListener("click", () => {
+
+btnToggleSidebar?.addEventListener("click", () => {
+  if (isMobile()) return;
   const isCollapsed = sidebarEl.classList.contains("collapsed");
   setSidebarCollapsed(!isCollapsed);
 });
-setSidebarCollapsed(localStorage.getItem(SIDEBAR_KEY) === "1");
+
+// aplicar estado guardado solo si no es mobile
+function applyCollapseFromStorage() {
+  if (isMobile()) {
+    sidebarEl.classList.remove("collapsed");
+    return;
+  }
+  const on = localStorage.getItem(SIDEBAR_KEY) === "1";
+  setSidebarCollapsed(on);
+}
+applyCollapseFromStorage();
 
 /* =========================
    PRESETS
@@ -104,7 +159,6 @@ btnClear.addEventListener("click", () => {
   renderOverlay();
 });
 
-/* Paint mask */
 function clearMask() {
   mctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
   mctx.fillStyle = "rgba(0,0,0,1)";
@@ -210,7 +264,6 @@ function maskBlobPNG() {
   });
 }
 
-/* Mode toggle */
 function setMode(paintOn) {
   usePaint.checked = !!paintOn;
 
@@ -230,14 +283,10 @@ btnModePaint.addEventListener("click", () => setMode(true));
 setMode(false);
 
 /* =========================
-   STORAGE (PROJECTS + VERSIONS)
+   STORAGE - PROJECTS
 ========================= */
 const PROJECTS_KEY = "ulises_projects_v1";
 const CURRENT_PROJECT_KEY = "ulises_current_project_id_v1";
-
-// historial viejo (si existe)
-const OLD_HISTORY_KEY = "ulises_history_v2";
-const MIGRATED_FLAG = "ulises_migrated_history_to_projects_v1";
 
 function uid() {
   return String(Date.now()) + "_" + Math.random().toString(16).slice(2);
@@ -280,55 +329,6 @@ function escapeHtml(s) {
     .replaceAll(">","&gt;");
 }
 
-/* ===== Migration (old history -> projects) ===== */
-function migrateOldHistoryOnce() {
-  if (localStorage.getItem(MIGRATED_FLAG) === "1") return;
-
-  const oldRaw = localStorage.getItem(OLD_HISTORY_KEY);
-  if (!oldRaw) { localStorage.setItem(MIGRATED_FLAG, "1"); return; }
-
-  const oldArr = safeJsonParse(oldRaw, []);
-  if (!Array.isArray(oldArr) || !oldArr.length) { localStorage.setItem(MIGRATED_FLAG, "1"); return; }
-
-  const projects = loadProjects();
-
-  const groups = new Map();
-  for (const it of oldArr) {
-    const name = (it.projectName || "").trim() || "Proyecto sin nombre";
-    if (!groups.has(name)) groups.set(name, []);
-    groups.get(name).push(it);
-  }
-
-  for (const [name, items] of groups.entries()) {
-    const pid = uid();
-    const createdAt = Math.min(...items.map(x => x.ts || Date.now()));
-    const updatedAt = Math.max(...items.map(x => x.ts || Date.now()));
-
-    const versions = items
-      .sort((a,b) => (a.ts||0) - (b.ts||0))
-      .map(x => ({
-        id: uid(),
-        ts: x.ts || Date.now(),
-        prompt: x.prompt || "",
-        mode: x.mode || "SIMPLE",
-        originalThumb: x.originalThumb || "",
-        resultUrl: x.resultUrl || "",
-      }));
-
-    projects.unshift({
-      id: pid,
-      name,
-      createdAt,
-      updatedAt,
-      favorite: false,
-      versions,
-    });
-  }
-
-  saveProjects(projects);
-  localStorage.setItem(MIGRATED_FLAG, "1");
-}
-
 /* ===== Sidebar render ===== */
 function projectThumb(p) {
   const last = p.versions?.[0] ? p.versions[0] : (p.versions?.[p.versions.length - 1] || null);
@@ -336,8 +336,8 @@ function projectThumb(p) {
 }
 
 function lastMeta(p) {
-  const count = p.versions?.length || 0;
   const up = p.updatedAt ? formatDate(p.updatedAt) : "";
+  const count = p.versions?.length || 0; // queda interno, no te obliga a mostrar versiones
   return { count, up };
 }
 
@@ -355,10 +355,7 @@ function renderSidebar() {
   const currentId = getCurrentProjectId();
 
   let projects = sortProjects(loadProjects());
-
-  if (q) {
-    projects = projects.filter(p => (p.name || "").toLowerCase().includes(q));
-  }
+  if (q) projects = projects.filter(p => (p.name || "").toLowerCase().includes(q));
 
   if (!projects.length) {
     projectList.innerHTML = `<div class="muted small">Todavía no hay proyectos.</div>`;
@@ -367,7 +364,7 @@ function renderSidebar() {
 
   projectList.innerHTML = projects.map(p => {
     const active = p.id === currentId ? "active" : "";
-    const { count, up } = lastMeta(p);
+    const { up } = lastMeta(p);
     const thumb = projectThumb(p);
 
     return `
@@ -376,7 +373,6 @@ function renderSidebar() {
         <div class="projMain">
           <p class="projName">${escapeHtml(p.name || "Proyecto sin nombre")}</p>
           <div class="projMeta">
-            <span class="projBadge">${count} versión${count===1?"":"es"}</span>
             ${up ? `<span class="projBadge">${escapeHtml(up)}</span>` : ``}
             ${p.favorite ? `<span class="projBadge">⭐</span>` : ``}
           </div>
@@ -394,8 +390,13 @@ function renderSidebar() {
     row.addEventListener("click", (e) => {
       const id = row.getAttribute("data-id");
       if (!id) return;
+
       if (e.target?.classList?.contains("projFav") || e.target?.classList?.contains("projDel")) return;
+
       selectProject(id);
+
+      // en mobile, al elegir proyecto cerramos el drawer
+      if (isMobile()) closeSidebarDrawer();
     });
   });
 
@@ -430,9 +431,7 @@ function renderSidebar() {
       let list = loadProjects().filter(p => p.id !== id);
       saveProjects(list);
 
-      if (getCurrentProjectId() === id) {
-        setCurrentProjectId(list[0]?.id || "");
-      }
+      if (getCurrentProjectId() === id) setCurrentProjectId(list[0]?.id || "");
       syncCurrentProjectUI();
       renderSidebar();
     });
@@ -468,17 +467,12 @@ function syncCurrentProjectUI() {
   const list = loadProjects();
   const p = findProjectById(list, getCurrentProjectId());
 
-  if (!p) {
-    projHint.textContent = "";
-    return;
-  }
+  if (!p) { projHint.textContent = ""; return; }
 
-  if (!(proyectoEl.value || "").trim()) {
-    proyectoEl.value = p.name || "";
-  }
+  if (!(proyectoEl.value || "").trim()) proyectoEl.value = p.name || "";
 
   const count = p.versions?.length || 0;
-  projHint.textContent = `Proyecto activo: "${p.name || "Proyecto sin nombre"}" · ${count} versión${count===1?"":"es"}`;
+  projHint.textContent = `Proyecto activo: "${p.name || "Proyecto sin nombre"}" · ${count} cambio${count===1?"":"s"} guardado${count===1?"":"s"}`;
 }
 
 /* ===== Crear nuevo proyecto ===== */
@@ -502,7 +496,6 @@ btnNewProject.addEventListener("click", () => {
   saveProjects(list);
   setCurrentProjectId(p.id);
 
-  // limpiar inputs para empezar “desde cero”
   textoEl.value = "";
   recomendacionEl.textContent = "—";
   imagenResultadoEl.style.display = "none";
@@ -513,13 +506,15 @@ btnNewProject.addEventListener("click", () => {
   proyectoEl.value = clean;
   syncCurrentProjectUI();
   renderSidebar();
+
+  if (isMobile()) closeSidebarDrawer();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
 projectSearch.addEventListener("input", renderSidebar);
 
 /* =========================
-   GENERALES
+   UI HELPERS
 ========================= */
 function setLoading(on) {
   loader.style.display = on ? "block" : "none";
@@ -598,6 +593,7 @@ inputImagen.addEventListener("change", async () => {
 });
 
 window.addEventListener("resize", () => {
+  applyCollapseFromStorage();
   if (!imgNaturalW) return;
   if (!usePaint.checked) return;
   resizeCanvasesToImage();
@@ -774,7 +770,7 @@ btnZip.addEventListener("click", async () => {
 });
 
 /* =========================
-   GENERAR -> guarda versión en proyecto
+   GENERAR -> guarda un “cambio” en el proyecto (se guarda en versions, pero no lo mostramos)
 ========================= */
 boton.addEventListener("click", async () => {
   const texto = (textoEl.value || "").trim();
@@ -798,9 +794,7 @@ boton.addEventListener("click", async () => {
   if (!proj) return niceError("No hay proyecto activo. Creá uno con “Nuevo proyecto”.");
 
   const nameInput = (proyectoEl.value || "").trim();
-  if (nameInput && nameInput !== proj.name) {
-    proj.name = nameInput;
-  }
+  if (nameInput && nameInput !== proj.name) proj.name = nameInput;
 
   try {
     setLoading(true);
@@ -867,10 +861,10 @@ boton.addEventListener("click", async () => {
 });
 
 /* ===== INIT ===== */
-migrateOldHistoryOnce();
 ensureSomeProject();
 syncCurrentProjectUI();
 renderSidebar();
+
 
 
 

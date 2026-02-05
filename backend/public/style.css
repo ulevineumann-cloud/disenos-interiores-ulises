@@ -36,6 +36,17 @@ body{
   min-height: 100vh;
 }
 
+/* ===== OVERLAY (mobile drawer) ===== */
+.sidebarOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  z-index: 50;
+  display: none;
+}
+.sidebarOverlay.show{ display:block; }
+
+/* ===== SIDEBAR (desktop visible) ===== */
 .sidebar{
   width: 320px;
   border-right: 1px solid rgba(255,255,255,.12);
@@ -47,7 +58,8 @@ body{
   height: 100vh;
   display:flex;
   flex-direction: column;
-  transition: width .18s ease;
+  transition: width .18s ease, transform .18s ease;
+  z-index: 60;
 }
 
 .mainCol{
@@ -55,9 +67,19 @@ body{
   min-width: 0;
 }
 
-/* ✅ en mobile sigue visible */
+/* ===== MOBILE DRAWER ===== */
 @media (max-width: 980px){
-  .sidebar{ width: 260px; }
+  .sidebar{
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(320px, 86vw);
+    transform: translateX(-105%);
+  }
+  .sidebar.open{
+    transform: translateX(0);
+  }
 }
 
 /* ===== SIDEBAR CONTENT ===== */
@@ -73,7 +95,7 @@ body{
   background: linear-gradient(135deg, rgba(255,255,255,.18), rgba(255,255,255,.06));
   border: 1px solid rgba(255,255,255,.14);
 }
-.sbText{ min-width:0; }
+.sbText{ flex:1; min-width:0; }
 .sbTitle{ font-weight: 900; letter-spacing: .2px; font-size: 12px; opacity:.95; }
 .sbSub{ color: var(--muted); font-size: 12px; margin-top: 2px; }
 
@@ -169,8 +191,13 @@ body{
 }
 .sbMiniBtn:hover{ border-color: rgba(255,255,255,.24); }
 
-.sbToggle{
-  margin-left: auto;
+.sbToggle{ margin-left:auto; }
+
+/* close button: solo mobile */
+.sbClose{ display:none; }
+@media (max-width: 980px){
+  .sbToggle{ display:none; }
+  .sbClose{ display:inline-flex; }
 }
 
 .sbHelp{
@@ -182,7 +209,7 @@ body{
 .sbHelpTitle{ font-weight: 900; margin-bottom: 6px; }
 .sbHelpText{ color: rgba(234,240,255,.85); font-size: 13px; line-height: 1.35; }
 
-/* ===== SIDEBAR COLAPSADA ===== */
+/* ===== SIDEBAR COLAPSADA (desktop) ===== */
 .sidebar.collapsed{
   width: 76px;
 }
@@ -197,7 +224,7 @@ body{
 .sidebar.collapsed .projRow{ justify-content:center; }
 .sidebar.collapsed .sbToggle{ transform: rotate(180deg); }
 
-/* ===== MAIN HEADER ===== */
+/* ===== HEADER ===== */
 .top{ padding: 22px 0 10px; }
 
 .wrap{
@@ -226,6 +253,7 @@ body{
   box-shadow: var(--shadow);
 }
 
+.brandText{ flex:1; min-width:0; }
 .brandText h1{
   margin:0;
   font-size: 20px;
@@ -235,6 +263,20 @@ body{
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 14px;
+}
+
+/* botón hamburguesa: solo mobile */
+.hamburger{
+  display:none;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(10,16,28,.55);
+  color: var(--text);
+  cursor:pointer;
+}
+@media (max-width: 980px){
+  .hamburger{ display:inline-flex; }
 }
 
 .card{
@@ -572,3 +614,4 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   background: rgba(10,16,28,.25);
   max-height: 360px;
 }
+
