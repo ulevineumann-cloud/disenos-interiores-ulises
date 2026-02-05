@@ -401,6 +401,28 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   background: rgba(10,16,28,.25);
   max-height: 360px;
 }
+/* ✅ input nombre del proyecto */
+.textInput{
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(10,16,28,.55);
+  color: var(--text);
+  outline: none;
+}
+.textInput:focus{
+  border-color: rgba(255,255,255,.28);
+}
+
+/* ✅ nombre dentro del historial */
+.histTitle{
+  font-weight: 900;
+  margin: 0 0 6px;
+  font-size: 14px;
+  letter-spacing: .2px;
+}
 
 
 

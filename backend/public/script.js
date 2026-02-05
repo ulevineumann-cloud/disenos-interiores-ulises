@@ -10,6 +10,9 @@ const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
 const textoEl = document.getElementById("texto");
 
+// ✅ nuevo: proyecto
+const proyectoEl = document.getElementById("proyecto");
+
 // Video UI
 const btnVideo = document.getElementById("btnVideo");
 const downloadVideo = document.getElementById("downloadVideo");
@@ -27,7 +30,7 @@ const btnClearHistory = document.getElementById("btnClearHistory");
 let originalObjectUrl = "";
 let resultadoUrlFinal = "";
 let videoBlobUrl = "";
-let currentOriginalThumb = ""; // miniatura base64 para historial
+let currentOriginalThumb = "";
 
 // Presets
 document.querySelectorAll("[data-preset]").forEach(btn => {
@@ -62,13 +65,10 @@ let eraseMode = false;
 
 const pctx = paintCanvas.getContext("2d", { willReadFrequently: true });
 
-// máscara real (misma resolución que la imagen)
+// máscara real
 const maskCanvas = document.createElement("canvas");
 const mctx = maskCanvas.getContext("2d", { willReadFrequently: true });
 
-/* =========================
-   Helpers UI
-========================= */
 function setLoading(on) {
   loader.style.display = on ? "block" : "none";
   boton.disabled = on;
@@ -110,11 +110,8 @@ btnClear.addEventListener("click", () => {
   renderOverlay();
 });
 
-/* =========================
-   Paint mask
-========================= */
+/* Paint mask */
 function clearMask() {
-  // negro opaco = NO editable
   mctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
   mctx.fillStyle = "rgba(0,0,0,1)";
   mctx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
@@ -141,7 +138,6 @@ function renderOverlay() {
   const imgData = mctx.getImageData(0, 0, imgNaturalW, imgNaturalH);
   const data = imgData.data;
 
-  // overlay rojo donde alpha==0 (editable)
   const step = 4;
   pctx.fillStyle = "rgba(255, 60, 90, 0.40)";
   for (let y = 0; y < imgNaturalH; y += step) {
@@ -168,7 +164,6 @@ function applyStroke(mx, my, radius) {
   if (!imgNaturalW || !imgNaturalH) return;
 
   if (!eraseMode) {
-    // Pintar => transparente (editable)
     mctx.save();
     mctx.globalCompositeOperation = "destination-out";
     mctx.beginPath();
@@ -176,7 +171,6 @@ function applyStroke(mx, my, radius) {
     mctx.fill();
     mctx.restore();
   } else {
-    // Borrar => vuelve a negro (no editable)
     mctx.save();
     mctx.globalCompositeOperation = "source-over";
     mctx.fillStyle = "rgba(0,0,0,1)";
@@ -224,9 +218,7 @@ function maskBlobPNG() {
   });
 }
 
-/* =========================
-   Mode toggle
-========================= */
+/* Mode toggle */
 function setMode(paintOn) {
   usePaint.checked = !!paintOn;
 
@@ -241,14 +233,11 @@ function setMode(paintOn) {
 
   if (paintOn && imgNaturalW) setTimeout(resizeCanvasesToImage, 0);
 }
-
 btnModeSimple.addEventListener("click", () => setMode(false));
 btnModePaint.addEventListener("click", () => setMode(true));
 setMode(false);
 
-/* =========================
-   Thumbnail (para historial)
-========================= */
+/* Thumbnail */
 function fileToThumbDataUrl(file, maxW = 420) {
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -277,9 +266,7 @@ function fileToThumbDataUrl(file, maxW = 420) {
   });
 }
 
-/* =========================
-   Input image
-========================= */
+/* Input image */
 inputImagen.addEventListener("change", async () => {
   const file = inputImagen.files?.[0];
   if (!file) return;
@@ -287,12 +274,8 @@ inputImagen.addEventListener("change", async () => {
   resetVideoUI();
   resultadoUrlFinal = "";
 
-  // miniatura para historial
-  try {
-    currentOriginalThumb = await fileToThumbDataUrl(file);
-  } catch {
-    currentOriginalThumb = "";
-  }
+  try { currentOriginalThumb = await fileToThumbDataUrl(file); }
+  catch { currentOriginalThumb = ""; }
 
   if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(file);
@@ -314,9 +297,7 @@ window.addEventListener("resize", () => {
   resizeCanvasesToImage();
 });
 
-/* =========================
-   🎬 VIDEO
-========================= */
+/* VIDEO */
 function loadImg(src) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -429,9 +410,7 @@ btnVideo.addEventListener("click", async () => {
   }
 });
 
-/* =========================
-   📦 ZIP
-========================= */
+/* ZIP */
 async function fetchAsBlob(url) {
   const r = await fetch(url);
   if (!r.ok) throw new Error("No se pudo descargar: " + url);
@@ -454,7 +433,10 @@ btnZip.addEventListener("click", async () => {
     const zip = new JSZip();
 
     const pedido = (textoEl.value || "").trim();
+    const nombre = (proyectoEl.value || "").trim();
+
     zip.file("pedido.txt", pedido || "(sin texto)");
+    zip.file("proyecto.txt", nombre || "(sin nombre)");
 
     const originalBlob = await fetchAsBlob(originalObjectUrl);
     const resultadoBlob = await fetchAsBlob(resultadoUrlFinal);
@@ -475,7 +457,7 @@ btnZip.addEventListener("click", async () => {
 
     const a = document.createElement("a");
     a.href = zipUrl;
-    a.download = "pack_cliente.zip";
+    a.download = (nombre ? `${nombre}` : "pack_cliente") + ".zip";
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -489,10 +471,8 @@ btnZip.addEventListener("click", async () => {
   }
 });
 
-/* =========================
-   🗂️ HISTORIAL (localStorage)
-========================= */
-const HISTORY_KEY = "ulises_history_v1";
+/* HISTORIAL */
+const HISTORY_KEY = "ulises_history_v2";
 
 function loadHistory() {
   try {
@@ -509,11 +489,8 @@ function saveHistory(list) {
 }
 
 function formatDate(ts) {
-  try {
-    return new Date(ts).toLocaleString();
-  } catch {
-    return String(ts);
-  }
+  try { return new Date(ts).toLocaleString(); }
+  catch { return String(ts); }
 }
 
 function escapeHtml(s) {
@@ -534,6 +511,7 @@ function renderHistory() {
   historyList.innerHTML = items.map(it => {
     const p = (it.prompt || "").trim();
     const short = p.length > 140 ? p.slice(0, 140) + "…" : p;
+    const title = (it.projectName || "").trim() || "Proyecto sin nombre";
 
     return `
       <div class="histCard" data-id="${it.id}">
@@ -541,6 +519,8 @@ function renderHistory() {
           <div class="histDate">${escapeHtml(formatDate(it.ts))}</div>
           <div class="histMode">${escapeHtml(it.mode || "—")}</div>
         </div>
+
+        <p class="histTitle">${escapeHtml(title)}</p>
 
         <div class="histThumbs">
           <img class="histImg" src="${it.originalThumb || ""}" alt="Original (thumb)" />
@@ -550,7 +530,7 @@ function renderHistory() {
         <p class="histPrompt">${escapeHtml(short)}</p>
 
         <div class="histBtns">
-          <button class="ghost histUse" type="button">↩️ Usar pedido</button>
+          <button class="ghost histUse" type="button">↩️ Usar proyecto</button>
           <button class="ghost histOpen" type="button">🖼️ Abrir resultado</button>
           <button class="ghost histDelete" type="button">🗑️ Borrar</button>
         </div>
@@ -558,7 +538,6 @@ function renderHistory() {
     `;
   }).join("");
 
-  // events
   historyList.querySelectorAll(".histUse").forEach(btn => {
     btn.addEventListener("click", (e) => {
       const card = e.target.closest(".histCard");
@@ -567,9 +546,9 @@ function renderHistory() {
       const it = items.find(x => x.id === id);
       if (!it) return;
 
+      proyectoEl.value = it.projectName || "";
       textoEl.value = it.prompt || "";
-      textoEl.focus();
-      setMode(false); // simple por defecto
+      setMode(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     });
   });
@@ -604,15 +583,13 @@ btnClearHistory.addEventListener("click", () => {
   renderHistory();
 });
 
-// pintar historial al cargar
 renderHistory();
 
-/* =========================
-   GENERAR (IA)
-========================= */
+/* GENERAR */
 boton.addEventListener("click", async () => {
   const texto = (textoEl.value || "").trim();
   const imagen = inputImagen.files?.[0];
+  const nombreProyecto = (proyectoEl.value || "").trim();
 
   estado.textContent = "";
   recomendacionEl.textContent = "—";
@@ -663,21 +640,19 @@ boton.addEventListener("click", async () => {
       btnZip.disabled = false;
       videoInfo.textContent = "Podés generar el video o descargar el pack ZIP.";
 
-      // ✅ Guardar en historial (miniatura original + resultado + prompt + fecha + modo)
       const entry = {
         id: String(Date.now()),
         ts: Date.now(),
+        projectName: nombreProyecto,
         prompt: texto,
         mode: paintOn ? "PAINT" : "SIMPLE",
         originalThumb: currentOriginalThumb || "",
-        resultUrl: data.imagenUrl, // guardamos sin cache-buster
+        resultUrl: data.imagenUrl,
       };
 
       const list = loadHistory();
       list.unshift(entry);
-      // limitamos para no inflar
-      const limited = list.slice(0, 20);
-      saveHistory(limited);
+      saveHistory(list.slice(0, 30));
       renderHistory();
     }
 
@@ -689,6 +664,7 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
 
 
 
