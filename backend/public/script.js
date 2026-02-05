@@ -9,8 +9,6 @@ const imagenResultadoEl = document.getElementById("imagenResultado");
 const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
 const textoEl = document.getElementById("texto");
-
-// ✅ nuevo: proyecto
 const proyectoEl = document.getElementById("proyecto");
 
 // Video UI
@@ -94,9 +92,7 @@ function resetVideoUI() {
   videoBlobUrl = "";
 }
 
-function setBrushUI() {
-  brushVal.textContent = String(brush.value);
-}
+function setBrushUI() { brushVal.textContent = String(brush.value); }
 setBrushUI();
 brush.addEventListener("input", setBrushUI);
 
@@ -144,9 +140,7 @@ function renderOverlay() {
     for (let x = 0; x < imgNaturalW; x += step) {
       const i = (y * imgNaturalW + x) * 4;
       const a = data[i + 3];
-      if (a === 0) {
-        pctx.fillRect(x * scaleX, y * scaleY, step * scaleX, step * scaleY);
-      }
+      if (a === 0) pctx.fillRect(x * scaleX, y * scaleY, step * scaleX, step * scaleY);
     }
   }
 }
@@ -184,21 +178,18 @@ function applyStroke(mx, my, radius) {
 paintCanvas.addEventListener("pointerdown", (e) => {
   if (!imgNaturalW) return;
   if (!usePaint.checked) return;
-
   drawing = true;
   paintCanvas.setPointerCapture(e.pointerId);
   const { mx, my } = getPosOnCanvas(e);
   applyStroke(mx, my, Number(brush.value));
   renderOverlay();
 });
-
 paintCanvas.addEventListener("pointermove", (e) => {
   if (!drawing) return;
   const { mx, my } = getPosOnCanvas(e);
   applyStroke(mx, my, Number(brush.value));
   renderOverlay();
 });
-
 paintCanvas.addEventListener("pointerup", () => { drawing = false; });
 paintCanvas.addEventListener("pointercancel", () => { drawing = false; });
 
@@ -258,10 +249,7 @@ function fileToThumbDataUrl(file, maxW = 420) {
       URL.revokeObjectURL(url);
       resolve(dataUrl);
     };
-    img.onerror = (e) => {
-      URL.revokeObjectURL(url);
-      reject(e);
-    };
+    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
     img.src = url;
   });
 }
@@ -337,7 +325,6 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
 
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
   const chunks = [];
-
   recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
 
   const done = new Promise((resolve) => {
@@ -352,9 +339,6 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
 
     ctx.fillStyle = "#0b1220";
     ctx.fillRect(0, 0, w, h);
-
-    const zoomA = 1.02 - 0.02 * k;
-    const zoomB = 1.00 + 0.02 * k;
 
     function drawCover(img, zoom, alpha) {
       ctx.save();
@@ -373,8 +357,8 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
       ctx.restore();
     }
 
-    drawCover(imgA, zoomA, 1);
-    drawCover(imgB, zoomB, k);
+    drawCover(imgA, 1.02 - 0.02 * k, 1);
+    drawCover(imgB, 1.00 + 0.02 * k, k);
 
     await new Promise(r => setTimeout(r, 1000 / fps));
   }
@@ -471,7 +455,7 @@ btnZip.addEventListener("click", async () => {
   }
 });
 
-/* HISTORIAL */
+/* HISTORIAL (lista pro) */
 const HISTORY_KEY = "ulises_history_v2";
 
 function loadHistory() {
@@ -514,25 +498,27 @@ function renderHistory() {
     const title = (it.projectName || "").trim() || "Proyecto sin nombre";
 
     return `
-      <div class="histCard" data-id="${it.id}">
-        <div class="histMeta">
-          <div class="histDate">${escapeHtml(formatDate(it.ts))}</div>
-          <div class="histMode">${escapeHtml(it.mode || "—")}</div>
-        </div>
-
-        <p class="histTitle">${escapeHtml(title)}</p>
-
+      <div class="histRow" data-id="${it.id}">
         <div class="histThumbs">
-          <img class="histImg" src="${it.originalThumb || ""}" alt="Original (thumb)" />
+          <img class="histImg" src="${it.originalThumb || ""}" alt="Original" />
           <img class="histImg" src="${it.resultUrl || ""}" alt="Resultado" />
         </div>
 
-        <p class="histPrompt">${escapeHtml(short)}</p>
+        <div class="histInfo">
+          <div class="histTopLine">
+            <p class="histTitle">${escapeHtml(title)}</p>
+            <div class="histMeta">
+              <span class="histDate">${escapeHtml(formatDate(it.ts))}</span>
+              <span class="histMode">${escapeHtml(it.mode || "—")}</span>
+            </div>
+          </div>
+          <p class="histPrompt">${escapeHtml(short)}</p>
+        </div>
 
         <div class="histBtns">
-          <button class="ghost histUse" type="button">↩️ Usar proyecto</button>
-          <button class="ghost histOpen" type="button">🖼️ Abrir resultado</button>
-          <button class="ghost histDelete" type="button">🗑️ Borrar</button>
+          <button class="ghost btnMini histUse" type="button">↩️ Usar</button>
+          <button class="ghost btnMini histOpen" type="button">🖼️ Abrir</button>
+          <button class="ghost btnMini histDelete" type="button">🗑️</button>
         </div>
       </div>
     `;
@@ -540,10 +526,9 @@ function renderHistory() {
 
   historyList.querySelectorAll(".histUse").forEach(btn => {
     btn.addEventListener("click", (e) => {
-      const card = e.target.closest(".histCard");
-      const id = card?.getAttribute("data-id");
-      const items = loadHistory();
-      const it = items.find(x => x.id === id);
+      const row = e.target.closest(".histRow");
+      const id = row?.getAttribute("data-id");
+      const it = loadHistory().find(x => x.id === id);
       if (!it) return;
 
       proyectoEl.value = it.projectName || "";
@@ -555,10 +540,9 @@ function renderHistory() {
 
   historyList.querySelectorAll(".histOpen").forEach(btn => {
     btn.addEventListener("click", (e) => {
-      const card = e.target.closest(".histCard");
-      const id = card?.getAttribute("data-id");
-      const items = loadHistory();
-      const it = items.find(x => x.id === id);
+      const row = e.target.closest(".histRow");
+      const id = row?.getAttribute("data-id");
+      const it = loadHistory().find(x => x.id === id);
       if (!it?.resultUrl) return;
       window.open(it.resultUrl, "_blank");
     });
@@ -566,10 +550,9 @@ function renderHistory() {
 
   historyList.querySelectorAll(".histDelete").forEach(btn => {
     btn.addEventListener("click", (e) => {
-      const card = e.target.closest(".histCard");
-      const id = card?.getAttribute("data-id");
+      const row = e.target.closest(".histRow");
+      const id = row?.getAttribute("data-id");
       if (!id) return;
-
       const items = loadHistory().filter(x => x.id !== id);
       saveHistory(items);
       renderHistory();
@@ -664,6 +647,7 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
 
 
 

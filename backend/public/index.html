@@ -30,7 +30,6 @@
         Si querés marcar una zona exacta, usá Modo Paint.
       </p>
 
-      <!-- ✅ NUEVO: nombre del proyecto -->
       <label class="label" for="proyecto">Nombre del proyecto</label>
       <input id="proyecto" class="textInput" type="text" maxlength="60" placeholder="Ej: Barandas hierro - Casa Nordelta" />
 
@@ -148,7 +147,6 @@
             <img id="imagenResultado" class="imgResultadoSmall" alt="Resultado" style="display:none;" />
           </div>
 
-          <!-- 🎬 VIDEO + 📦 ZIP -->
           <div class="videoBlock">
             <div class="videoRow">
               <button id="btnVideo" class="ghost" type="button" disabled>🎬 Generar video (Original → Resultado)</button>
@@ -157,25 +155,24 @@
             </div>
 
             <p id="videoInfo" class="muted small" style="margin:8px 0 0;"></p>
-
             <video id="videoPreview" class="videoPreview" controls playsinline style="display:none;"></video>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- 🗂️ HISTORIAL -->
+    <!-- 🗂️ HISTORIAL (LISTA PRO) -->
     <section class="card">
       <div class="histHeader">
         <div>
-          <h2 style="margin:0;">Historial</h2>
+          <h2 style="margin:0;">Proyectos</h2>
           <p class="muted small" style="margin:6px 0 0;">
-            Se guarda en esta compu/celular. Podés volver a un pedido y ver el resultado.
+            Guardado local en este dispositivo. Tocá “Usar” para recuperar el nombre + el pedido.
           </p>
         </div>
 
         <div class="histActions">
-          <button id="btnClearHistory" class="ghost" type="button">🗑️ Borrar historial</button>
+          <button id="btnClearHistory" class="ghost" type="button">🗑️ Borrar todo</button>
         </div>
       </div>
 
@@ -188,12 +185,12 @@
       Proyecto experimental de diseño con inteligencia artificial
     </footer>
 
-    <!-- JSZip (para el ZIP) -->
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
     <script src="script.js"></script>
   </main>
 </body>
 </html>
+
 
 
 

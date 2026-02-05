@@ -103,6 +103,19 @@ textarea{
 }
 textarea:focus{ border-color: rgba(255,255,255,.28); }
 
+/* ✅ input nombre del proyecto */
+.textInput{
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(10,16,28,.55);
+  color: var(--text);
+  outline: none;
+}
+.textInput:focus{ border-color: rgba(255,255,255,.28); }
+
 .row{
   display:flex;
   gap: 10px;
@@ -201,7 +214,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   margin-top: 12px;
 }
 
-/* ====== RESULTADO EN BLOQUES + CHICO ====== */
+/* ====== RESULTADO EN BLOQUES ====== */
 .resultGrid{
   display:grid;
   gap:14px;
@@ -222,7 +235,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   white-space: pre-wrap;
   line-height: 1.55;
   margin: 0;
-  max-height: 300px;
+  max-height: 260px;
   overflow: auto;
   background: rgba(10,16,28,.25);
   border: 1px solid rgba(255,255,255,.14);
@@ -241,7 +254,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 .imgResultadoSmall{
   width: 100%;
   height: auto;
-  max-height: 360px;
+  max-height: 260px;
   object-fit: contain;
   display: block;
   border-radius: 12px;
@@ -274,7 +287,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   border-color: rgba(255,255,255,.28);
 }
 
-/* ====== MODO SIMPLE / PAINT (toggle) ====== */
+/* ====== MODO SIMPLE / PAINT ====== */
 .modeBar{
   display:flex;
   align-items:center;
@@ -401,28 +414,134 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   background: rgba(10,16,28,.25);
   max-height: 360px;
 }
-/* ✅ input nombre del proyecto */
-.textInput{
-  width: 100%;
-  padding: 12px;
-  font-size: 15px;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-  background: rgba(10,16,28,.55);
-  color: var(--text);
-  outline: none;
-}
-.textInput:focus{
-  border-color: rgba(255,255,255,.28);
+
+/* ====== HISTORIAL LISTA PRO ====== */
+.histHeader{
+  display:flex;
+  align-items:flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-/* ✅ nombre dentro del historial */
+.histActions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.historyList{
+  margin-top: 12px;
+  display:flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 360px;     /* ✅ no enorme */
+  overflow: auto;        /* ✅ scroll */
+  padding-right: 4px;
+}
+
+.histRow{
+  display:grid;
+  grid-template-columns: 112px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(10,16,28,.25);
+}
+
+@media (max-width: 700px){
+  .histRow{
+    grid-template-columns: 112px 1fr;
+    grid-template-rows: auto auto;
+  }
+  .histBtns{
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+.histThumbs{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.histImg{
+  width: 100%;
+  height: 74px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+}
+
+.histInfo{
+  min-width: 0;
+}
+
+.histTopLine{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
 .histTitle{
   font-weight: 900;
-  margin: 0 0 6px;
+  margin: 0;
   font-size: 14px;
   letter-spacing: .2px;
 }
+
+.histMeta{
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  flex-wrap: wrap;
+}
+
+.histDate{
+  color: rgba(234,240,255,.70);
+  font-size: 12px;
+}
+
+.histMode{
+  font-size: 12px;
+  color: rgba(234,240,255,.85);
+  border: 1px solid rgba(255,255,255,.16);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(10,16,28,.25);
+}
+
+.histPrompt{
+  color: rgba(234,240,255,.80);
+  font-size: 13px;
+  line-height: 1.35;
+  margin: 4px 0 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;        /* ✅ cortito */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.histBtns{
+  display:flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btnMini{
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+
 
 
 
