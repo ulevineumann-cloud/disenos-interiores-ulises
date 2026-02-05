@@ -43,10 +43,21 @@ let videoBlobUrl = "";
 let currentOriginalThumb = "";
 
 /* =========================
-   MOBILE DRAWER HELPERS
+   MOBILE DRAWER HELPERS + SCROLL LOCK
 ========================= */
 function isMobile() {
   return window.matchMedia("(max-width: 980px)").matches;
+}
+
+let _prevBodyOverflow = "";
+
+function lockBodyScroll() {
+  _prevBodyOverflow = document.body.style.overflow || "";
+  document.body.style.overflow = "hidden";
+}
+
+function unlockBodyScroll() {
+  document.body.style.overflow = _prevBodyOverflow;
 }
 
 function openSidebarDrawer() {
@@ -54,12 +65,14 @@ function openSidebarDrawer() {
   sidebarEl.classList.add("open");
   sidebarOverlay.classList.add("show");
   sidebarOverlay.setAttribute("aria-hidden", "false");
+  lockBodyScroll();
 }
 
 function closeSidebarDrawer() {
   sidebarEl.classList.remove("open");
   sidebarOverlay.classList.remove("show");
   sidebarOverlay.setAttribute("aria-hidden", "true");
+  unlockBodyScroll();
 }
 
 btnOpenSidebar?.addEventListener("click", openSidebarDrawer);
@@ -71,7 +84,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("resize", () => {
-  // si salís de mobile a desktop, limpiamos estado drawer/overlay
+  // si salís de mobile a desktop, limpiamos drawer/overlay/scrolllock
   if (!isMobile()) {
     closeSidebarDrawer();
   }
@@ -80,7 +93,7 @@ window.addEventListener("resize", () => {
 /* =========================
    DESKTOP COLLAPSE (save state)
 ========================= */
-function setSidebarCollapsed(on){
+function setSidebarCollapsed(on) {
   // en mobile no usamos collapsed (drawer manda)
   if (isMobile()) return;
   sidebarEl.classList.toggle("collapsed", !!on);
@@ -107,7 +120,7 @@ applyCollapseFromStorage();
 /* =========================
    PRESETS
 ========================= */
-document.querySelectorAll("[data-preset]").forEach(btn => {
+document.querySelectorAll("[data-preset]").forEach((btn) => {
   btn.addEventListener("click", () => {
     textoEl.value = btn.getAttribute("data-preset") || "";
     textoEl.focus();
@@ -145,7 +158,9 @@ const pctx = paintCanvas.getContext("2d", { willReadFrequently: true });
 const maskCanvas = document.createElement("canvas");
 const mctx = maskCanvas.getContext("2d", { willReadFrequently: true });
 
-function setBrushUI() { brushVal.textContent = String(brush.value); }
+function setBrushUI() {
+  brushVal.textContent = String(brush.value);
+}
 setBrushUI();
 brush.addEventListener("input", setBrushUI);
 
@@ -245,8 +260,12 @@ paintCanvas.addEventListener("pointermove", (e) => {
   renderOverlay();
 });
 
-paintCanvas.addEventListener("pointerup", () => { drawing = false; });
-paintCanvas.addEventListener("pointercancel", () => { drawing = false; });
+paintCanvas.addEventListener("pointerup", () => {
+  drawing = false;
+});
+paintCanvas.addEventListener("pointercancel", () => {
+  drawing = false;
+});
 
 function maskHasEdits() {
   if (!maskCanvas.width || !maskCanvas.height) return false;
@@ -293,7 +312,11 @@ function uid() {
 }
 
 function safeJsonParse(raw, fallback) {
-  try { return JSON.parse(raw); } catch { return fallback; }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
 }
 
 function loadProjects() {
@@ -315,18 +338,22 @@ function setCurrentProjectId(id) {
 }
 
 function findProjectById(list, id) {
-  return list.find(p => p.id === id) || null;
+  return list.find((p) => p.id === id) || null;
 }
 
 function formatDate(ts) {
-  try { return new Date(ts).toLocaleString(); } catch { return ""; }
+  try {
+    return new Date(ts).toLocaleString();
+  } catch {
+    return "";
+  }
 }
 
 function escapeHtml(s) {
   return String(s || "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;");
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
 }
 
 /* ===== Sidebar render ===== */
@@ -337,12 +364,12 @@ function projectThumb(p) {
 
 function lastMeta(p) {
   const up = p.updatedAt ? formatDate(p.updatedAt) : "";
-  const count = p.versions?.length || 0; // queda interno, no te obliga a mostrar versiones
+  const count = p.versions?.length || 0; // interno (no lo mostramos)
   return { count, up };
 }
 
 function sortProjects(list) {
-  return [...list].sort((a,b) => {
+  return [...list].sort((a, b) => {
     const fa = a.favorite ? 1 : 0;
     const fb = b.favorite ? 1 : 0;
     if (fa !== fb) return fb - fa;
@@ -355,19 +382,20 @@ function renderSidebar() {
   const currentId = getCurrentProjectId();
 
   let projects = sortProjects(loadProjects());
-  if (q) projects = projects.filter(p => (p.name || "").toLowerCase().includes(q));
+  if (q) projects = projects.filter((p) => (p.name || "").toLowerCase().includes(q));
 
   if (!projects.length) {
     projectList.innerHTML = `<div class="muted small">Todavía no hay proyectos.</div>`;
     return;
   }
 
-  projectList.innerHTML = projects.map(p => {
-    const active = p.id === currentId ? "active" : "";
-    const { up } = lastMeta(p);
-    const thumb = projectThumb(p);
+  projectList.innerHTML = projects
+    .map((p) => {
+      const active = p.id === currentId ? "active" : "";
+      const { up } = lastMeta(p);
+      const thumb = projectThumb(p);
 
-    return `
+      return `
       <div class="projRow ${active}" data-id="${p.id}">
         <img class="projThumb" src="${thumb}" alt="thumb" onerror="this.style.display='none'"/>
         <div class="projMain">
@@ -383,10 +411,11 @@ function renderSidebar() {
         </div>
       </div>
     `;
-  }).join("");
+    })
+    .join("");
 
   // click seleccionar
-  projectList.querySelectorAll(".projRow").forEach(row => {
+  projectList.querySelectorAll(".projRow").forEach((row) => {
     row.addEventListener("click", (e) => {
       const id = row.getAttribute("data-id");
       if (!id) return;
@@ -401,7 +430,7 @@ function renderSidebar() {
   });
 
   // favorito
-  projectList.querySelectorAll(".projFav").forEach(btn => {
+  projectList.querySelectorAll(".projFav").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const row = btn.closest(".projRow");
@@ -419,7 +448,7 @@ function renderSidebar() {
   });
 
   // borrar
-  projectList.querySelectorAll(".projDel").forEach(btn => {
+  projectList.querySelectorAll(".projDel").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const row = btn.closest(".projRow");
@@ -428,7 +457,7 @@ function renderSidebar() {
 
       if (!confirm("¿Borrar este proyecto y todas sus versiones?")) return;
 
-      let list = loadProjects().filter(p => p.id !== id);
+      let list = loadProjects().filter((p) => p.id !== id);
       saveProjects(list);
 
       if (getCurrentProjectId() === id) setCurrentProjectId(list[0]?.id || "");
@@ -457,7 +486,7 @@ function ensureSomeProject() {
     createdAt: Date.now(),
     updatedAt: Date.now(),
     favorite: false,
-    versions: []
+    versions: [],
   };
   saveProjects([p]);
   setCurrentProjectId(p.id);
@@ -467,12 +496,15 @@ function syncCurrentProjectUI() {
   const list = loadProjects();
   const p = findProjectById(list, getCurrentProjectId());
 
-  if (!p) { projHint.textContent = ""; return; }
+  if (!p) {
+    projHint.textContent = "";
+    return;
+  }
 
   if (!(proyectoEl.value || "").trim()) proyectoEl.value = p.name || "";
 
   const count = p.versions?.length || 0;
-  projHint.textContent = `Proyecto activo: "${p.name || "Proyecto sin nombre"}" · ${count} cambio${count===1?"":"s"} guardado${count===1?"":"s"}`;
+  projHint.textContent = `Proyecto activo: "${p.name || "Proyecto sin nombre"}" · ${count} cambio${count === 1 ? "" : "s"} guardado${count === 1 ? "" : "s"}`;
 }
 
 /* ===== Crear nuevo proyecto ===== */
@@ -489,7 +521,7 @@ btnNewProject.addEventListener("click", () => {
     createdAt: Date.now(),
     updatedAt: Date.now(),
     favorite: false,
-    versions: []
+    versions: [],
   };
 
   list.unshift(p);
@@ -562,7 +594,10 @@ function fileToThumbDataUrl(file, maxW = 420) {
       URL.revokeObjectURL(url);
       resolve(dataUrl);
     };
-    img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
     img.src = url;
   });
 }
@@ -575,8 +610,11 @@ inputImagen.addEventListener("change", async () => {
   resetVideoUI();
   resultadoUrlFinal = "";
 
-  try { currentOriginalThumb = await fileToThumbDataUrl(file); }
-  catch { currentOriginalThumb = ""; }
+  try {
+    currentOriginalThumb = await fileToThumbDataUrl(file);
+  } catch {
+    currentOriginalThumb = "";
+  }
 
   if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(file);
@@ -633,13 +671,13 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
   const frames = Math.floor(fps * seconds);
 
   const stream = canvas.captureStream(fps);
-  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-    ? "video/webm;codecs=vp9"
-    : "video/webm";
+  const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
 
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
   const chunks = [];
-  recorder.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+  recorder.ondataavailable = (e) => {
+    if (e.data && e.data.size) chunks.push(e.data);
+  };
 
   const done = new Promise((resolve) => {
     recorder.onstop = () => resolve(new Blob(chunks, { type: "video/webm" }));
@@ -674,7 +712,7 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
     drawCover(imgA, 1.02 - 0.02 * k, 1);
     drawCover(imgB, 1.00 + 0.02 * k, k);
 
-    await new Promise(r => setTimeout(r, 1000 / fps));
+    await new Promise((r) => setTimeout(r, 1000 / fps));
   }
 
   recorder.stop();
@@ -739,8 +777,7 @@ btnZip.addEventListener("click", async () => {
     const originalBlob = await fetchAsBlob(originalObjectUrl);
     const resultadoBlob = await fetchAsBlob(resultadoUrlFinal);
 
-    const extOriginal = (originalBlob.type.includes("png")) ? "png"
-      : (originalBlob.type.includes("webp")) ? "webp" : "jpg";
+    const extOriginal = originalBlob.type.includes("png") ? "png" : originalBlob.type.includes("webp") ? "webp" : "jpg";
 
     zip.file(`original.${extOriginal}`, originalBlob);
     zip.file("resultado.png", resultadoBlob);
@@ -770,7 +807,7 @@ btnZip.addEventListener("click", async () => {
 });
 
 /* =========================
-   GENERAR -> guarda un “cambio” en el proyecto (se guarda en versions, pero no lo mostramos)
+   GENERAR -> guarda un “cambio” en el proyecto (no lo mostramos)
 ========================= */
 boton.addEventListener("click", async () => {
   const texto = (textoEl.value || "").trim();
@@ -816,7 +853,9 @@ boton.addEventListener("click", async () => {
     const res = await fetch("/generar", { method: "POST", body: formData });
 
     let data = {};
-    try { data = await res.json(); } catch {}
+    try {
+      data = await res.json();
+    } catch {}
 
     if (!res.ok) throw new Error(data?.error || `Servidor respondió ${res.status}`);
 
@@ -864,6 +903,7 @@ boton.addEventListener("click", async () => {
 ensureSomeProject();
 syncCurrentProjectUI();
 renderSidebar();
+
 
 
 
