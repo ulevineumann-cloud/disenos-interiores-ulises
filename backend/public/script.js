@@ -19,9 +19,15 @@ const videoInfo = document.getElementById("videoInfo");
 // ZIP UI
 const btnZip = document.getElementById("btnZip");
 
+// Historial UI
+const historyList = document.getElementById("historyList");
+const btnClearHistory = document.getElementById("btnClearHistory");
+
+// Estado actual
 let originalObjectUrl = "";
 let resultadoUrlFinal = "";
 let videoBlobUrl = "";
+let currentOriginalThumb = ""; // miniatura base64 para historial
 
 // Presets
 document.querySelectorAll("[data-preset]").forEach(btn => {
@@ -60,6 +66,9 @@ const pctx = paintCanvas.getContext("2d", { willReadFrequently: true });
 const maskCanvas = document.createElement("canvas");
 const mctx = maskCanvas.getContext("2d", { willReadFrequently: true });
 
+/* =========================
+   Helpers UI
+========================= */
 function setLoading(on) {
   loader.style.display = on ? "block" : "none";
   boton.disabled = on;
@@ -101,6 +110,9 @@ btnClear.addEventListener("click", () => {
   renderOverlay();
 });
 
+/* =========================
+   Paint mask
+========================= */
 function clearMask() {
   // negro opaco = NO editable
   mctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
@@ -201,7 +213,7 @@ function maskHasEdits() {
   const imgData = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
   const data = imgData.data;
   for (let i = 3; i < data.length; i += 4) {
-    if (data[i] === 0) return true; // existe zona editable
+    if (data[i] === 0) return true;
   }
   return false;
 }
@@ -212,6 +224,9 @@ function maskBlobPNG() {
   });
 }
 
+/* =========================
+   Mode toggle
+========================= */
 function setMode(paintOn) {
   usePaint.checked = !!paintOn;
 
@@ -231,12 +246,53 @@ btnModeSimple.addEventListener("click", () => setMode(false));
 btnModePaint.addEventListener("click", () => setMode(true));
 setMode(false);
 
-inputImagen.addEventListener("change", () => {
+/* =========================
+   Thumbnail (para historial)
+========================= */
+function fileToThumbDataUrl(file, maxW = 420) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      const outW = Math.min(maxW, w);
+      const outH = Math.round((outW / w) * h);
+
+      const c = document.createElement("canvas");
+      c.width = outW;
+      c.height = outH;
+      const ctx = c.getContext("2d");
+      ctx.drawImage(img, 0, 0, outW, outH);
+
+      const dataUrl = c.toDataURL("image/jpeg", 0.82);
+      URL.revokeObjectURL(url);
+      resolve(dataUrl);
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
+  });
+}
+
+/* =========================
+   Input image
+========================= */
+inputImagen.addEventListener("change", async () => {
   const file = inputImagen.files?.[0];
   if (!file) return;
 
   resetVideoUI();
   resultadoUrlFinal = "";
+
+  // miniatura para historial
+  try {
+    currentOriginalThumb = await fileToThumbDataUrl(file);
+  } catch {
+    currentOriginalThumb = "";
+  }
 
   if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(file);
@@ -259,7 +315,7 @@ window.addEventListener("resize", () => {
 });
 
 /* =========================
-   🎬 VIDEO (crossfade)
+   🎬 VIDEO
 ========================= */
 function loadImg(src) {
   return new Promise((resolve, reject) => {
@@ -374,7 +430,7 @@ btnVideo.addEventListener("click", async () => {
 });
 
 /* =========================
-   📦 ZIP (pack cliente)
+   📦 ZIP
 ========================= */
 async function fetchAsBlob(url) {
   const r = await fetch(url);
@@ -433,6 +489,127 @@ btnZip.addEventListener("click", async () => {
   }
 });
 
+/* =========================
+   🗂️ HISTORIAL (localStorage)
+========================= */
+const HISTORY_KEY = "ulises_history_v1";
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveHistory(list) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(list));
+}
+
+function formatDate(ts) {
+  try {
+    return new Date(ts).toLocaleString();
+  } catch {
+    return String(ts);
+  }
+}
+
+function escapeHtml(s) {
+  return String(s || "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;");
+}
+
+function renderHistory() {
+  const items = loadHistory();
+
+  if (!items.length) {
+    historyList.innerHTML = `<p class="muted">Todavía no hay proyectos guardados.</p>`;
+    return;
+  }
+
+  historyList.innerHTML = items.map(it => {
+    const p = (it.prompt || "").trim();
+    const short = p.length > 140 ? p.slice(0, 140) + "…" : p;
+
+    return `
+      <div class="histCard" data-id="${it.id}">
+        <div class="histMeta">
+          <div class="histDate">${escapeHtml(formatDate(it.ts))}</div>
+          <div class="histMode">${escapeHtml(it.mode || "—")}</div>
+        </div>
+
+        <div class="histThumbs">
+          <img class="histImg" src="${it.originalThumb || ""}" alt="Original (thumb)" />
+          <img class="histImg" src="${it.resultUrl || ""}" alt="Resultado" />
+        </div>
+
+        <p class="histPrompt">${escapeHtml(short)}</p>
+
+        <div class="histBtns">
+          <button class="ghost histUse" type="button">↩️ Usar pedido</button>
+          <button class="ghost histOpen" type="button">🖼️ Abrir resultado</button>
+          <button class="ghost histDelete" type="button">🗑️ Borrar</button>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // events
+  historyList.querySelectorAll(".histUse").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const card = e.target.closest(".histCard");
+      const id = card?.getAttribute("data-id");
+      const items = loadHistory();
+      const it = items.find(x => x.id === id);
+      if (!it) return;
+
+      textoEl.value = it.prompt || "";
+      textoEl.focus();
+      setMode(false); // simple por defecto
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  });
+
+  historyList.querySelectorAll(".histOpen").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const card = e.target.closest(".histCard");
+      const id = card?.getAttribute("data-id");
+      const items = loadHistory();
+      const it = items.find(x => x.id === id);
+      if (!it?.resultUrl) return;
+      window.open(it.resultUrl, "_blank");
+    });
+  });
+
+  historyList.querySelectorAll(".histDelete").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const card = e.target.closest(".histCard");
+      const id = card?.getAttribute("data-id");
+      if (!id) return;
+
+      const items = loadHistory().filter(x => x.id !== id);
+      saveHistory(items);
+      renderHistory();
+    });
+  });
+}
+
+btnClearHistory.addEventListener("click", () => {
+  if (!confirm("¿Borrar todo el historial?")) return;
+  localStorage.removeItem(HISTORY_KEY);
+  renderHistory();
+});
+
+// pintar historial al cargar
+renderHistory();
+
+/* =========================
+   GENERAR (IA)
+========================= */
 boton.addEventListener("click", async () => {
   const texto = (textoEl.value || "").trim();
   const imagen = inputImagen.files?.[0];
@@ -457,7 +634,9 @@ boton.addEventListener("click", async () => {
     formData.append("texto", texto);
     formData.append("imagen", imagen);
 
-    if (usePaint.checked) {
+    const paintOn = usePaint.checked;
+
+    if (paintOn) {
       if (!imgNaturalW) return niceError("Esperá que cargue la imagen.");
       if (!maskHasEdits()) return niceError("Pintá una zona: la IA solo va a modificar lo pintado.");
       const mb = await maskBlobPNG();
@@ -483,6 +662,23 @@ boton.addEventListener("click", async () => {
       btnVideo.disabled = false;
       btnZip.disabled = false;
       videoInfo.textContent = "Podés generar el video o descargar el pack ZIP.";
+
+      // ✅ Guardar en historial (miniatura original + resultado + prompt + fecha + modo)
+      const entry = {
+        id: String(Date.now()),
+        ts: Date.now(),
+        prompt: texto,
+        mode: paintOn ? "PAINT" : "SIMPLE",
+        originalThumb: currentOriginalThumb || "",
+        resultUrl: data.imagenUrl, // guardamos sin cache-buster
+      };
+
+      const list = loadHistory();
+      list.unshift(entry);
+      // limitamos para no inflar
+      const limited = list.slice(0, 20);
+      saveHistory(limited);
+      renderHistory();
     }
 
     estado.textContent = "Listo ✅";
@@ -493,6 +689,7 @@ boton.addEventListener("click", async () => {
     setLoading(false);
   }
 });
+
 
 
 
