@@ -1,3 +1,21 @@
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// servir archivos públicos
+app.use(express.static(path.join(__dirname, "public")));
+
+// forzar robots.txt explícito (CLAVE)
+app.get("/robots.txt", (req, res) => {
+  res.type("text/plain");
+  res.send(`User-agent: *
+Allow: /
+
+Sitemap: https://disenos-interiores-ulises.onrender.com/sitemap.xml`);
+});
+
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
