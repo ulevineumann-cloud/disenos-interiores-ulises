@@ -1,39 +1,40 @@
-import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
+const express = require("express");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Fix __dirname con ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Paths
+const publicPath = path.join(__dirname, "public");
 
-// ====== MIDDLEWARES ======
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ====== ARCHIVOS ESTÁTICOS (CLAVE) ======
-app.use(express.static(path.join(__dirname, "public")));
-
-// ====== ROBOTS.TXT FORZADO (CLAVE PARA GOOGLE) ======
+// ✅ Robots FORZADO (lo primero, así Google lo lee sí o sí)
 app.get("/robots.txt", (req, res) => {
   res.type("text/plain");
-  res.send(`User-agent: *
+  res.send(
+`User-agent: *
 Allow: /
 
-Sitemap: https://disenos-interiores-ulises.onrender.com/sitemap.xml`);
+Sitemap: https://disenos-interiores-ulises.onrender.com/sitemap.xml`
+  );
 });
 
-// ====== HOME ======
+// ✅ Servir estáticos
+app.use(express.static(publicPath));
+
+// Home
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(publicPath, "index.html"));
 });
 
-// ====== START SERVER ======
+// Start
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en puerto ${PORT}`);
 });
+
 
 
 
