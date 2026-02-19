@@ -181,6 +181,9 @@ REGLA #4:
 );
 
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+app.get("/app", basicAuth, (req, res) => {
+  res.sendFile(path.join(publicPath, "app.html"));
+});
 
 
 

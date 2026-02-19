@@ -614,4 +614,14 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   background: rgba(10,16,28,.25);
   max-height: 360px;
 }
+.landingRow { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-top:12px; }
+.landingPreview { width:220px; max-width:100%; border-radius:12px; border:1px solid rgba(255,255,255,.15); }
+.landingCtas { display:flex; flex-direction:column; gap:8px; }
+
+.bullets { margin: 10px 0 0; padding-left: 18px; }
+.bullets li { margin: 8px 0; }
+
+.ctaRow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.primaryLink { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding: 10px 14px; border-radius: 12px; background: #ffffff; color: #111; font-weight: 700; text-decoration: none; }
+.primaryLink:hover { transform: translateY(-1px); }
 
