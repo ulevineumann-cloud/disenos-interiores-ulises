@@ -624,4 +624,38 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 .ctaRow { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
 .primaryLink { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding: 10px 14px; border-radius: 12px; background: #ffffff; color: #111; font-weight: 700; text-decoration: none; }
 .primaryLink:hover { transform: translateY(-1px); }
+.heroSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 40px;
+}
 
+.heroText {
+  flex: 1;
+}
+
+.heroImage {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.heroImage img {
+  width: 100%;
+  max-width: 420px; /* controla tamaño */
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .heroSection {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroImage img {
+    max-width: 100%;
+  }
+}
