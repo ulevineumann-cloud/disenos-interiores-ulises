@@ -628,3 +628,18 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   text-decoration:none;
 }
 .ghostLinkBtn:hover{ border-color: rgba(255,255,255,.28); }
+/* ===== PREVIEW EN LANDING ===== */
+.landingRow{
+  margin-top: 12px;
+  display:flex;
+  justify-content:flex-start;
+}
+
+.landingPreview{
+  width: 100%;
+  max-width: 360px; /* tamaño */
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 18px 45px rgba(0,0,0,.35);
+}
