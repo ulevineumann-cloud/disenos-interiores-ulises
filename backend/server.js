@@ -32,7 +32,8 @@ app.get("/robots.txt", (req, res) => {
   res.send(`User-agent: *
 Allow: /
 
-Sitemap: ${BASE_URL}/sitemap.xml`);
+Sitemap: https://disenos-interiores-ulises.onrender.com/sitemap.xml`);
+
 });
 
 // ===== STATIC =====
