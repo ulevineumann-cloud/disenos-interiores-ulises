@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://https://disenos-interiores-ulises.onrender.com/sitemap.xml
