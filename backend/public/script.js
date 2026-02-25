@@ -12,6 +12,9 @@ const textoEl = document.getElementById("texto");
 const proyectoEl = document.getElementById("proyecto");
 const projHint = document.getElementById("projHint");
 
+// NUEVO: botón iteración
+const btnUseResult = document.getElementById("btnUseResult");
+
 // Sidebar UI
 const btnNewProject = document.getElementById("btnNewProject");
 const projectSearch = document.getElementById("projectSearch");
@@ -84,7 +87,6 @@ document.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("resize", () => {
-  // si salís de mobile a desktop, limpiamos drawer/overlay/scrolllock
   if (!isMobile()) {
     closeSidebarDrawer();
   }
@@ -94,7 +96,6 @@ window.addEventListener("resize", () => {
    DESKTOP COLLAPSE (save state)
 ========================= */
 function setSidebarCollapsed(on) {
-  // en mobile no usamos collapsed (drawer manda)
   if (isMobile()) return;
   sidebarEl.classList.toggle("collapsed", !!on);
   localStorage.setItem(SIDEBAR_KEY, on ? "1" : "0");
@@ -106,7 +107,6 @@ btnToggleSidebar?.addEventListener("click", () => {
   setSidebarCollapsed(!isCollapsed);
 });
 
-// aplicar estado guardado solo si no es mobile
 function applyCollapseFromStorage() {
   if (isMobile()) {
     sidebarEl.classList.remove("collapsed");
@@ -356,7 +356,6 @@ function escapeHtml(s) {
     .replaceAll(">", "&gt;");
 }
 
-/* ===== Sidebar render ===== */
 function projectThumb(p) {
   const last = p.versions?.[0] ? p.versions[0] : (p.versions?.[p.versions.length - 1] || null);
   return (last?.originalThumb || "") || "";
@@ -364,7 +363,7 @@ function projectThumb(p) {
 
 function lastMeta(p) {
   const up = p.updatedAt ? formatDate(p.updatedAt) : "";
-  const count = p.versions?.length || 0; // interno (no lo mostramos)
+  const count = p.versions?.length || 0;
   return { count, up };
 }
 
@@ -414,7 +413,6 @@ function renderSidebar() {
     })
     .join("");
 
-  // click seleccionar
   projectList.querySelectorAll(".projRow").forEach((row) => {
     row.addEventListener("click", (e) => {
       const id = row.getAttribute("data-id");
@@ -424,12 +422,10 @@ function renderSidebar() {
 
       selectProject(id);
 
-      // en mobile, al elegir proyecto cerramos el drawer
       if (isMobile()) closeSidebarDrawer();
     });
   });
 
-  // favorito
   projectList.querySelectorAll(".projFav").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -447,7 +443,6 @@ function renderSidebar() {
     });
   });
 
-  // borrar
   projectList.querySelectorAll(".projDel").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -535,6 +530,8 @@ btnNewProject.addEventListener("click", () => {
   resultadoUrlFinal = "";
   resetVideoUI();
 
+  if (btnUseResult) btnUseResult.disabled = true;
+
   proyectoEl.value = clean;
   syncCurrentProjectUI();
   renderSidebar();
@@ -609,6 +606,7 @@ inputImagen.addEventListener("change", async () => {
 
   resetVideoUI();
   resultadoUrlFinal = "";
+  if (btnUseResult) btnUseResult.disabled = true;
 
   try {
     currentOriginalThumb = await fileToThumbDataUrl(file);
@@ -635,6 +633,50 @@ window.addEventListener("resize", () => {
   if (!imgNaturalW) return;
   if (!usePaint.checked) return;
   resizeCanvasesToImage();
+});
+
+/* =========================
+   USAR RESULTADO COMO NUEVA BASE  ✅
+========================= */
+async function usarResultadoComoBase() {
+  const src = imagenResultadoEl?.src;
+  if (!src) return;
+
+  const resp = await fetch(src, { cache: "no-store" });
+  if (!resp.ok) throw new Error("No se pudo descargar el resultado");
+
+  const blob = await resp.blob();
+  const file = new File([blob], `base_${Date.now()}.png`, { type: blob.type || "image/png" });
+
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  inputImagen.files = dt.files;
+
+  resetVideoUI();
+  resultadoUrlFinal = "";
+  if (btnUseResult) btnUseResult.disabled = true;
+
+  if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
+  originalObjectUrl = URL.createObjectURL(file);
+
+  preview.src = originalObjectUrl;
+  preview.style.display = "block";
+
+  paintBase.onload = () => {
+    imgNaturalW = paintBase.naturalWidth;
+    imgNaturalH = paintBase.naturalHeight;
+    if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+  };
+  paintBase.src = originalObjectUrl;
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+btnUseResult?.addEventListener("click", () => {
+  usarResultadoComoBase().catch((err) => {
+    console.error(err);
+    alert("No se pudo usar el resultado como base. Probá recargar y de nuevo.");
+  });
 });
 
 /* VIDEO */
@@ -807,7 +849,7 @@ btnZip.addEventListener("click", async () => {
 });
 
 /* =========================
-   GENERAR -> guarda un “cambio” en el proyecto (no lo mostramos)
+   GENERAR -> guarda un “cambio” en el proyecto
 ========================= */
 boton.addEventListener("click", async () => {
   const texto = (textoEl.value || "").trim();
@@ -821,6 +863,7 @@ boton.addEventListener("click", async () => {
 
   resetVideoUI();
   resultadoUrlFinal = "";
+  if (btnUseResult) btnUseResult.disabled = true;
 
   if (!texto) return niceError("Escribí qué querés cambiar.");
   if (!imagen) return niceError("Seleccioná una imagen.");
@@ -872,6 +915,8 @@ boton.addEventListener("click", async () => {
       btnZip.disabled = false;
       videoInfo.textContent = "Podés generar el video o descargar el pack ZIP.";
 
+      if (btnUseResult) btnUseResult.disabled = false;
+
       const version = {
         id: uid(),
         ts: Date.now(),
@@ -903,7 +948,6 @@ boton.addEventListener("click", async () => {
 ensureSomeProject();
 syncCurrentProjectUI();
 renderSidebar();
-
 
 
 
