@@ -52,8 +52,11 @@ app.get("/robots.txt", (req, res) => {
   res.type("text/plain");
   res.send(`User-agent: *
 Allow: /
+Disallow: /app
+Disallow: /generar
 
-Sitemap: ${BASE_URL}/sitemap.xml`);
+Sitemap: ${BASE_URL}/sitemap.xml
+`);
 });
 
 // ✅ estáticos (IMPORTANTE: así /style.css y /script.js cargan bien)
