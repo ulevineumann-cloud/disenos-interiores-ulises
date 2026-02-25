@@ -223,6 +223,18 @@
                 <img id="imagenResultado" class="imgResultadoSmall" alt="Resultado" style="display:none;" />
               </div>
 
+              <!-- 🔥 Comparador Antes/Después -->
+              <div id="compareBox" class="compareBox" style="display:none;">
+                <div class="compareWrapper" id="compareWrapper">
+                  <img id="compareOriginal" class="compareImg" alt="Original" />
+                  <img id="compareResult" class="compareImg" alt="Resultado" />
+                  <div id="compareSlider" class="compareSlider" aria-hidden="true"></div>
+                </div>
+                <div class="muted small" style="margin-top:8px;">
+                  Arrastrá para comparar: <b>Original</b> ↔ <b>Resultado</b>
+                </div>
+              </div>
+
               <div class="row" style="margin-top:10px;">
                 <button id="btnUseResult" class="ghost" type="button" disabled>
                   🔁 Usar resultado como nueva base
@@ -245,15 +257,6 @@
               </div>
             </div>
           </div>
-        </section>
-
-        <!-- HISTORIAL PRO -->
-        <section class="card">
-          <h2>Historial de versiones</h2>
-          <p class="muted small">Tocá una versión para usarla como base. Podés borrar versiones.</p>
-
-          <!-- grid renderizado por JS -->
-          <div id="versionGrid" style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));"></div>
         </section>
 
         <footer class="footer">

@@ -1,3 +1,4 @@
+
 const boton = document.getElementById("generar");
 const estado = document.getElementById("estado");
 const loader = document.getElementById("loader");
@@ -12,13 +13,17 @@ const textoEl = document.getElementById("texto");
 const proyectoEl = document.getElementById("proyecto");
 const projHint = document.getElementById("projHint");
 
-// Botones pro
+// Botones iteración
 const btnUseResult = document.getElementById("btnUseResult");
 const btnBackToOriginal = document.getElementById("btnBackToOriginal");
 let originalBaseFile = null; // primera imagen subida (original real)
 
-// Historial UI
-const versionGrid = document.getElementById("versionGrid");
+// Comparador Antes/Después
+const compareBox = document.getElementById("compareBox");
+const compareWrapper = document.getElementById("compareWrapper");
+const compareOriginal = document.getElementById("compareOriginal");
+const compareResult = document.getElementById("compareResult");
+const compareSlider = document.getElementById("compareSlider");
 
 // Sidebar UI
 const btnNewProject = document.getElementById("btnNewProject");
@@ -453,7 +458,6 @@ function renderSidebar() {
       if (getCurrentProjectId() === id) setCurrentProjectId(list[0]?.id || "");
       syncCurrentProjectUI();
       renderSidebar();
-      renderVersionGrid();
     });
   });
 }
@@ -462,7 +466,6 @@ function selectProject(id) {
   setCurrentProjectId(id);
   syncCurrentProjectUI();
   renderSidebar();
-  renderVersionGrid();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -531,10 +534,11 @@ btnNewProject.addEventListener("click", () => {
   if (btnBackToOriginal) btnBackToOriginal.disabled = true;
   originalBaseFile = null;
 
+  hideCompare(); // comparador off
+
   proyectoEl.value = clean;
   syncCurrentProjectUI();
   renderSidebar();
-  renderVersionGrid();
 
   if (isMobile()) closeSidebarDrawer();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -599,6 +603,75 @@ function fileToThumbDataUrl(file, maxW = 420) {
   });
 }
 
+/* =========================
+   COMPARADOR (Antes/Después)
+========================= */
+let compareReady = false;
+
+function hideCompare() {
+  if (!compareBox) return;
+  compareBox.style.display = "none";
+}
+
+function showCompare(originalSrc, resultSrc) {
+  if (!compareBox || !compareOriginal || !compareResult) return;
+
+  compareOriginal.src = originalSrc || "";
+  compareResult.src = resultSrc || "";
+
+  compareBox.style.display = "block";
+
+  // inicializa listeners 1 sola vez
+  if (!compareReady) {
+    initCompareSlider();
+    compareReady = true;
+  }
+
+  // setea posición inicial al 50%
+  setComparePercent(50);
+}
+
+function setComparePercent(percent) {
+  if (!compareWrapper || !compareResult || !compareSlider) return;
+  const p = Math.max(0, Math.min(100, percent));
+  compareResult.style.clipPath = `inset(0 ${100 - p}% 0 0)`;
+  compareSlider.style.left = p + "%";
+}
+
+function initCompareSlider() {
+  if (!compareWrapper) return;
+
+  let dragging = false;
+
+  const updateFromClientX = (clientX) => {
+    const rect = compareWrapper.getBoundingClientRect();
+    let offset = clientX - rect.left;
+    offset = Math.max(0, Math.min(offset, rect.width));
+    const percent = (offset / rect.width) * 100;
+    setComparePercent(percent);
+  };
+
+  // Pointer events (sirve para mouse + touch)
+  compareWrapper.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    compareWrapper.setPointerCapture(e.pointerId);
+    updateFromClientX(e.clientX);
+  });
+
+  compareWrapper.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    updateFromClientX(e.clientX);
+  });
+
+  compareWrapper.addEventListener("pointerup", () => {
+    dragging = false;
+  });
+
+  compareWrapper.addEventListener("pointercancel", () => {
+    dragging = false;
+  });
+}
+
 /* Input image */
 inputImagen.addEventListener("change", async () => {
   const file = inputImagen.files?.[0];
@@ -610,6 +683,8 @@ inputImagen.addEventListener("change", async () => {
   resetVideoUI();
   resultadoUrlFinal = "";
   if (btnUseResult) btnUseResult.disabled = true;
+
+  hideCompare();
 
   try {
     currentOriginalThumb = await fileToThumbDataUrl(file);
@@ -661,12 +736,15 @@ function volverAlOriginal() {
   };
   paintBase.src = originalObjectUrl;
 
+  // limpiar resultado
   imagenResultadoEl.style.display = "none";
   imagenResultadoEl.src = "";
   resultadoUrlFinal = "";
 
   resetVideoUI();
   if (btnUseResult) btnUseResult.disabled = true;
+
+  hideCompare();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -706,6 +784,9 @@ async function usarResultadoComoBase() {
   };
   paintBase.src = originalObjectUrl;
 
+  // estás “arrancando de nuevo”, ocultamos comparador hasta que haya resultado nuevo
+  hideCompare();
+
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -714,146 +795,6 @@ btnUseResult?.addEventListener("click", () => {
     console.error(err);
     alert("No se pudo usar el resultado como base. Probá recargar y de nuevo.");
   });
-});
-
-/* =========================
-   HISTORIAL PRO (miniaturas + cargar + borrar)
-========================= */
-function getActiveProject() {
-  const projects = loadProjects();
-  const proj = findProjectById(projects, getCurrentProjectId());
-  return { projects, proj };
-}
-
-function shortText(s, n = 64) {
-  const t = (s || "").trim();
-  if (t.length <= n) return t;
-  return t.slice(0, n - 1) + "…";
-}
-
-async function loadUrlAsFile(src, filename = "base.png") {
-  const resp = await fetch(src, { cache: "no-store" });
-  if (!resp.ok) throw new Error("No se pudo descargar: " + src);
-  const blob = await resp.blob();
-  return new File([blob], filename, { type: blob.type || "image/png" });
-}
-
-async function setFileAsCurrentBase(file) {
-  const dt = new DataTransfer();
-  dt.items.add(file);
-  inputImagen.files = dt.files;
-
-  resetVideoUI();
-  resultadoUrlFinal = "";
-  if (btnUseResult) btnUseResult.disabled = true;
-
-  if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
-  originalObjectUrl = URL.createObjectURL(file);
-
-  preview.src = originalObjectUrl;
-  preview.style.display = "block";
-
-  paintBase.onload = () => {
-    imgNaturalW = paintBase.naturalWidth;
-    imgNaturalH = paintBase.naturalHeight;
-    if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
-  };
-  paintBase.src = originalObjectUrl;
-
-  imagenResultadoEl.style.display = "none";
-  imagenResultadoEl.src = "";
-  resultadoUrlFinal = "";
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-}
-
-function renderVersionGrid() {
-  if (!versionGrid) return;
-
-  const { proj } = getActiveProject();
-  const versions = proj?.versions || [];
-
-  if (!versions.length) {
-    versionGrid.innerHTML = `<div class="muted small">Todavía no hay versiones. Generá tu primer resultado.</div>`;
-    return;
-  }
-
-  versionGrid.innerHTML = versions.slice(0, 24).map(v => {
-    const thumb = v.resultUrl ? `${v.resultUrl}?v=${v.ts}` : "";
-    const when = v.ts ? new Date(v.ts).toLocaleString() : "";
-    const mode = v.mode || "";
-    const prompt = shortText(v.prompt, 72);
-
-    return `
-      <div class="panel" style="padding:12px;">
-        <div style="display:flex; gap:10px; align-items:flex-start;">
-          <div style="width:92px; flex:0 0 92px;">
-            ${thumb ? `
-              <img src="${thumb}" alt="ver" style="width:92px; height:72px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04);" />
-            ` : `
-              <div style="width:92px; height:72px; border-radius:10px; border:1px dashed rgba(255,255,255,.18); display:grid; place-items:center; color:rgba(234,240,255,.7); font-size:12px;">
-                sin img
-              </div>
-            `}
-          </div>
-
-          <div style="flex:1; min-width:0;">
-            <div class="muted small" style="margin-bottom:6px;">${escapeHtml(when)} · ${escapeHtml(mode)}</div>
-            <div style="font-weight:800; font-size:13px; line-height:1.25; margin-bottom:10px;">
-              ${escapeHtml(prompt || "(sin texto)")}
-            </div>
-
-            <div class="ctaRow" style="margin-top:0;">
-              <button class="ghost" type="button" data-action="use" data-id="${v.id}">🧩 Usar como base</button>
-              <button class="ghost" type="button" data-action="del" data-id="${v.id}">🗑️ Borrar</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join("");
-}
-
-// Delegación de eventos (más pro: no duplicás listeners)
-versionGrid?.addEventListener("click", async (e) => {
-  const btn = e.target?.closest?.("[data-action]");
-  if (!btn) return;
-
-  const action = btn.getAttribute("data-action");
-  const id = btn.getAttribute("data-id");
-  if (!action || !id) return;
-
-  const { projects, proj } = getActiveProject();
-  if (!proj) return;
-
-  const versions = proj.versions || [];
-  const ver = versions.find(v => v.id === id);
-  if (!ver) return;
-
-  if (action === "del") {
-    if (!confirm("¿Borrar esta versión?")) return;
-
-    proj.versions = versions.filter(v => v.id !== id);
-    proj.updatedAt = Date.now();
-    saveProjects(projects);
-
-    renderSidebar();
-    renderVersionGrid();
-    return;
-  }
-
-  if (action === "use") {
-    try {
-      if (!ver.resultUrl) return;
-
-      const src = `${ver.resultUrl}?v=${Date.now()}`;
-      const file = await loadUrlAsFile(src, `version_${Date.now()}.png`);
-      await setFileAsCurrentBase(file);
-    } catch (err) {
-      console.error(err);
-      alert("No se pudo cargar la versión. Probá de nuevo.");
-    }
-  }
 });
 
 /* VIDEO */
@@ -1042,6 +983,8 @@ boton.addEventListener("click", async () => {
   resultadoUrlFinal = "";
   if (btnUseResult) btnUseResult.disabled = true;
 
+  hideCompare();
+
   if (!texto) return niceError("Escribí qué querés cambiar.");
   if (!imagen) return niceError("Seleccioná una imagen.");
 
@@ -1092,6 +1035,10 @@ boton.addEventListener("click", async () => {
 
       if (btnUseResult) btnUseResult.disabled = false;
 
+      // 🔥 activar comparador usando original actual vs resultado
+      // (si querés que compare SIEMPRE contra la primer original, avisame y lo cambiamos)
+      showCompare(originalObjectUrl, url);
+
       const version = {
         id: uid(),
         ts: Date.now(),
@@ -1108,7 +1055,6 @@ boton.addEventListener("click", async () => {
       saveProjects(projects);
       syncCurrentProjectUI();
       renderSidebar();
-      renderVersionGrid();
     }
 
     estado.textContent = "Listo ✅";
@@ -1124,7 +1070,7 @@ boton.addEventListener("click", async () => {
 ensureSomeProject();
 syncCurrentProjectUI();
 renderSidebar();
-renderVersionGrid();
+
 
 
 
