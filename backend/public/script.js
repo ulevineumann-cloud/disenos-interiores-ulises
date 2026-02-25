@@ -1,4 +1,33 @@
 const boton = document.getElementById("generar");
+/* =========================
+   ESTILO - AUTO PROMPT
+========================= */
+
+const estiloColor = document.getElementById("estiloColor");
+const estiloMaterial = document.getElementById("estiloMaterial");
+const estiloNivel = document.getElementById("estiloNivel");
+const estiloLuz = document.getElementById("estiloLuz");
+const resetEstilo = document.getElementById("resetEstilo");
+
+function construirEstiloTexto() {
+  const partes = [];
+
+  if (estiloColor?.value) partes.push(`paleta ${estiloColor.value}`);
+  if (estiloMaterial?.value) partes.push(`material ${estiloMaterial.value}`);
+  if (estiloNivel?.value) partes.push(`estética ${estiloNivel.value}`);
+  if (estiloLuz?.value) partes.push(`iluminación ${estiloLuz.value}`);
+
+  if (!partes.length) return "";
+
+  return "Aplicar estilo general con " + partes.join(", ") + ".";
+}
+
+resetEstilo?.addEventListener("click", () => {
+  if (estiloColor) estiloColor.value = "";
+  if (estiloMaterial) estiloMaterial.value = "";
+  if (estiloNivel) estiloNivel.value = "";
+  if (estiloLuz) estiloLuz.value = "";
+});
 const estado = document.getElementById("estado");
 const loader = document.getElementById("loader");
 const modoInfo = document.getElementById("modoInfo");
@@ -994,7 +1023,11 @@ btnZip.addEventListener("click", async () => {
    GENERAR -> guarda versión
 ========================= */
 boton.addEventListener("click", async () => {
-  const texto = (textoEl.value || "").trim();
+  const textoBase = (textoEl.value || "").trim();
+const estiloExtra = construirEstiloTexto();
+const texto = estiloExtra
+  ? textoBase + " " + estiloExtra
+  : textoBase;
   const imagen = inputImagen.files?.[0];
 
   estado.textContent = "";
@@ -1036,7 +1069,7 @@ boton.addEventListener("click", async () => {
       const mb = await maskBlobPNG();
       formData.append("mask", mb, "mask.png");
     }
-
+    
     const res = await fetch("/generar", { method: "POST", body: formData });
 
     let data = {};
