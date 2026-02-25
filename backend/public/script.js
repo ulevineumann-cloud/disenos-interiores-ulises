@@ -1095,6 +1095,38 @@ ensureSomeProject();
 syncCurrentProjectUI();
 renderSidebar();
 
+document.getElementById("calcularEstilo").addEventListener("click", function () {
+  const color = document.getElementById("q-color").value;
+  const material = document.getElementById("q-material").value;
+  const estetica = document.getElementById("q-estetica").value;
+
+  const resultado = document.getElementById("resultadoEstilo");
+
+  if (!color || !material || !estetica) {
+    resultado.innerHTML = "⚠️ Respondé todas las preguntas.";
+    return;
+  }
+
+  let estilo = "";
+
+  if (color === "claro" && material === "madera" && estetica === "minimalista") {
+    estilo = "Japandi 🌿";
+  } 
+  else if (color === "oscuro" && material === "metal" && estetica === "cargado") {
+    estilo = "Industrial Moderno 🏭";
+  } 
+  else if (color === "claro" && material === "metal" && estetica === "minimalista") {
+    estilo = "Minimalismo Contemporáneo 🤍";
+  } 
+  else if (color === "oscuro" && material === "madera" && estetica === "cargado") {
+    estilo = "Rústico Elegante 🪵";
+  } 
+  else {
+    estilo = "Estilo Personalizado ✨";
+  }
+
+  resultado.innerHTML = `👉 Tu estilo es: <span style="color:#4ade80">${estilo}</span>`;
+});
 
 
 

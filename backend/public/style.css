@@ -708,3 +708,43 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   border: 1px solid rgba(255,255,255,.18);
   color: rgba(255,255,255,.92);
 }
+.style-test {
+  margin-top: 60px;
+  padding: 30px;
+  background: #111;
+  border-radius: 12px;
+}
+
+.style-test h2 {
+  margin-bottom: 20px;
+}
+
+.question {
+  margin-bottom: 20px;
+}
+
+.question select {
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  margin-top: 5px;
+}
+
+#calcularEstilo {
+  padding: 10px 20px;
+  background: #ffffff;
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#calcularEstilo:hover {
+  opacity: 0.85;
+}
+
+.resultado-estilo {
+  margin-top: 20px;
+  font-size: 18px;
+  font-weight: bold;
+}
