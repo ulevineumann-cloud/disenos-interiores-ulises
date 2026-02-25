@@ -14,6 +14,8 @@ const projHint = document.getElementById("projHint");
 
 // NUEVO: botón iteración
 const btnUseResult = document.getElementById("btnUseResult");
+const btnBackToOriginal = document.getElementById("btnBackToOriginal");                                                 
+let originalBaseFile = null; // guarda la primera imagen original
 
 // Sidebar UI
 const btnNewProject = document.getElementById("btnNewProject");
@@ -602,6 +604,8 @@ function fileToThumbDataUrl(file, maxW = 420) {
 /* Input image */
 inputImagen.addEventListener("change", async () => {
   const file = inputImagen.files?.[0];
+  originalBaseFile = file; // guardamos la original real
+if (btnBackToOriginal) btnBackToOriginal.disabled = false;
   if (!file) return;
 
   resetVideoUI();
@@ -671,6 +675,41 @@ async function usarResultadoComoBase() {
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
+/* =========================
+   VOLVER AL ORIGINAL
+========================= */
+function volverAlOriginal() {
+  if (!originalBaseFile) return;
+
+  const dt = new DataTransfer();
+  dt.items.add(originalBaseFile);
+  inputImagen.files = dt.files;
+
+  if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
+  originalObjectUrl = URL.createObjectURL(originalBaseFile);
+
+  preview.src = originalObjectUrl;
+  preview.style.display = "block";
+
+  paintBase.onload = () => {
+    imgNaturalW = paintBase.naturalWidth;
+    imgNaturalH = paintBase.naturalHeight;
+    if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+  };
+  paintBase.src = originalObjectUrl;
+
+  // limpiar resultado
+  imagenResultadoEl.style.display = "none";
+  imagenResultadoEl.src = "";
+  resultadoUrlFinal = "";
+
+  resetVideoUI();
+  if (btnUseResult) btnUseResult.disabled = true;
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+btnBackToOriginal?.addEventListener("click", volverAlOriginal);
 
 btnUseResult?.addEventListener("click", () => {
   usarResultadoComoBase().catch((err) => {
