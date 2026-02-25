@@ -12,10 +12,13 @@ const textoEl = document.getElementById("texto");
 const proyectoEl = document.getElementById("proyecto");
 const projHint = document.getElementById("projHint");
 
-// NUEVO: botón iteración
+// Botones pro
 const btnUseResult = document.getElementById("btnUseResult");
-const btnBackToOriginal = document.getElementById("btnBackToOriginal");                                                 
-let originalBaseFile = null; // guarda la primera imagen original
+const btnBackToOriginal = document.getElementById("btnBackToOriginal");
+let originalBaseFile = null; // primera imagen subida (original real)
+
+// Historial UI
+const versionGrid = document.getElementById("versionGrid");
 
 // Sidebar UI
 const btnNewProject = document.getElementById("btnNewProject");
@@ -89,9 +92,7 @@ document.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("resize", () => {
-  if (!isMobile()) {
-    closeSidebarDrawer();
-  }
+  if (!isMobile()) closeSidebarDrawer();
 });
 
 /* =========================
@@ -314,11 +315,7 @@ function uid() {
 }
 
 function safeJsonParse(raw, fallback) {
-  try {
-    return JSON.parse(raw);
-  } catch {
-    return fallback;
-  }
+  try { return JSON.parse(raw); } catch { return fallback; }
 }
 
 function loadProjects() {
@@ -344,11 +341,7 @@ function findProjectById(list, id) {
 }
 
 function formatDate(ts) {
-  try {
-    return new Date(ts).toLocaleString();
-  } catch {
-    return "";
-  }
+  try { return new Date(ts).toLocaleString(); } catch { return ""; }
 }
 
 function escapeHtml(s) {
@@ -358,6 +351,7 @@ function escapeHtml(s) {
     .replaceAll(">", "&gt;");
 }
 
+/* ===== Sidebar render ===== */
 function projectThumb(p) {
   const last = p.versions?.[0] ? p.versions[0] : (p.versions?.[p.versions.length - 1] || null);
   return (last?.originalThumb || "") || "";
@@ -423,7 +417,6 @@ function renderSidebar() {
       if (e.target?.classList?.contains("projFav") || e.target?.classList?.contains("projDel")) return;
 
       selectProject(id);
-
       if (isMobile()) closeSidebarDrawer();
     });
   });
@@ -460,6 +453,7 @@ function renderSidebar() {
       if (getCurrentProjectId() === id) setCurrentProjectId(list[0]?.id || "");
       syncCurrentProjectUI();
       renderSidebar();
+      renderVersionGrid();
     });
   });
 }
@@ -468,6 +462,7 @@ function selectProject(id) {
   setCurrentProjectId(id);
   syncCurrentProjectUI();
   renderSidebar();
+  renderVersionGrid();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -533,10 +528,13 @@ btnNewProject.addEventListener("click", () => {
   resetVideoUI();
 
   if (btnUseResult) btnUseResult.disabled = true;
+  if (btnBackToOriginal) btnBackToOriginal.disabled = true;
+  originalBaseFile = null;
 
   proyectoEl.value = clean;
   syncCurrentProjectUI();
   renderSidebar();
+  renderVersionGrid();
 
   if (isMobile()) closeSidebarDrawer();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -604,9 +602,10 @@ function fileToThumbDataUrl(file, maxW = 420) {
 /* Input image */
 inputImagen.addEventListener("change", async () => {
   const file = inputImagen.files?.[0];
-  originalBaseFile = file; // guardamos la original real
-if (btnBackToOriginal) btnBackToOriginal.disabled = false;
   if (!file) return;
+
+  originalBaseFile = file;
+  if (btnBackToOriginal) btnBackToOriginal.disabled = false;
 
   resetVideoUI();
   resultadoUrlFinal = "";
@@ -640,7 +639,41 @@ window.addEventListener("resize", () => {
 });
 
 /* =========================
-   USAR RESULTADO COMO NUEVA BASE  ✅
+   VOLVER AL ORIGINAL
+========================= */
+function volverAlOriginal() {
+  if (!originalBaseFile) return;
+
+  const dt = new DataTransfer();
+  dt.items.add(originalBaseFile);
+  inputImagen.files = dt.files;
+
+  if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
+  originalObjectUrl = URL.createObjectURL(originalBaseFile);
+
+  preview.src = originalObjectUrl;
+  preview.style.display = "block";
+
+  paintBase.onload = () => {
+    imgNaturalW = paintBase.naturalWidth;
+    imgNaturalH = paintBase.naturalHeight;
+    if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+  };
+  paintBase.src = originalObjectUrl;
+
+  imagenResultadoEl.style.display = "none";
+  imagenResultadoEl.src = "";
+  resultadoUrlFinal = "";
+
+  resetVideoUI();
+  if (btnUseResult) btnUseResult.disabled = true;
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+btnBackToOriginal?.addEventListener("click", volverAlOriginal);
+
+/* =========================
+   USAR RESULTADO COMO NUEVA BASE
 ========================= */
 async function usarResultadoComoBase() {
   const src = imagenResultadoEl?.src;
@@ -675,18 +708,47 @@ async function usarResultadoComoBase() {
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
-/* =========================
-   VOLVER AL ORIGINAL
-========================= */
-function volverAlOriginal() {
-  if (!originalBaseFile) return;
 
+btnUseResult?.addEventListener("click", () => {
+  usarResultadoComoBase().catch((err) => {
+    console.error(err);
+    alert("No se pudo usar el resultado como base. Probá recargar y de nuevo.");
+  });
+});
+
+/* =========================
+   HISTORIAL PRO (miniaturas + cargar + borrar)
+========================= */
+function getActiveProject() {
+  const projects = loadProjects();
+  const proj = findProjectById(projects, getCurrentProjectId());
+  return { projects, proj };
+}
+
+function shortText(s, n = 64) {
+  const t = (s || "").trim();
+  if (t.length <= n) return t;
+  return t.slice(0, n - 1) + "…";
+}
+
+async function loadUrlAsFile(src, filename = "base.png") {
+  const resp = await fetch(src, { cache: "no-store" });
+  if (!resp.ok) throw new Error("No se pudo descargar: " + src);
+  const blob = await resp.blob();
+  return new File([blob], filename, { type: blob.type || "image/png" });
+}
+
+async function setFileAsCurrentBase(file) {
   const dt = new DataTransfer();
-  dt.items.add(originalBaseFile);
+  dt.items.add(file);
   inputImagen.files = dt.files;
 
+  resetVideoUI();
+  resultadoUrlFinal = "";
+  if (btnUseResult) btnUseResult.disabled = true;
+
   if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
-  originalObjectUrl = URL.createObjectURL(originalBaseFile);
+  originalObjectUrl = URL.createObjectURL(file);
 
   preview.src = originalObjectUrl;
   preview.style.display = "block";
@@ -698,24 +760,100 @@ function volverAlOriginal() {
   };
   paintBase.src = originalObjectUrl;
 
-  // limpiar resultado
   imagenResultadoEl.style.display = "none";
   imagenResultadoEl.src = "";
   resultadoUrlFinal = "";
 
-  resetVideoUI();
-  if (btnUseResult) btnUseResult.disabled = true;
-
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-btnBackToOriginal?.addEventListener("click", volverAlOriginal);
+function renderVersionGrid() {
+  if (!versionGrid) return;
 
-btnUseResult?.addEventListener("click", () => {
-  usarResultadoComoBase().catch((err) => {
-    console.error(err);
-    alert("No se pudo usar el resultado como base. Probá recargar y de nuevo.");
-  });
+  const { proj } = getActiveProject();
+  const versions = proj?.versions || [];
+
+  if (!versions.length) {
+    versionGrid.innerHTML = `<div class="muted small">Todavía no hay versiones. Generá tu primer resultado.</div>`;
+    return;
+  }
+
+  versionGrid.innerHTML = versions.slice(0, 24).map(v => {
+    const thumb = v.resultUrl ? `${v.resultUrl}?v=${v.ts}` : "";
+    const when = v.ts ? new Date(v.ts).toLocaleString() : "";
+    const mode = v.mode || "";
+    const prompt = shortText(v.prompt, 72);
+
+    return `
+      <div class="panel" style="padding:12px;">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="width:92px; flex:0 0 92px;">
+            ${thumb ? `
+              <img src="${thumb}" alt="ver" style="width:92px; height:72px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04);" />
+            ` : `
+              <div style="width:92px; height:72px; border-radius:10px; border:1px dashed rgba(255,255,255,.18); display:grid; place-items:center; color:rgba(234,240,255,.7); font-size:12px;">
+                sin img
+              </div>
+            `}
+          </div>
+
+          <div style="flex:1; min-width:0;">
+            <div class="muted small" style="margin-bottom:6px;">${escapeHtml(when)} · ${escapeHtml(mode)}</div>
+            <div style="font-weight:800; font-size:13px; line-height:1.25; margin-bottom:10px;">
+              ${escapeHtml(prompt || "(sin texto)")}
+            </div>
+
+            <div class="ctaRow" style="margin-top:0;">
+              <button class="ghost" type="button" data-action="use" data-id="${v.id}">🧩 Usar como base</button>
+              <button class="ghost" type="button" data-action="del" data-id="${v.id}">🗑️ Borrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// Delegación de eventos (más pro: no duplicás listeners)
+versionGrid?.addEventListener("click", async (e) => {
+  const btn = e.target?.closest?.("[data-action]");
+  if (!btn) return;
+
+  const action = btn.getAttribute("data-action");
+  const id = btn.getAttribute("data-id");
+  if (!action || !id) return;
+
+  const { projects, proj } = getActiveProject();
+  if (!proj) return;
+
+  const versions = proj.versions || [];
+  const ver = versions.find(v => v.id === id);
+  if (!ver) return;
+
+  if (action === "del") {
+    if (!confirm("¿Borrar esta versión?")) return;
+
+    proj.versions = versions.filter(v => v.id !== id);
+    proj.updatedAt = Date.now();
+    saveProjects(projects);
+
+    renderSidebar();
+    renderVersionGrid();
+    return;
+  }
+
+  if (action === "use") {
+    try {
+      if (!ver.resultUrl) return;
+
+      const src = `${ver.resultUrl}?v=${Date.now()}`;
+      const file = await loadUrlAsFile(src, `version_${Date.now()}.png`);
+      await setFileAsCurrentBase(file);
+    } catch (err) {
+      console.error(err);
+      alert("No se pudo cargar la versión. Probá de nuevo.");
+    }
+  }
 });
 
 /* VIDEO */
@@ -888,7 +1026,7 @@ btnZip.addEventListener("click", async () => {
 });
 
 /* =========================
-   GENERAR -> guarda un “cambio” en el proyecto
+   GENERAR -> guarda versión
 ========================= */
 boton.addEventListener("click", async () => {
   const texto = (textoEl.value || "").trim();
@@ -935,9 +1073,7 @@ boton.addEventListener("click", async () => {
     const res = await fetch("/generar", { method: "POST", body: formData });
 
     let data = {};
-    try {
-      data = await res.json();
-    } catch {}
+    try { data = await res.json(); } catch {}
 
     if (!res.ok) throw new Error(data?.error || `Servidor respondió ${res.status}`);
 
@@ -972,6 +1108,7 @@ boton.addEventListener("click", async () => {
       saveProjects(projects);
       syncCurrentProjectUI();
       renderSidebar();
+      renderVersionGrid();
     }
 
     estado.textContent = "Listo ✅";
@@ -987,6 +1124,7 @@ boton.addEventListener("click", async () => {
 ensureSomeProject();
 syncCurrentProjectUI();
 renderSidebar();
+renderVersionGrid();
 
 
 

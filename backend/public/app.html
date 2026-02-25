@@ -206,6 +206,7 @@
           <p class="muted small">Tip: pintá solo el objeto/zona a cambiar. Si pintás de más, la IA puede tocar de más.</p>
         </section>
 
+        <!-- RESULTADO -->
         <section class="card">
           <h2>Resultado</h2>
 
@@ -222,13 +223,15 @@
                 <img id="imagenResultado" class="imgResultadoSmall" alt="Resultado" style="display:none;" />
               </div>
 
-              <button id="btnUseResult" class="ghost" type="button" disabled>
-  🔁 Usar resultado como nueva base
-</button>
+              <div class="row" style="margin-top:10px;">
+                <button id="btnUseResult" class="ghost" type="button" disabled>
+                  🔁 Usar resultado como nueva base
+                </button>
 
-<button id="btnBackToOriginal" class="ghost" type="button" disabled>
-  ↩ Volver al original
-</button>
+                <button id="btnBackToOriginal" class="ghost" type="button" disabled>
+                  ↩ Volver al original
+                </button>
+              </div>
 
               <div class="videoBlock">
                 <div class="videoRow">
@@ -242,6 +245,15 @@
               </div>
             </div>
           </div>
+        </section>
+
+        <!-- HISTORIAL PRO -->
+        <section class="card">
+          <h2>Historial de versiones</h2>
+          <p class="muted small">Tocá una versión para usarla como base. Podés borrar versiones.</p>
+
+          <!-- grid renderizado por JS -->
+          <div id="versionGrid" style="display:grid; gap:12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));"></div>
         </section>
 
         <footer class="footer">
