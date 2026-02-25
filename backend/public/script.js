@@ -1,4 +1,3 @@
-
 const boton = document.getElementById("generar");
 const estado = document.getElementById("estado");
 const loader = document.getElementById("loader");
@@ -488,19 +487,44 @@ function ensureSomeProject() {
 }
 
 function syncCurrentProjectUI() {
-  const list = loadProjects();
-  const p = findProjectById(list, getCurrentProjectId());
+  let list = loadProjects();
+  let currentId = getCurrentProjectId();
+  let p = findProjectById(list, currentId);
 
-  if (!p) {
-    projHint.textContent = "";
-    return;
+  // 🔥 Si no existe proyecto actual pero hay proyectos, usar el primero
+  if (!p && list.length) {
+    setCurrentProjectId(list[0].id);
+    p = list[0];
   }
 
-  if (!(proyectoEl.value || "").trim()) proyectoEl.value = p.name || "";
+  // 🔥 Si NO hay proyectos, crear uno automáticamente
+  if (!p) {
+    const nuevo = {
+      id: uid(),
+      name: "Proyecto sin nombre",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      favorite: false,
+      versions: [],
+    };
+
+    list = [nuevo];
+    saveProjects(list);
+    setCurrentProjectId(nuevo.id);
+    p = nuevo;
+  }
+
+  if (!(proyectoEl.value || "").trim()) {
+    proyectoEl.value = p.name || "";
+  }
 
   const count = p.versions?.length || 0;
-  projHint.textContent = `Proyecto activo: "${p.name || "Proyecto sin nombre"}" · ${count} cambio${count === 1 ? "" : "s"} guardado${count === 1 ? "" : "s"}`;
+
+  projHint.textContent =
+    `Proyecto activo: "${p.name || "Proyecto sin nombre"}" · ` +
+    `${count} cambio${count === 1 ? "" : "s"} guardado${count === 1 ? "" : "s"}`;
 }
+
 
 /* ===== Crear nuevo proyecto ===== */
 btnNewProject.addEventListener("click", () => {
