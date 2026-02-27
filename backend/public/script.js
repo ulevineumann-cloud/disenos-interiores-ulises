@@ -1128,38 +1128,43 @@ ensureSomeProject();
 syncCurrentProjectUI();
 renderSidebar();
 
-document.getElementById("calcularEstilo").addEventListener("click", function () {
-  const color = document.getElementById("q-color").value;
-  const material = document.getElementById("q-material").value;
-  const estetica = document.getElementById("q-estetica").value;
+const btnMiniTest = document.getElementById("calcularEstilo");
+
+btnMiniTest?.addEventListener("click", function () {
+  const color = document.getElementById("q-color")?.value;
+  const material = document.getElementById("q-material")?.value;
+  const estetica = document.getElementById("q-estetica")?.value;
+  const espacio = document.getElementById("q-espacio")?.value;
 
   const resultado = document.getElementById("resultadoEstilo");
 
-  if (!color || !material || !estetica) {
+  if (!color || !material || !estetica || !espacio) {
     resultado.innerHTML = "⚠️ Respondé todas las preguntas.";
     return;
   }
 
-  let estilo = "";
+  let estilo = "Estilo Personalizado ✨";
 
   if (color === "claro" && material === "madera" && estetica === "minimalista") {
     estilo = "Japandi 🌿";
-  } 
-  else if (color === "oscuro" && material === "metal" && estetica === "cargado") {
+  }
+  else if (color === "oscuro" && material === "metal") {
     estilo = "Industrial Moderno 🏭";
-  } 
-  else if (color === "claro" && material === "metal" && estetica === "minimalista") {
-    estilo = "Minimalismo Contemporáneo 🤍";
-  } 
-  else if (color === "oscuro" && material === "madera" && estetica === "cargado") {
-    estilo = "Rústico Elegante 🪵";
-  } 
-  else {
-    estilo = "Estilo Personalizado ✨";
+  }
+  else if (color === "pastel") {
+    estilo = "Nórdico Soft 🤍";
+  }
+  else if (color === "tierra" && espacio === "living") {
+    estilo = "Boho Natural 🌾";
+  }
+  else if (espacio === "oficina" && estetica === "minimalista") {
+    estilo = "Minimalismo Ejecutivo 🖤";
   }
 
-  resultado.innerHTML = `👉 Tu estilo es: <span style="color:#4ade80">${estilo}</span>`;
+  resultado.innerHTML = `👉 Tu estilo ideal es: <span>${estilo}</span>`;
 });
+
+
 
 
 
