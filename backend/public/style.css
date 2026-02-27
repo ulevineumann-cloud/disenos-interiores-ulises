@@ -708,43 +708,60 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   border: 1px solid rgba(255,255,255,.18);
   color: rgba(255,255,255,.92);
 }
-.style-test {
-  margin-top: 60px;
-  padding: 30px;
-  background: #111;
+/* ===== MINI TEST SIDEBAR ===== */
+
+.miniTest {
+  margin-top: 25px;
+}
+
+.miniTest .label {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.miniTest select {
+  width: 100%;
+  padding: 10px;
   border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(10,16,28,.55);
+  color: var(--text);
+  outline: none;
+  font-size: 14px;
 }
 
-.style-test h2 {
-  margin-bottom: 20px;
+.miniTest select:focus {
+  border-color: rgba(255,255,255,.28);
 }
 
-.question {
-  margin-bottom: 20px;
+.miniTest button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 12px;
+  font-weight: 800;
+  background: linear-gradient(135deg, rgba(120,90,255,.55), rgba(0,210,255,.35));
+  border: 1px solid rgba(255,255,255,.22);
 }
 
-.question select {
-  padding: 8px;
-  border-radius: 6px;
-  border: none;
-  margin-top: 5px;
-}
-
-#calcularEstilo {
-  padding: 10px 20px;
-  background: #ffffff;
-  color: #000;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-#calcularEstilo:hover {
-  opacity: 0.85;
+.miniTest button:hover {
+  border-color: rgba(255,255,255,.35);
 }
 
 .resultado-estilo {
-  margin-top: 20px;
-  font-size: 18px;
-  font-weight: bold;
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(10,16,28,.35);
+  color: var(--text);
 }
+
+.resultado-estilo span {
+  color: #4ade80;
+  font-weight: 900;
+}
+
