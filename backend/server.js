@@ -91,7 +91,11 @@ if (ENABLE_AI && OPENAI_API_KEY) openai = new OpenAI({ apiKey: OPENAI_API_KEY })
 app.post(
   "/generar",
   basicAuth,
-  upload.fields([{ name: "imagen", maxCount: 1 }, { name: "mask", maxCount: 1 }]),
+  upload.fields([
+  { name: "imagen", maxCount: 1 },
+  { name: "mask", maxCount: 1 },
+  { name: "imagenReferencia", maxCount: 1 } // 🔥 NUEVO
+]),
   async (req, res) => {
     try {
       if (!ENABLE_AI) return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
@@ -100,6 +104,7 @@ app.post(
       const texto = (req.body.texto || "").trim();
       const imagen = req.files?.imagen?.[0];
       const mask = req.files?.mask?.[0] || null;
+      const referencia = req.files?.imagenReferencia?.[0] || null;
 
       if (!texto) return res.status(400).json({ error: "Falta descripción" });
       if (!imagen) return res.status(400).json({ error: "Falta imagen" });
@@ -132,16 +137,36 @@ REGLAS:
         const maskPath = path.join(uploadsPath, mask.filename);
         maskFile = await toFile(fs.createReadStream(maskPath), null, { type: mask.mimetype });
       }
+      // 🔥 REFERENCIA (VA ACÁ)
+let referenceFile = null;
+
+if (referencia) {
+  const refPath = path.join(uploadsPath, referencia.filename);
+  referenceFile = await toFile(
+    fs.createReadStream(refPath),
+    null,
+    { type: referencia.mimetype }
+  );
+}
+
 
       const params = {
-        model: "gpt-image-1",
-        image: imageFile,
-        prompt,
-        input_fidelity: "high",
-        size: "auto",
-        quality: "high",
-      };
-      if (maskFile) params.mask = maskFile;
+  model: "gpt-image-1",
+  image: imageFile,
+  prompt,
+  input_fidelity: "high",
+  size: "auto",
+  quality: "high",
+};
+
+if (maskFile) {
+  params.mask = maskFile;
+}
+
+if (referenceFile) {
+  params.reference_image = referenceFile;
+}
+
 
       const result = await openai.images.edit(params);
 
