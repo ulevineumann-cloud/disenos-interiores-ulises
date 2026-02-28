@@ -1034,146 +1034,100 @@ Dejar el espacio completamente vacío y limpio.
 `;
 });
 if (boton) {
-  boton.addEventListener("click", async () => {    
-  });
-}
+  boton.addEventListener("click", async () => {
 
-  const textoBase = (textoEl.value || "").trim();
-const estiloExtra = construirEstiloTexto();
-const texto = estiloExtra
-  ? textoBase + " " + estiloExtra
-  : textoBase;
-  // 🔥 NUEVA LÓGICA REFERENCIA
-const refInput = document.getElementById("imagenReferencia"); // input nuevo
-const hayReferencia = refInput && refInput.files.length > 0;
-const hayMascara = usePaint.checked;
+    const textoBase = (textoEl.value || "").trim();
+    const estiloExtra = construirEstiloTexto();
+    const texto = estiloExtra
+      ? textoBase + " " + estiloExtra
+      : textoBase;
 
-let promptFinal = texto;
+    const refInput = document.getElementById("imagenReferencia");
+    const hayReferencia = refInput && refInput.files.length > 0;
+    const hayMascara = usePaint.checked;
 
-// CASO 1: referencia + máscara
-if (hayReferencia && hayMascara) {
+    let promptFinal = texto;
 
-  promptFinal = `
+    if (hayReferencia && hayMascara) {
+      promptFinal = `
 Modificar únicamente la zona pintada utilizando como referencia visual la imagen adjunta.
 Mantener perspectiva, proporciones y realismo.
 No modificar ninguna otra parte de la imagen.
 `;
-
-}
-
-// CASO 2: referencia sin máscara
-else if (hayReferencia && !hayMascara) {
-
-  promptFinal = `
+    } else if (hayReferencia && !hayMascara) {
+      promptFinal = `
 Aplicar los atributos visuales de la imagen de referencia
 según lo indicado en la descripción del usuario.
 Mantener el resto de la imagen igual.
 `;
-
-}
-
-  const imagen = inputImagen.files?.[0];
-
-  if (estado) estado.textContent = "";
-if (recomendacionEl) recomendacionEl.textContent = "—";
-if (modoInfo) modoInfo.textContent = "";
-if (imagenResultadoEl) {
-  imagenResultadoEl.style.display = "none";
-  imagenResultadoEl.src = "";
-}
-
-
-  resetVideoUI();
-  resultadoUrlFinal = "";
-  if (btnUseResult) btnUseResult.disabled = true;
-
-  hideCompare();
-
-  if (!texto) return niceError("Escribí qué querés cambiar.");
-  if (!imagen) return niceError("Seleccioná una imagen.");
-
-  const projects = loadProjects();
-  const pid = getCurrentProjectId();
-  const proj = findProjectById(projects, pid);
-  if (!proj) return niceError("No hay proyecto activo. Creá uno con “Nuevo proyecto”.");
-
-  const nameInput = (proyectoEl.value || "").trim();
-  if (nameInput && nameInput !== proj.name) proj.name = nameInput;
-
-  try {
-    setLoading(true);
-    estado.textContent = "Enviando…";
-
-    const formData = new FormData();
-    
-formData.append("texto", promptFinal);
-formData.append("imagen", imagen);
-
-if (hayReferencia) {
-  formData.append("imagenReferencia", refInput.files[0]);
-}
-
-    const paintOn = usePaint.checked;
-
-    if (paintOn) {
-      if (!imgNaturalW) return niceError("Esperá que cargue la imagen.");
-      if (!maskHasEdits()) return niceError("Pintá una zona: la IA solo va a modificar lo pintado.");
-      const mb = await maskBlobPNG();
-      formData.append("mask", mb, "mask.png");
-    }
-    
-    const res = await fetch("/generar", { method: "POST", body: formData });
-
-    let data = {};
-    try { data = await res.json(); } catch {}
-
-    if (!res.ok) throw new Error(data?.error || `Servidor respondió ${res.status}`);
-
-    recomendacionEl.textContent = data.recomendacion || "Listo ✅";
-    modoInfo.textContent = data.modo ? `Modo: ${data.modo}` : "";
-
-    if (data.imagenUrl) {
-      const url = `${data.imagenUrl}?v=${Date.now()}`;
-      imagenResultadoEl.src = url;
-      imagenResultadoEl.style.display = "block";
-
-      resultadoUrlFinal = url;
-      btnVideo.disabled = false;
-      btnZip.disabled = false;
-      videoInfo.textContent = "Podés generar el video o descargar el pack ZIP.";
-
-      if (btnUseResult) btnUseResult.disabled = false;
-
-      // 🔥 activar comparador usando original actual vs resultado
-      // (si querés que compare SIEMPRE contra la primer original, avisame y lo cambiamos)
-      showCompare(originalObjectUrl, url);
-
-      const version = {
-        id: uid(),
-        ts: Date.now(),
-        prompt: texto,
-        mode: paintOn ? "PAINT" : "SIMPLE",
-        originalThumb: currentOriginalThumb || "",
-        resultUrl: data.imagenUrl,
-      };
-
-      proj.versions = Array.isArray(proj.versions) ? proj.versions : [];
-      proj.versions.unshift(version);
-      proj.updatedAt = Date.now();
-
-      saveProjects(projects);
-      syncCurrentProjectUI();
-      renderSidebar();
     }
 
-    estado.textContent = "Listo ✅";
-  } catch (err) {
-    console.error(err);
-    niceError("Error al generar: " + (err?.message || "desconocido"));
-  } finally {
-    setLoading(false);
-  }
-});
+    const imagen = inputImagen.files?.[0];
+
+    if (estado) estado.textContent = "";
+    if (recomendacionEl) recomendacionEl.textContent = "—";
+    if (modoInfo) modoInfo.textContent = "";
+    if (imagenResultadoEl) {
+      imagenResultadoEl.style.display = "none";
+      imagenResultadoEl.src = "";
+    }
+
+    resetVideoUI();
+    resultadoUrlFinal = "";
+    if (btnUseResult) btnUseResult.disabled = true;
+
+    hideCompare();
+
+    if (!texto) return niceError("Escribí qué querés cambiar.");
+    if (!imagen) return niceError("Seleccioná una imagen.");
+
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+      formData.append("texto", promptFinal);
+      formData.append("imagen", imagen);
+
+      if (hayReferencia) {
+        formData.append("imagenReferencia", refInput.files[0]);
+      }
+
+      if (hayMascara) {
+        if (!imgNaturalW) return niceError("Esperá que cargue la imagen.");
+        if (!maskHasEdits()) return niceError("Pintá una zona.");
+        const mb = await maskBlobPNG();
+        formData.append("mask", mb, "mask.png");
+      }
+
+      const res = await fetch("/generar", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data?.error);
+
+      if (recomendacionEl) {
+        recomendacionEl.textContent = data.recomendacion || "Listo ✅";
+      }
+
+      if (data.imagenUrl && imagenResultadoEl) {
+        const url = `${data.imagenUrl}?v=${Date.now()}`;
+        imagenResultadoEl.src = url;
+        imagenResultadoEl.style.display = "block";
+        resultadoUrlFinal = url;
+      }
+
+    } catch (err) {
+      console.error(err);
+      niceError("Error al generar");
+    } finally {
+      setLoading(false);
+    }
+
+  });
+}
 
 /* ===== INIT ===== */
 ensureSomeProject();
