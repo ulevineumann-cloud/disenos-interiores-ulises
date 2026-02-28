@@ -1113,11 +1113,29 @@ Mantener el resto de la imagen igual.
       }
 
       if (data.imagenUrl && imagenResultadoEl) {
-        const url = `${data.imagenUrl}?v=${Date.now()}`;
-        imagenResultadoEl.src = url;
-        imagenResultadoEl.style.display = "block";
-        resultadoUrlFinal = url;
-      }
+
+  const url = `${data.imagenUrl}?v=${Date.now()}`;
+
+  imagenResultadoEl.src = url;
+  imagenResultadoEl.style.display = "block";
+
+  resultadoUrlFinal = url;
+
+  // 🔥 REACTIVAR BOTONES
+  if (btnUseResult) btnUseResult.disabled = false;
+  if (btnVideo) btnVideo.disabled = false;
+  if (btnZip) btnZip.disabled = false;
+
+  // 🔥 MOSTRAR COMPARADOR
+  if (originalObjectUrl) {
+    showCompare(originalObjectUrl, url);
+  }
+
+  // 🔥 Mostrar modo
+  if (modoInfo && data.modo) {
+    modoInfo.textContent = "Modo: " + data.modo;
+  }
+}
 
     } catch (err) {
       console.error(err);
