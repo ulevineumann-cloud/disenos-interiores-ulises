@@ -226,6 +226,7 @@ La IA solo va a modificar lo que pintes.
              alt="Resultado"
              style="display:none;" />
       </div>
+      
 
       <!-- 🔥 Comparador Antes/Después -->
       <div id="compareBox" class="compareBox" style="display:none;">
@@ -255,6 +256,20 @@ La IA solo va a modificar lo que pintes.
                 disabled>
           ↩ Volver al original
         </button>
+        <div class="panel" style="margin-top:15px;">
+  <h3>🔧 Corregir parte del resultado</h3>
+
+
+  <label class="label">Imagen de referencia (opcional)</label>
+  <input type="file"
+         id="imagenReferencia"
+         accept="image/jpeg,image/png,image/webp" />
+
+  <p class="muted small" style="margin-top:8px;">
+    Pintá la zona que querés modificar.
+    Si no pintás nada, se usará la descripción escrita.
+  </p>
+</div>
       </div>
 
       <!-- 🎬 VIDEO + ZIP -->

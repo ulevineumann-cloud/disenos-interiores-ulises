@@ -1028,6 +1028,35 @@ const estiloExtra = construirEstiloTexto();
 const texto = estiloExtra
   ? textoBase + " " + estiloExtra
   : textoBase;
+  // 🔥 NUEVA LÓGICA REFERENCIA
+const refInput = document.getElementById("imagenReferencia"); // input nuevo
+const hayReferencia = refInput && refInput.files.length > 0;
+const hayMascara = usePaint.checked;
+
+let promptFinal = texto;
+
+// CASO 1: referencia + máscara
+if (hayReferencia && hayMascara) {
+
+  promptFinal = `
+Modificar únicamente la zona pintada utilizando como referencia visual la imagen adjunta.
+Mantener perspectiva, proporciones y realismo.
+No modificar ninguna otra parte de la imagen.
+`;
+
+}
+
+// CASO 2: referencia sin máscara
+else if (hayReferencia && !hayMascara) {
+
+  promptFinal = `
+Aplicar los atributos visuales de la imagen de referencia
+según lo indicado en la descripción del usuario.
+Mantener el resto de la imagen igual.
+`;
+
+}
+
   const imagen = inputImagen.files?.[0];
 
   estado.textContent = "";
@@ -1058,8 +1087,13 @@ const texto = estiloExtra
     estado.textContent = "Enviando…";
 
     const formData = new FormData();
-    formData.append("texto", texto);
-    formData.append("imagen", imagen);
+    
+formData.append("texto", promptFinal);
+formData.append("imagen", imagen);
+
+if (hayReferencia) {
+  formData.append("imagenReferencia", refInput.files[0]);
+}
 
     const paintOn = usePaint.checked;
 
