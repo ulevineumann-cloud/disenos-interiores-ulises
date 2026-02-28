@@ -1033,7 +1033,11 @@ No modificar iluminación ni perspectiva.
 Dejar el espacio completamente vacío y limpio.
 `;
 });
-boton.addEventListener("click", async () => {
+if (boton) {
+  boton.addEventListener("click", async () => {    
+  });
+}
+
   const textoBase = (textoEl.value || "").trim();
 const estiloExtra = construirEstiloTexto();
 const texto = estiloExtra
@@ -1070,11 +1074,14 @@ Mantener el resto de la imagen igual.
 
   const imagen = inputImagen.files?.[0];
 
-  estado.textContent = "";
-  recomendacionEl.textContent = "—";
-  modoInfo.textContent = "";
+  if (estado) estado.textContent = "";
+if (recomendacionEl) recomendacionEl.textContent = "—";
+if (modoInfo) modoInfo.textContent = "";
+if (imagenResultadoEl) {
   imagenResultadoEl.style.display = "none";
   imagenResultadoEl.src = "";
+}
+
 
   resetVideoUI();
   resultadoUrlFinal = "";
