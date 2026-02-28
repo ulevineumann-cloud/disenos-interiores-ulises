@@ -119,15 +119,25 @@ app.post(
 
       const prompt = `
 Sos un editor fotográfico de arquitectura EXTREMADAMENTE ESTRICTO.
+
 OBJETIVO DEL USUARIO:
 "${texto}"
 
 REGLAS:
 - SOLO modificar lo explícitamente pedido.
-- Mantener encuadre/perspectiva/iluminación.
+- Mantener encuadre, perspectiva e iluminación.
 - Cambio mínimo necesario.
-- Fotorealismo. Sin texto/logos/marcas de agua.
+- Fotorealismo.
+- No agregar texto ni marcas.
+
+AL FINAL, generar una lista de materiales recomendados en formato texto estructurado:
+- Pintura sugerida
+- Tipo de piso
+- Materiales principales
+- Iluminación recomendada
+- Estilo general
 `;
+
 
       const imagePath = path.join(uploadsPath, imagen.filename);
       const imageFile = await toFile(fs.createReadStream(imagePath), null, { type: imagen.mimetype });
@@ -170,17 +180,36 @@ if (referenceFile) {
 
       const result = await openai.images.edit(params);
 
+      const materialesResponse = await openai.responses.create({
+  model: "gpt-4.1-mini",
+  input: `
+Basado en esta descripción del proyecto:
+
+"${texto}"
+
+Generar lista profesional de materiales recomendados.
+Formato claro y corto.
+`
+});
+
+const materialesTexto = materialesResponse.output_text;
+
+
       const base64 = result.data?.[0]?.b64_json;
       if (!base64) return res.status(500).json({ error: "La IA no devolvió imagen" });
 
       const outputName = `resultado_${Date.now()}.png`;
       fs.writeFileSync(path.join(uploadsPath, outputName), Buffer.from(base64, "base64"));
 
-      res.json({
-        recomendacion: `Propuesta generada según:\n"${texto}"`,
-        imagenUrl: `/uploads/${outputName}`,
-        modo: maskFile ? "IA_CON_MASK" : "IA_SIN_MASK",
-      });
+      return res.json({
+  recomendacion: materialesTexto || `Propuesta generada según:\n"${texto}"`,
+  imagenUrl: `/uploads/${outputName}`,
+  modo: maskFile
+    ? "IA_CON_MASK"
+    : referenceFile
+    ? "IA_CON_REFERENCIA"
+    : "IA_SIMPLE",
+});
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: err?.message || "Error interno" });

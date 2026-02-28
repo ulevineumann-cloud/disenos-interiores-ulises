@@ -1022,6 +1022,17 @@ btnZip.addEventListener("click", async () => {
 /* =========================
    GENERAR -> guarda versión
 ========================= */
+
+const btnVaciar = document.getElementById("btnVaciar");
+
+btnVaciar?.addEventListener("click", () => {
+  textoEl.value = `
+Eliminar todos los muebles y objetos decorativos.
+Mantener paredes, piso, techo, aberturas y estructura original.
+No modificar iluminación ni perspectiva.
+Dejar el espacio completamente vacío y limpio.
+`;
+});
 boton.addEventListener("click", async () => {
   const textoBase = (textoEl.value || "").trim();
 const estiloExtra = construirEstiloTexto();
