@@ -1061,6 +1061,13 @@ según lo indicado en la descripción del usuario.
 Mantener el resto de la imagen igual.
 `;
     }
+    
+const boxReferencia = document.getElementById("boxReferencia");
+const inputReferencia = document.getElementById("imagenReferencia");
+
+boxReferencia?.addEventListener("click", () => {
+  inputReferencia?.click();
+});
 
     const imagen = inputImagen.files?.[0];
 

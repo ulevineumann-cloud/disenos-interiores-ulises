@@ -262,14 +262,15 @@ La IA solo va a modificar lo que pintes.
                 disabled>
           ↩ Volver al original
         </button>
-        <div class="panel" style="margin-top:15px;">
+        <div class="panel" style="margin-top:15px;" id="boxReferencia">
   <h3>🔧 Corregir parte del resultado</h3>
 
-
   <label class="label">Imagen de referencia (opcional)</label>
+
   <input type="file"
          id="imagenReferencia"
-         accept="image/jpeg,image/png,image/webp" />
+         accept="image/jpeg,image/png,image/webp"
+         style="display:none;" />
 
   <p class="muted small" style="margin-top:8px;">
     Pintá la zona que querés modificar.
