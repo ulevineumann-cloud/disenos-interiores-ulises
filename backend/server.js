@@ -146,6 +146,11 @@ aplicar el cambio en TODOS los elementos iguales de la imagen.
 
 La imagen original siempre es la base principal.
 
+Cuando el usuario pide cambiar un material
+(por ejemplo vidrio → hierro),
+interpretar que debe reemplazarse ese material
+en todos los objetos donde aparezca.
+
 Si existe una imagen de referencia:
 - Usarla solo como guía visual de materiales, estilo o forma.
 - NO copiar ni pegar partes de la referencia.
