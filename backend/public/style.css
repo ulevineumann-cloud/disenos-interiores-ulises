@@ -765,3 +765,15 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   font-weight: 900;
 }
 
+
+.previewRow{
+display:flex;
+gap:12px;
+align-items:flex-start;
+flex-wrap:wrap;
+}
+
+.previewImg{
+max-width:260px;
+border-radius:8px;
+}

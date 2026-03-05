@@ -159,6 +159,10 @@ Si querés marcar una zona exacta, usá Modo Paint.
 <div class="row">
 <label class="fileBtn" for="imagen">Seleccionar imagen</label>
 <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
+
+<label class="fileBtn" for="imagenReferencia">Imagen de referencia</label>
+<input type="file" id="imagenReferencia" accept="image/jpeg,image/png,image/webp" />
+
 <button id="generar" class="primary">Diseñar</button>
 </div>
 
@@ -189,9 +193,19 @@ Si querés marcar una zona exacta, usá Modo Paint.
 <p id="estado" class="estado"></p>
 <div id="loader" class="loader"></div>
 
+
 <div class="previewBox">
+
 <div class="previewTitle">Vista previa</div>
-<img id="preview">
+
+<div class="previewRow">
+
+<img id="preview" class="previewImg">
+
+<img id="previewReferencia" class="previewImg" style="display:none;">
+
+</div>
+
 </div>
 </section>
 

@@ -117,17 +117,17 @@ app.post(
         return res.status(400).json({ error: "Mask inválida (debe ser PNG)" });
       }
 
-      const prompt = `
+const prompt = `
 Sos un editor fotográfico de arquitectura EXTREMADAMENTE ESTRICTO.
 
 OBJETIVO DEL USUARIO:
 "${texto}"
 
 REGLAS:
+
 - SOLO modificar lo explícitamente pedido.
 - Mantener encuadre, perspectiva e iluminación.
-- Cambio mínimo necesario.
-- Fotorealismo.
+- Fotorealismo total.
 - No agregar texto ni marcas.
 
 AL FINAL, generar una lista de materiales recomendados en formato texto estructurado:
@@ -136,6 +136,23 @@ AL FINAL, generar una lista de materiales recomendados en formato texto estructu
 - Materiales principales
 - Iluminación recomendada
 - Estilo general
+
+
+IMPORTANTE:
+
+Si el cambio solicitado afecta un elemento repetido en la escena
+(por ejemplo barandas, ventanas, pisos, paredes o muebles),
+aplicar el cambio en TODOS los elementos iguales de la imagen.
+
+La imagen original siempre es la base principal.
+
+Si existe una imagen de referencia:
+- Usarla solo como guía visual de materiales, estilo o forma.
+- NO copiar ni pegar partes de la referencia.
+- Mantener geometría y perspectiva de la imagen original.
+
+El resultado debe verse como una fotografía realista
+donde el cambio siempre fue parte de la escena original.
 `;
 
 

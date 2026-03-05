@@ -37,6 +37,10 @@ const imagenResultadoEl = document.getElementById("imagenResultado");
 
 const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
+
+const previewReferencia = document.getElementById("previewReferencia");
+const inputReferencia = document.getElementById("imagenReferencia");
+
 const textoEl = document.getElementById("texto");
 const proyectoEl = document.getElementById("proyecto");
 const projHint = document.getElementById("projHint");
@@ -1049,21 +1053,42 @@ if (boton) {
     let promptFinal = texto;
 
     if (hayReferencia && hayMascara) {
-      promptFinal = `
-Modificar únicamente la zona pintada utilizando como referencia visual la imagen adjunta.
-Mantener perspectiva, proporciones y realismo.
-No modificar ninguna otra parte de la imagen.
-`;
-    } else if (hayReferencia && !hayMascara) {
-      promptFinal = `
-Aplicar los atributos visuales de la imagen de referencia
-según lo indicado en la descripción del usuario.
-Mantener el resto de la imagen igual.
+promptFinal = `
+El usuario quiere modificar la imagen original utilizando
+la imagen de referencia como guía visual.
+
+REGLAS:
+
+- La imagen original es la base principal.
+- La imagen de referencia solo sirve como inspiración visual.
+- No copiar ni pegar partes de la referencia.
+- Aplicar únicamente los materiales, formas o estilo de la referencia.
+- Mantener perspectiva, iluminación y geometría de la imagen original.
+- Aplicar el cambio en toda la escena si corresponde.
+
+Descripción del usuario:
+${texto}
 `;
     }
     
+
 const boxReferencia = document.getElementById("boxReferencia");
-const inputReferencia = document.getElementById("imagenReferencia");
+
+boxReferencia?.addEventListener("click", () => {
+  inputReferencia?.click();
+});
+
+inputReferencia?.addEventListener("change", () => {
+
+  const file = inputReferencia.files?.[0];
+  if (!file) return;
+
+  const url = URL.createObjectURL(file);
+
+  previewReferencia.src = url;
+  previewReferencia.style.display = "block";
+
+});
 
 boxReferencia?.addEventListener("click", () => {
   inputReferencia?.click();
