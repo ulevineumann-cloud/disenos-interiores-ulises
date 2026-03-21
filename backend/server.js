@@ -182,14 +182,10 @@ if (referencia) {
 }
 
 
-
-
 const params = {
   model: "gpt-image-1",
   image: imageFile,
   prompt,
-  size: "auto",
-  output_format: "png",
 };
 
 
