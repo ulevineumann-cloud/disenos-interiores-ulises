@@ -38,6 +38,9 @@ const imagenResultadoEl = document.getElementById("imagenResultado");
 const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
 
+const inputReferencia = document.getElementById("imagenReferencia");
+const previewReferencia = document.getElementById("previewReferencia");
+
 const textoEl = document.getElementById("texto");
 const proyectoEl = document.getElementById("proyecto");
 const projHint = document.getElementById("projHint");
@@ -731,6 +734,7 @@ function initCompareSlider() {
 ========================= */
 
 const boxReferencia = document.getElementById("boxReferencia");
+
 
 boxReferencia?.addEventListener("click", () => {
   inputReferencia?.click();
