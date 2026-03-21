@@ -734,8 +734,6 @@ function initCompareSlider() {
 ========================= */
 
 const boxReferencia = document.getElementById("boxReferencia");
-const inputReferencia = document.getElementById("imagenReferencia");
-const previewReferencia = document.getElementById("previewReferencia");
 
 boxReferencia?.addEventListener("click", () => {
   inputReferencia?.click();
@@ -1102,28 +1100,6 @@ ${texto}
 `;
     }
     
-
-const boxReferencia = document.getElementById("boxReferencia");
-
-boxReferencia?.addEventListener("click", () => {
-  inputReferencia?.click();
-});
-
-inputReferencia?.addEventListener("change", () => {
-
-  const file = inputReferencia.files?.[0];
-  if (!file) return;
-
-  const url = URL.createObjectURL(file);
-
-  previewReferencia.src = url;
-  previewReferencia.style.display = "block";
-
-});
-
-boxReferencia?.addEventListener("click", () => {
-  inputReferencia?.click();
-});
 
     const imagen = inputImagen.files?.[0];
 
