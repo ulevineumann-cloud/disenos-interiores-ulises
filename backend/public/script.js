@@ -756,9 +756,15 @@ inputReferencia?.addEventListener("change", () => {
 });
 
 /* Input image */
-inputImagen.addEventListener("change", async () => {
+inputImagen?.addEventListener("change", async () => {
   const file = inputImagen.files?.[0];
-  if (!file) return;
+  if (!file) {
+    if (preview) {
+      preview.src = "";
+      preview.style.display = "none";
+    }
+    return;
+  }
 
   originalBaseFile = file;
   if (btnBackToOriginal) btnBackToOriginal.disabled = false;
@@ -778,8 +784,12 @@ inputImagen.addEventListener("change", async () => {
   if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(file);
 
-  preview.src = originalObjectUrl;
-  preview.style.display = "block";
+  if (preview) {
+    preview.src = originalObjectUrl;
+    preview.onload = () => {
+      preview.style.display = "block";
+    };
+  }
 
   paintBase.onload = () => {
     imgNaturalW = paintBase.naturalWidth;
