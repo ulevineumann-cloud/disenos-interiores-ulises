@@ -160,8 +160,7 @@ Si querés marcar una zona exacta, usá Modo Paint.
 <label class="fileBtn" for="imagen">Seleccionar imagen</label>
 <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
 
-<label class="fileBtn" for="imagenReferencia">Imagen de referencia</label>
-<input type="file" id="imagenReferencia" accept="image/jpeg,image/png,image/webp" />
+<input type="file" id="imagenReferencia" accept="image/jpeg,image/png,image/webp" style="display:none;" />
 
 <button id="generar" class="primary">Diseñar</button>
 </div>
@@ -276,8 +275,16 @@ La IA solo va a modificar lo que pintes.
                 disabled>
           ↩ Volver al original
         </button>
-        <div class="panel" style="margin-top:15px;" id="boxReferencia">
+
+<div class="panel" id="boxReferencia" style="margin-top:15px;">
   <h3>🔧 Corregir parte del resultado</h3>
+
+  <p class="muted small" style="margin-top:8px;">
+    Tocá acá para cargar una imagen de referencia.
+    Pintá la zona que querés modificar.
+    Si no pintás nada, se usará la descripción escrita.
+  </p>
+</div>
 
   <label class="label">Imagen de referencia (opcional)</label>
 

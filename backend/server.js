@@ -182,22 +182,18 @@ if (referencia) {
 }
 
 
-      const params = {
+const params = {
   model: "gpt-image-1",
   image: imageFile,
   prompt,
-  input_fidelity: "high",
   size: "auto",
   quality: "high",
+  output_format: "png",
 };
 
-if (maskFile) {
-  params.mask = maskFile;
-}
 
-if (referenceFile) {
-  params.reference_image = referenceFile;
-}
+if (maskFile) params.mask = maskFile;
+if (referenceFile) params.reference_image = referenceFile;
 
 
       const result = await openai.images.edit(params);
