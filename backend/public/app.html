@@ -156,14 +156,14 @@ Si querés marcar una zona exacta, usá Modo Paint.
 <label class="label" for="texto">Descripción</label>
 <textarea id="texto" rows="4"></textarea>
 
+
 <div class="row">
-<label class="fileBtn" for="imagen">Seleccionar imagen</label>
-<input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
+  <label class="fileBtn" for="imagen">Seleccionar imagen</label>
+  <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
 
-<input type="file" id="imagenReferencia" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-
-<button id="generar" class="primary">Diseñar</button>
+  <button id="generar" class="primary">Diseñar</button>
 </div>
+
 
 <div class="row" style="margin-top:10px;">
   <button id="btnVaciar" class="ghost">
@@ -245,9 +245,8 @@ La IA solo va a modificar lo que pintes.
              alt="Resultado"
              style="display:none;" />
       </div>
-      
 
-      <!-- 🔥 Comparador Antes/Después -->
+      <!-- Comparador -->
       <div id="compareBox" class="compareBox" style="display:none;">
         <div class="compareWrapper" id="compareWrapper">
           <img id="compareOriginal" class="compareImg" alt="Original" />
@@ -260,7 +259,7 @@ La IA solo va a modificar lo que pintes.
         </div>
       </div>
 
-      <!-- ✅ BOTONES CORRECTOS -->
+      <!-- Botones principales -->
       <div class="row" style="margin-top:10px;">
         <button id="btnUseResult"
                 class="ghost"
@@ -275,33 +274,25 @@ La IA solo va a modificar lo que pintes.
                 disabled>
           ↩ Volver al original
         </button>
-
-<div class="panel" id="boxReferencia" style="margin-top:15px;">
-  <h3>🔧 Corregir parte del resultado</h3>
-
-  <p class="muted small" style="margin-top:8px;">
-    Tocá acá para cargar una imagen de referencia.
-    Pintá la zona que querés modificar.
-    Si no pintás nada, se usará la descripción escrita.
-  </p>
-</div>
-
-  <label class="label">Imagen de referencia (opcional)</label>
-
-  <input type="file"
-         id="imagenReferencia"
-         accept="image/jpeg,image/png,image/webp"
-         style="display:none;" />
-
-  <p class="muted small" style="margin-top:8px;">
-    Pintá la zona que querés modificar.
-    Si no pintás nada, se usará la descripción escrita.
-  </p>
-</div>
       </div>
 
-      <!-- 🎬 VIDEO + ZIP -->
-      <div class="videoBlock">
+      <!-- Caja referencia -->
+      <div class="panel" id="boxReferencia" style="margin-top:18px;">
+        <h3>🔧 Corregir parte del resultado</h3>
+
+        <input type="file"
+               id="imagenReferencia"
+               accept="image/jpeg,image/png,image/webp"
+               style="display:none;" />
+
+        <p class="muted small" style="margin-top:8px;">
+          Tocá acá para cargar una imagen de referencia. Pintá la zona que querés modificar.
+          Si no pintás nada, se usará la descripción escrita.
+        </p>
+      </div>
+
+      <!-- Video + ZIP -->
+      <div class="videoBlock" style="margin-top:18px;">
         <div class="videoRow">
           <button id="btnVideo"
                   class="ghost"
@@ -330,16 +321,15 @@ La IA solo va a modificar lo que pintes.
                class="videoPreview"
                controls
                playsinline
-               style="display:none;">
-        </video>
+               style="display:none;"></video>
       </div>
-
     </div>
+
   </div>
 </section>
 
 <footer class="footer">
-Proyecto experimental de diseño con inteligencia artificial
+  Proyecto experimental de diseño con inteligencia artificial
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
