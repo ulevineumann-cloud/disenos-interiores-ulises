@@ -729,6 +729,37 @@ function initCompareSlider() {
   });
 }
 
+/* =========================
+   REFERENCIA (CLICK + PREVIEW)
+========================= */
+
+const boxReferencia = document.getElementById("boxReferencia");
+const inputReferencia = document.getElementById("imagenReferencia");
+const previewReferencia = document.getElementById("previewReferencia");
+
+boxReferencia?.addEventListener("click", () => {
+  inputReferencia?.click();
+});
+
+inputReferencia?.addEventListener("change", () => {
+  const file = inputReferencia.files?.[0];
+
+  if (!file) {
+    if (previewReferencia) {
+      previewReferencia.style.display = "none";
+      previewReferencia.src = "";
+    }
+    return;
+  }
+
+  const url = URL.createObjectURL(file);
+
+  if (previewReferencia) {
+    previewReferencia.src = url;
+    previewReferencia.style.display = "block";
+  }
+});
+
 /* Input image */
 inputImagen.addEventListener("change", async () => {
   const file = inputImagen.files?.[0];
