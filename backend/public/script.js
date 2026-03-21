@@ -38,9 +38,6 @@ const imagenResultadoEl = document.getElementById("imagenResultado");
 const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
 
-const previewReferencia = document.getElementById("previewReferencia");
-const inputReferencia = document.getElementById("imagenReferencia");
-
 const textoEl = document.getElementById("texto");
 const proyectoEl = document.getElementById("proyecto");
 const projHint = document.getElementById("projHint");
