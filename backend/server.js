@@ -101,7 +101,7 @@ app.post(
       if (!ENABLE_AI) return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
       if (!openai) return res.status(500).json({ error: "Falta OPENAI_API_KEY" });
 
-      const texto = (req.body.texto || "").trim();
+  
       const imagen = req.files?.imagen?.[0];
       const mask = req.files?.mask?.[0] || null;
       const referencia = req.files?.imagenReferencia?.[0] || null;
