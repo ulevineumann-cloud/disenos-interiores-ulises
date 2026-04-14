@@ -1071,12 +1071,20 @@ const btnVaciar = document.getElementById("btnVaciar");
 
 btnVaciar?.addEventListener("click", () => {
   textoEl.value = `
-Eliminar todos los muebles y objetos decorativos.
-Mantener paredes, piso, techo, aberturas y estructura original.
-No modificar iluminación ni perspectiva.
-Dejar el espacio completamente vacío y limpio.
+Vaciar el ambiente eliminando únicamente basura, objetos sueltos, bolsas, papeles, ropa, recipientes, muebles pequeños y desorden.
+
+IMPORTANTE:
+- Mantener exactamente la misma habitación.
+- No cambiar la arquitectura.
+- No mover ni rediseñar paredes, ventana, cortinas, piso, zócalos, enchufes ni ángulos.
+- No cambiar proporciones ni perspectiva.
+- No generar una habitación nueva.
+- No reinterpretar la escena.
+- Solo limpiar y despejar el ambiente original.
+- El resultado debe verse como la MISMA foto, pero totalmente limpia y vacía.
 `;
 });
+
 if (boton) {
   boton.addEventListener("click", async () => {
 

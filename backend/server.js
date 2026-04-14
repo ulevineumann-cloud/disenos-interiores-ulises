@@ -117,59 +117,170 @@ app.post(
         return res.status(400).json({ error: "Mask inválida (debe ser PNG)" });
       }
 
-const prompt = `
-Sos un editor fotográfico de arquitectura EXTREMADAMENTE ESTRICTO.
+const texto = (req.body.texto || "").trim();
+const modoEspecial = (req.body.modoEspecial || "").trim();
+
+let prompt = `
+Sos un sistema avanzado de edición fotográfica arquitectónica.
+
+Tu objetivo NO es crear una imagen nueva.
+Tu objetivo es EDITAR la imagen original con precisión extrema.
+
+---
 
 OBJETIVO DEL USUARIO:
 "${texto}"
 
-REGLAS:
+---
 
-- SOLO modificar lo explícitamente pedido.
-- Mantener encuadre, perspectiva e iluminación.
-- Fotorealismo total.
-- No agregar texto ni marcas.
+REGLAS CRÍTICAS (OBLIGATORIAS):
 
-AL FINAL, generar una lista de materiales recomendados en formato texto estructurado:
-- Pintura sugerida
-- Tipo de piso
-- Materiales principales
-- Iluminación recomendada
-- Estilo general
+- La imagen original es SIEMPRE la base absoluta.
+- No reinterpretar la escena.
+- No rediseñar el ambiente.
+- No cambiar arquitectura.
+- No modificar dimensiones, proporciones ni perspectiva.
+- No cambiar posición de cámara ni encuadre.
+- No inventar elementos nuevos innecesarios.
+- No mejorar estéticamente si no se pidió.
+- No estilizar.
+- No hacer versiones "inspiradas".
 
+---
 
-IMPORTANTE:
+REALISMO:
 
-Si el cambio solicitado afecta un elemento repetido en la escena
-(por ejemplo barandas, ventanas, pisos, paredes o muebles),
-aplicar el cambio en TODOS los elementos iguales de la imagen.
+- El resultado debe parecer una fotografía real tomada en el mismo momento.
+- Debe ser indistinguible de una foto original.
+- Mantener iluminación, sombras, reflejos y coherencia física.
+- Mantener imperfecciones reales del ambiente.
 
-La imagen original siempre es la base principal.
+---
 
-Cuando el usuario pide cambiar un material
-(por ejemplo vidrio → hierro),
-interpretar que debe reemplazarse ese material
-en todos los objetos donde aparezca.
+MODIFICACIONES:
 
-Si existe una imagen de referencia:
-- Usarla solo como guía visual de materiales, estilo o forma.
-- NO copiar ni pegar partes de la referencia.
-- Mantener geometría y perspectiva de la imagen original.
+- SOLO aplicar exactamente lo que el usuario pidió.
+- Si el cambio afecta elementos repetidos:
+  aplicar en TODOS los elementos iguales.
 
-El resultado debe verse como una fotografía realista
-donde el cambio siempre fue parte de la escena original.
+- Si el usuario cambia materiales:
+  reemplazar en todos los objetos donde exista.
+
+---
+
+REFERENCIA (si existe):
+
+- Usarla solo como guía visual.
+- NO copiar objetos.
+- NO cambiar geometría.
+- SOLO aplicar estilo/material.
+
+---
+
+PRIORIDAD:
+
+1. Mantener identidad original
+2. Precisión del cambio
+3. Realismo absoluto
+4. Coherencia visual
+
+Si hay conflicto → elegir REALISMO.
+
+---
+
+RESULTADO:
+
+La imagen final debe parecer exactamente la misma fotografía original,
+pero con los cambios aplicados de forma perfecta y creíble.
 `;
 
+if (modoEspecial === "VACIAR") {
+  prompt = `
+Sos un sistema experto en limpieza visual fotográfica de interiores.
 
-      const imagePath = path.join(uploadsPath, imagen.filename);
-      const imageFile = await toFile(fs.createReadStream(imagePath), null, { type: imagen.mimetype });
+Tu tarea es ELIMINAR objetos, no rediseñar el ambiente.
 
-      let maskFile = null;
-      if (mask) {
-        const maskPath = path.join(uploadsPath, mask.filename);
-        maskFile = await toFile(fs.createReadStream(maskPath), null, { type: mask.mimetype });
-      }
-      // 🔥 REFERENCIA (VA ACÁ)
+---
+
+TAREA:
+
+Eliminar únicamente:
+- basura
+- bolsas
+- papeles
+- ropa
+- objetos sueltos
+- recipientes
+- desorden general
+
+---
+
+PROHIBIDO:
+
+- NO cambiar paredes
+- NO cambiar piso
+- NO cambiar cortinas
+- NO cambiar ventanas
+- NO cambiar enchufes
+- NO cambiar zócalos
+- NO cambiar iluminación
+- NO cambiar perspectiva
+- NO cambiar encuadre
+- NO modificar arquitectura
+- NO reinterpretar el espacio
+- NO generar una nueva habitación
+- NO “mejorar” el diseño
+
+---
+
+REGLA CLAVE:
+
+NO reconstruir el ambiente.
+NO rediseñar.
+NO inventar.
+
+SOLO borrar objetos.
+
+---
+
+REALISMO:
+
+- Mantener sombras originales
+- Mantener marcas reales del piso
+- Mantener suciedad leve si existe
+- Mantener desgaste real
+
+---
+
+RESULTADO:
+
+Debe parecer la MISMA foto original,
+como si alguien simplemente limpió el lugar en la vida real.
+
+NO debe parecer render.
+NO debe parecer generado por IA.
+
+Debe ser fotográficamente creíble.
+`;
+}
+
+const imagePath = path.join(uploadsPath, imagen.filename);
+const imageFile = await toFile(
+  fs.createReadStream(imagePath),
+  null,
+  { type: imagen.mimetype }
+);
+
+let maskFile = null;
+if (mask) {
+  const maskPath = path.join(uploadsPath, mask.filename);
+  maskFile = await toFile(
+    fs.createReadStream(maskPath),
+    null,
+    { type: mask.mimetype }
+  );
+}
+
 let referenceFile = null;
 
 if (referencia) {
@@ -181,8 +292,6 @@ if (referencia) {
   );
 }
 
-
-
 const params = {
   model: "gpt-image-1",
   image: imageFile,
@@ -193,9 +302,9 @@ if (maskFile) params.mask = maskFile;
 // if (referenceFile) params.reference_image = referenceFile;
 
 
-      const result = await openai.images.edit(params);
+const result = await openai.images.edit(params);
 
-      const materialesResponse = await openai.responses.create({
+const materialesResponse = await openai.responses.create({
   model: "gpt-4.1-mini",
   input: `
 Basado en esta descripción del proyecto:
@@ -204,19 +313,23 @@ Basado en esta descripción del proyecto:
 
 Generar lista profesional de materiales recomendados.
 Formato claro y corto.
-`
+`,
 });
 
 const materialesTexto = materialesResponse.output_text;
 
+const base64 = result.data?.[0]?.b64_json;
+if (!base64) {
+  return res.status(500).json({ error: "La IA no devolvió imagen" });
+}
 
-      const base64 = result.data?.[0]?.b64_json;
-      if (!base64) return res.status(500).json({ error: "La IA no devolvió imagen" });
+const outputName = `resultado_${Date.now()}.png`;
+fs.writeFileSync(
+  path.join(uploadsPath, outputName),
+  Buffer.from(base64, "base64")
+);
 
-      const outputName = `resultado_${Date.now()}.png`;
-      fs.writeFileSync(path.join(uploadsPath, outputName), Buffer.from(base64, "base64"));
-
-      return res.json({
+return res.json({
   recomendacion: materialesTexto || `Propuesta generada según:\n"${texto}"`,
   imagenUrl: `/uploads/${outputName}`,
   modo: maskFile
