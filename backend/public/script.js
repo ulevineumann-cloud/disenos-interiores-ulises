@@ -1069,16 +1069,12 @@ btnZip.addEventListener("click", async () => {
 ========================= */
 
 const btnVaciar = document.getElementById("btnVaciar");
-const btnStaging = document.getElementById("btnStaging");
 btnVaciar?.addEventListener("click", () => {
   modoEspecial = "VACIAR";
   if (estado) estado.textContent = "Modo activado: Vaciar ambiente 🧹";
 });
 
-btnStaging?.addEventListener("click", () => {
-  modoEspecial = "STAGING";
-  if (estado) estado.textContent = "Modo activado: Staging premium 🛋️";
-});
+
 
 
 btnVaciar?.addEventListener("click", () => {
