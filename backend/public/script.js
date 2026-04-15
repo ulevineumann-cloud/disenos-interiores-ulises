@@ -1191,6 +1191,7 @@ formData.append("modoEspecial", modoEspecial);
   imagenResultadoEl.src = url;
   imagenResultadoEl.style.display = "block";
 
+
   resultadoUrlFinal = url;
 
   // 🔥 REACTIVAR BOTONES
@@ -1207,6 +1208,8 @@ formData.append("modoEspecial", modoEspecial);
   if (modoInfo && data.modo) {
     modoInfo.textContent = "Modo: " + data.modo;
   }
+modoEspecial = "";
+  
 }
 
     } catch (err) {
