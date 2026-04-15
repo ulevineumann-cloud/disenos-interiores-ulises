@@ -1,9 +1,11 @@
+require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const OpenAI = require("openai");
 const { toFile } = require("openai");
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;

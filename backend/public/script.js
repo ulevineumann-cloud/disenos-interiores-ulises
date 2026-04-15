@@ -1100,20 +1100,20 @@ IMPORTANTE:
 if (boton) {
   boton.addEventListener("click", async () => {
 
-    const textoBase = (textoEl.value || "").trim();
-    const estiloExtra = construirEstiloTexto();
-    const texto = estiloExtra
-      ? textoBase + " " + estiloExtra
-      : textoBase;
+const textoBase = (textoEl.value || "").trim();
+const estiloExtra = construirEstiloTexto();
+const textoFinal = estiloExtra
+  ? textoBase + " " + estiloExtra
+  : textoBase;
 
-    const refInput = document.getElementById("imagenReferencia");
-    const hayReferencia = refInput && refInput.files.length > 0;
-    const hayMascara = usePaint.checked;
+const refInput = document.getElementById("imagenReferencia");
+const hayReferencia = refInput && refInput.files.length > 0;
+const hayMascara = usePaint.checked;
 
-    let promptFinal = texto;
+let promptFinal = textoFinal;
 
-    if (hayReferencia && hayMascara) {
-promptFinal = `
+if (hayReferencia && hayMascara) {
+  promptFinal = `
 El usuario quiere modificar la imagen original utilizando
 la imagen de referencia como guía visual.
 
@@ -1127,29 +1127,30 @@ REGLAS:
 - Aplicar el cambio en toda la escena si corresponde.
 
 Descripción del usuario:
-${texto}
+${textoFinal}
 `;
-    }
-    
+}
 
-    const imagen = inputImagen.files?.[0];
+const imagen = inputImagen.files?.[0];
 
-    if (estado) estado.textContent = "";
-    if (recomendacionEl) recomendacionEl.textContent = "—";
-    if (modoInfo) modoInfo.textContent = "";
-    if (imagenResultadoEl) {
-      imagenResultadoEl.style.display = "none";
-      imagenResultadoEl.src = "";
-    }
+if (estado) estado.textContent = "";
+if (recomendacionEl) recomendacionEl.textContent = "—";
+if (modoInfo) modoInfo.textContent = "";
+if (imagenResultadoEl) {
+  imagenResultadoEl.style.display = "none";
+  imagenResultadoEl.src = "";
+}
 
-    resetVideoUI();
-    resultadoUrlFinal = "";
-    if (btnUseResult) btnUseResult.disabled = true;
+resetVideoUI();
+resultadoUrlFinal = "";
+if (btnUseResult) btnUseResult.disabled = true;
 
-    hideCompare();
+hideCompare();
 
-    if (!texto) return niceError("Escribí qué querés cambiar.");
-    if (!imagen) return niceError("Seleccioná una imagen.");
+if (!textoFinal && modoEspecial === "") {
+  return niceError("Escribí qué querés cambiar.");
+}
+if (!imagen) return niceError("Seleccioná una imagen.");
 
     try {
       setLoading(true);
