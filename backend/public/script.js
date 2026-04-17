@@ -1069,12 +1069,16 @@ btnZip.addEventListener("click", async () => {
 ========================= */
 
 const btnVaciar = document.getElementById("btnVaciar");
+const btnStaging = document.getElementById("btnStaging");
 btnVaciar?.addEventListener("click", () => {
   modoEspecial = "VACIAR";
   if (estado) estado.textContent = "Modo activado: Vaciar ambiente 🧹";
 });
 
-
+btnStaging?.addEventListener("click", () => {
+  modoEspecial = "STAGING";
+  if (estado) estado.textContent = "Modo activado: Staging premium 🛋️";
+});
 
 
 btnVaciar?.addEventListener("click", () => {
@@ -1096,20 +1100,20 @@ IMPORTANTE:
 if (boton) {
   boton.addEventListener("click", async () => {
 
-const textoBase = (textoEl.value || "").trim();
-const estiloExtra = construirEstiloTexto();
-const textoFinal = estiloExtra
-  ? textoBase + " " + estiloExtra
-  : textoBase;
+    const textoBase = (textoEl.value || "").trim();
+    const estiloExtra = construirEstiloTexto();
+    const texto = estiloExtra
+      ? textoBase + " " + estiloExtra
+      : textoBase;
 
-const refInput = document.getElementById("imagenReferencia");
-const hayReferencia = refInput && refInput.files.length > 0;
-const hayMascara = usePaint.checked;
+    const refInput = document.getElementById("imagenReferencia");
+    const hayReferencia = refInput && refInput.files.length > 0;
+    const hayMascara = usePaint.checked;
 
-let promptFinal = textoFinal;
+    let promptFinal = texto;
 
-if (hayReferencia && hayMascara) {
-  promptFinal = `
+    if (hayReferencia && hayMascara) {
+promptFinal = `
 El usuario quiere modificar la imagen original utilizando
 la imagen de referencia como guía visual.
 
@@ -1123,30 +1127,29 @@ REGLAS:
 - Aplicar el cambio en toda la escena si corresponde.
 
 Descripción del usuario:
-${textoFinal}
+${texto}
 `;
-}
+    }
+    
 
-const imagen = inputImagen.files?.[0];
+    const imagen = inputImagen.files?.[0];
 
-if (estado) estado.textContent = "";
-if (recomendacionEl) recomendacionEl.textContent = "—";
-if (modoInfo) modoInfo.textContent = "";
-if (imagenResultadoEl) {
-  imagenResultadoEl.style.display = "none";
-  imagenResultadoEl.src = "";
-}
+    if (estado) estado.textContent = "";
+    if (recomendacionEl) recomendacionEl.textContent = "—";
+    if (modoInfo) modoInfo.textContent = "";
+    if (imagenResultadoEl) {
+      imagenResultadoEl.style.display = "none";
+      imagenResultadoEl.src = "";
+    }
 
-resetVideoUI();
-resultadoUrlFinal = "";
-if (btnUseResult) btnUseResult.disabled = true;
+    resetVideoUI();
+    resultadoUrlFinal = "";
+    if (btnUseResult) btnUseResult.disabled = true;
 
-hideCompare();
+    hideCompare();
 
-if (!textoFinal && modoEspecial === "") {
-  return niceError("Escribí qué querés cambiar.");
-}
-if (!imagen) return niceError("Seleccioná una imagen.");
+    if (!texto) return niceError("Escribí qué querés cambiar.");
+    if (!imagen) return niceError("Seleccioná una imagen.");
 
     try {
       setLoading(true);
