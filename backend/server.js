@@ -1,11 +1,9 @@
-require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
 const OpenAI = require("openai");
 const { toFile } = require("openai");
-
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -264,6 +262,45 @@ NO debe parecer generado por IA.
 
 Debe ser fotográficamente creíble.
 
+`;
+}
+
+if (modoEspecial === "STAGING") {
+  prompt = `
+Sos un especialista en home staging inmobiliario fotorealista.
+
+Tu tarea es transformar el ambiente en una versión más atractiva, ordenada y vendible,
+sin alterar la arquitectura original.
+
+OBJETIVO:
+Generar una propuesta de staging premium, cálida, moderna y realista,
+pensada para mostrar la propiedad de la mejor manera posible.
+
+REGLAS OBLIGATORIAS:
+- Mantener exactamente la misma arquitectura y distribución del ambiente.
+- No cambiar paredes, ventana, cortinas, piso, zócalos, enchufes ni estructura.
+- No modificar perspectiva, encuadre ni posición de cámara.
+- No inventar aberturas ni cambiar dimensiones.
+- No convertir la habitación en otra distinta.
+- No hacer un render fantasioso.
+
+STAGING:
+- Agregar mobiliario y decoración coherentes con el tamaño real del espacio.
+- Priorizar un estilo moderno, neutro, luminoso y elegante.
+- Usar pocos muebles, bien ubicados.
+- Lograr una estética inmobiliaria premium.
+- Hacer que el espacio se vea amplio, limpio, habitable y atractivo.
+- Mantener proporciones reales de muebles y objetos.
+
+ESTILO VISUAL:
+- Diseño contemporáneo, sobrio y cálido.
+- Paleta neutra y elegante.
+- Decoración mínima, premium y realista.
+- Sensación de orden, amplitud y valor inmobiliario.
+
+RESULTADO:
+La imagen final debe parecer una fotografía profesional de una propiedad preparada para publicarse en venta o alquiler premium.
+Debe verse real, creíble y comercialmente atractiva.
 `;
 }
 
