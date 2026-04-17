@@ -1087,7 +1087,8 @@ IMPORTANTE:
 
 if (boton) {
   boton.addEventListener("click", async () => {
-
+    
+    // 🔥 MOVER AQUI - Declarar texto PRIMERO
     const textoBase = (textoEl.value || "").trim();
     const estiloExtra = construirEstiloTexto();
     const texto = estiloExtra
@@ -1101,7 +1102,7 @@ if (boton) {
     let promptFinal = texto;
 
     if (hayReferencia && hayMascara) {
-promptFinal = `
+      promptFinal = `
 El usuario quiere modificar la imagen original utilizando
 la imagen de referencia como guía visual.
 
@@ -1172,28 +1173,28 @@ ${texto}
 
       if (data.imagenUrl && imagenResultadoEl) {
 
-  const url = `${data.imagenUrl}?v=${Date.now()}`;
+        const url = `${data.imagenUrl}?v=${Date.now()}`;
 
-  imagenResultadoEl.src = url;
-  imagenResultadoEl.style.display = "block";
+        imagenResultadoEl.src = url;
+        imagenResultadoEl.style.display = "block";
 
-  resultadoUrlFinal = url;
+        resultadoUrlFinal = url;
 
-  // 🔥 REACTIVAR BOTONES
-  if (btnUseResult) btnUseResult.disabled = false;
-  if (btnVideo) btnVideo.disabled = false;
-  if (btnZip) btnZip.disabled = false;
+        // 🔥 REACTIVAR BOTONES
+        if (btnUseResult) btnUseResult.disabled = false;
+        if (btnVideo) btnVideo.disabled = false;
+        if (btnZip) btnZip.disabled = false;
 
-  // 🔥 MOSTRAR COMPARADOR
-  if (originalObjectUrl) {
-    showCompare(originalObjectUrl, url);
-  }
+        // 🔥 MOSTRAR COMPARADOR
+        if (originalObjectUrl) {
+          showCompare(originalObjectUrl, url);
+        }
 
-  // 🔥 Mostrar modo
-  if (modoInfo && data.modo) {
-    modoInfo.textContent = "Modo: " + data.modo;
-  }
-}
+        // 🔥 Mostrar modo
+        if (modoInfo && data.modo) {
+          modoInfo.textContent = "Modo: " + data.modo;
+        }
+      }
 
     } catch (err) {
       console.error(err);
