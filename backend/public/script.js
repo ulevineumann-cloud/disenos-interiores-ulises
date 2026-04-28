@@ -87,6 +87,17 @@ let resultadoUrlFinal = "";
 let videoBlobUrl = "";
 let currentOriginalThumb = "";
 
+function revokeIfBlobUrl(url) {
+  if (url && String(url).startsWith("blob:")) {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function withCacheBust(url, stamp = Date.now()) {
+  if (!url) return "";
+  return url.includes("?") ? `${url}&v=${stamp}` : `${url}?v=${stamp}`;
+}
+
 /* =========================
    MOBILE DRAWER HELPERS + SCROLL LOCK
 ========================= */
@@ -377,6 +388,10 @@ function findProjectById(list, id) {
   return list.find((p) => p.id === id) || null;
 }
 
+function projectLastVersion(project) {
+  return Array.isArray(project?.versions) && project.versions.length ? project.versions[0] : null;
+}
+
 function formatDate(ts) {
   try { return new Date(ts).toLocaleString(); } catch { return ""; }
 }
@@ -390,8 +405,7 @@ function escapeHtml(s) {
 
 /* ===== Sidebar render ===== */
 function projectThumb(p) {
-  const last = p.versions?.[0] ? p.versions[0] : (p.versions?.[p.versions.length - 1] || null);
-  return (last?.originalThumb || "") || "";
+  return projectLastVersion(p)?.originalThumb || "";
 }
 
 function lastMeta(p) {
@@ -490,14 +504,18 @@ function renderSidebar() {
       if (getCurrentProjectId() === id) setCurrentProjectId(list[0]?.id || "");
       syncCurrentProjectUI();
       renderSidebar();
+      restoreCurrentProjectState().catch((err) => {
+        console.error(err);
+      });
     });
   });
 }
 
-function selectProject(id) {
+async function selectProject(id) {
   setCurrentProjectId(id);
   syncCurrentProjectUI();
   renderSidebar();
+  await restoreCurrentProjectState();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -559,6 +577,213 @@ function syncCurrentProjectUI() {
 }
 
 
+function setImageVisibility(imgEl, src) {
+  if (!imgEl) return;
+  if (!src) {
+    imgEl.removeAttribute("src");
+    imgEl.style.display = "none";
+    return;
+  }
+
+  imgEl.src = src;
+  imgEl.style.display = "block";
+}
+
+function clearCurrentWorkspace() {
+  textoEl.value = "";
+  if (estado) estado.textContent = "";
+  if (modoInfo) modoInfo.textContent = "";
+  if (recomendacionEl) recomendacionEl.textContent = "-";
+
+  setImageVisibility(imagenResultadoEl, "");
+  setImageVisibility(preview, "");
+  setImageVisibility(previewReferencia, "");
+
+  resultadoUrlFinal = "";
+  resetVideoUI();
+  hideCompare();
+
+  if (btnUseResult) btnUseResult.disabled = true;
+  if (btnBackToOriginal) btnBackToOriginal.disabled = true;
+  if (btnVideo) btnVideo.disabled = true;
+  if (btnZip) btnZip.disabled = true;
+
+  revokeIfBlobUrl(originalObjectUrl);
+  originalObjectUrl = "";
+  originalBaseFile = null;
+  currentOriginalThumb = "";
+
+  inputImagen.value = "";
+  if (inputReferencia) inputReferencia.value = "";
+
+  paintBase.removeAttribute("src");
+  imgNaturalW = 0;
+  imgNaturalH = 0;
+}
+
+async function hydrateInputFromStoredUrl(url, filename = "proyecto-base.png") {
+  const res = await fetch(withCacheBust(url), { cache: "no-store" });
+  if (!res.ok) throw new Error("No se pudo recuperar la imagen original");
+
+  const blob = await res.blob();
+  const file = new File([blob], filename, { type: blob.type || "image/png" });
+
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  inputImagen.files = dt.files;
+  originalBaseFile = file;
+
+  try {
+    currentOriginalThumb = await fileToThumbDataUrl(file);
+  } catch {
+    currentOriginalThumb = "";
+  }
+
+  revokeIfBlobUrl(originalObjectUrl);
+  originalObjectUrl = URL.createObjectURL(file);
+  setImageVisibility(preview, originalObjectUrl);
+
+  paintBase.onload = () => {
+    imgNaturalW = paintBase.naturalWidth;
+    imgNaturalH = paintBase.naturalHeight;
+    if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+  };
+  paintBase.src = originalObjectUrl;
+
+  if (btnBackToOriginal) btnBackToOriginal.disabled = false;
+}
+
+async function restoreCurrentProjectState() {
+  const list = loadProjects();
+  const currentId = getCurrentProjectId();
+  const project = findProjectById(list, currentId);
+  const latest = projectLastVersion(project);
+
+  if (!project) {
+    clearCurrentWorkspace();
+    return;
+  }
+
+  proyectoEl.value = project.name || "Proyecto sin nombre";
+
+  if (!latest) {
+    clearCurrentWorkspace();
+    proyectoEl.value = project.name || "Proyecto sin nombre";
+    return;
+  }
+
+  textoEl.value = latest.prompt || "";
+  if (estado) estado.textContent = "";
+  if (recomendacionEl) recomendacionEl.textContent = latest.recommendation || "-";
+  if (modoInfo) modoInfo.textContent = latest.mode ? "Modo: " + latest.mode : "";
+
+  const originalSrc = latest.originalUrl ? withCacheBust(latest.originalUrl, latest.createdAt || Date.now()) : "";
+  const resultSrc = latest.resultUrl ? withCacheBust(latest.resultUrl, latest.createdAt || Date.now()) : "";
+
+  setImageVisibility(imagenResultadoEl, resultSrc);
+  resultadoUrlFinal = resultSrc;
+  resetVideoUI();
+
+  if (btnUseResult) btnUseResult.disabled = !resultSrc;
+  if (btnVideo) btnVideo.disabled = !resultSrc;
+  if (btnZip) btnZip.disabled = !resultSrc;
+
+  currentOriginalThumb = latest.originalThumb || "";
+  setImageVisibility(preview, originalSrc || latest.originalThumb || "");
+
+  if (originalSrc) {
+    paintBase.onload = () => {
+      imgNaturalW = paintBase.naturalWidth;
+      imgNaturalH = paintBase.naturalHeight;
+      if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+    };
+    paintBase.src = originalSrc;
+  } else {
+    paintBase.removeAttribute("src");
+    imgNaturalW = 0;
+    imgNaturalH = 0;
+  }
+
+  if (originalSrc && resultSrc) {
+    showCompare(originalSrc, resultSrc);
+  } else {
+    hideCompare();
+  }
+
+  inputImagen.value = "";
+  originalBaseFile = null;
+  if (btnBackToOriginal) btnBackToOriginal.disabled = true;
+
+  if (!latest.originalUrl) return;
+
+  try {
+    await hydrateInputFromStoredUrl(latest.originalUrl, latest.originalName || "proyecto-base.png");
+    if (resultSrc) showCompare(originalObjectUrl || originalSrc, resultSrc);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function persistCurrentProjectName() {
+  const clean = (proyectoEl.value || "").trim() || "Proyecto sin nombre";
+  const list = loadProjects();
+  const project = findProjectById(list, getCurrentProjectId());
+  if (!project) return;
+
+  project.name = clean;
+  project.updatedAt = Date.now();
+  saveProjects(list);
+  syncCurrentProjectUI();
+  renderSidebar();
+}
+
+function saveCurrentVersion(versionData) {
+  const cleanName = (proyectoEl.value || "").trim() || "Proyecto sin nombre";
+  const list = loadProjects();
+  let project = findProjectById(list, getCurrentProjectId());
+
+  if (!project) {
+    project = {
+      id: uid(),
+      name: cleanName,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      favorite: false,
+      versions: [],
+    };
+    list.unshift(project);
+    setCurrentProjectId(project.id);
+  }
+
+  project.name = cleanName;
+  project.updatedAt = Date.now();
+  project.versions = Array.isArray(project.versions) ? project.versions : [];
+  project.versions.unshift({
+    id: uid(),
+    createdAt: Date.now(),
+    prompt: versionData.prompt || "",
+    recommendation: versionData.recommendation || "",
+    originalUrl: versionData.originalUrl || "",
+    originalThumb: versionData.originalThumb || "",
+    originalName: versionData.originalName || "",
+    resultUrl: versionData.resultUrl || "",
+    mode: versionData.mode || "",
+  });
+  project.versions = project.versions.slice(0, 12);
+
+  saveProjects(list);
+}
+
+let renameTimer = 0;
+proyectoEl?.addEventListener("input", () => {
+  clearTimeout(renameTimer);
+  renameTimer = setTimeout(() => {
+    persistCurrentProjectName();
+  }, 250);
+});
+proyectoEl?.addEventListener("blur", persistCurrentProjectName);
+
+
 /* ===== Crear nuevo proyecto ===== */
 btnNewProject.addEventListener("click", () => {
   const name = prompt("Nombre del proyecto:", "Nuevo proyecto");
@@ -579,6 +804,7 @@ btnNewProject.addEventListener("click", () => {
   list.unshift(p);
   saveProjects(list);
   setCurrentProjectId(p.id);
+  clearCurrentWorkspace();
 
   textoEl.value = "";
   recomendacionEl.textContent = "—";
@@ -785,7 +1011,7 @@ inputImagen?.addEventListener("change", async () => {
     currentOriginalThumb = "";
   }
 
-  if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
+  revokeIfBlobUrl(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(file);
 
   if (preview) {
@@ -820,7 +1046,7 @@ function volverAlOriginal() {
   dt.items.add(originalBaseFile);
   inputImagen.files = dt.files;
 
-  if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
+  revokeIfBlobUrl(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(originalBaseFile);
 
   preview.src = originalObjectUrl;
@@ -863,12 +1089,13 @@ async function usarResultadoComoBase() {
   const dt = new DataTransfer();
   dt.items.add(file);
   inputImagen.files = dt.files;
+  originalBaseFile = file;
 
   resetVideoUI();
   resultadoUrlFinal = "";
   if (btnUseResult) btnUseResult.disabled = true;
 
-  if (originalObjectUrl) URL.revokeObjectURL(originalObjectUrl);
+  revokeIfBlobUrl(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(file);
 
   preview.src = originalObjectUrl;
@@ -1173,7 +1400,8 @@ ${texto}
 
       if (data.imagenUrl && imagenResultadoEl) {
 
-        const url = `${data.imagenUrl}?v=${Date.now()}`;
+        const savedResultUrl = data.imagenUrl;
+        const url = withCacheBust(savedResultUrl);
 
         imagenResultadoEl.src = url;
         imagenResultadoEl.style.display = "block";
@@ -1194,6 +1422,18 @@ ${texto}
         if (modoInfo && data.modo) {
           modoInfo.textContent = "Modo: " + data.modo;
         }
+
+        saveCurrentVersion({
+          prompt: textoBase,
+          recommendation: data.recomendacion || "",
+          originalUrl: data.originalUrl || "",
+          originalThumb: currentOriginalThumb,
+          originalName: imagen.name || "original.png",
+          resultUrl: savedResultUrl,
+          mode: data.modo || "",
+        });
+        syncCurrentProjectUI();
+        renderSidebar();
       }
 
     } catch (err) {
@@ -1210,6 +1450,9 @@ ${texto}
 ensureSomeProject();
 syncCurrentProjectUI();
 renderSidebar();
+restoreCurrentProjectState().catch((err) => {
+  console.error(err);
+});
 
 const btnMiniTest = document.getElementById("calcularEstilo");
 

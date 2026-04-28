@@ -4,93 +4,180 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Diseño de Interiores en Argentina | Ulises</title>
-<meta name="description" content="Estudio de diseño de interiores y visualización arquitectónica en Argentina. Renders realistas, renovación de fachadas, barandas, mobiliario e iluminación.">
+<title>Diseno de Interiores en Argentina | Ulises</title>
+<meta name="description" content="Estudio de diseno de interiores y visualizacion arquitectonica en Argentina. Mostra cambios, materiales y atmósferas antes de construir o remodelar.">
+<meta name="keywords" content="diseno de interiores, visualizacion arquitectonica, renders realistas, remodelacion, materiales, fachadas">
+<meta property="og:title" content="Ulises | Diseno de interiores y visualizacion arquitectonica">
+<meta property="og:description" content="Propuestas visuales realistas para tomar decisiones antes de invertir en obra.">
+<meta property="og:image" content="/preview.jpg">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#15120f">
 
-<meta name="keywords" content="diseño de interiores, renders arquitectónicos, visualización arquitectónica, renovación de fachadas, diseño en Argentina">
-
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 </head>
 
-<body>
-<div class="bg"></div>
+<body class="landingPage">
+<div class="bg landingBg"></div>
 
 <div class="appShell">
   <div class="mainCol">
 
-    <header class="top">
-      <div class="brand">
-        <div class="logo">U</div>
-        <div class="brandText">
-          <h1>Diseño de interiores y visualización arquitectónica</h1>
-          <p class="seoLine">
-            Renders realistas y propuestas profesionales antes de construir.
-          </p>
-        </div>
+    <header class="top landingTop">
+      <div class="brand landingBrand">
+        <a class="brandLockup" href="/" aria-label="Inicio Ulises">
+          <div class="logo">U</div>
+          <div class="brandText">
+            <p class="eyebrow">Estudio visual</p>
+            <h1>Ulises</h1>
+          </div>
+        </a>
+
+        <nav class="landingNav" aria-label="Secciones principales">
+          <a href="#servicios">Servicios</a>
+          <a href="#proceso">Proceso</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
       </div>
     </header>
 
-    <main class="wrap">
+    <main class="wrap landingWrap">
+      <section class="heroCard card">
+        <div class="heroSplit">
+          <div class="heroCopy">
+            <p class="heroKicker">Diseno de interiores y visualizacion arquitectonica</p>
+            <h2 class="heroTitle">Visualiza el cambio antes de mover una pared, elegir un material o invertir en obra.</h2>
+            <p class="muted heroText">
+              Desarrollo propuestas visuales para interiores, fachadas y espacios en transformacion.
+              La idea es simple: que puedas decidir con claridad, viendo primero una imagen realista del resultado.
+            </p>
 
-      <!-- HERO -->
-      <section class="card">
-        <h2>Transformo espacios antes de que existan</h2>
-        <p class="muted">
-          Desarrollo proyectos de diseño de interiores y visualización arquitectónica 
-          para casas, edificios y desarrollos inmobiliarios.
-          Podés ver cómo quedarán los cambios antes de ejecutarlos.
-        </p>
+            <div class="ctaRow heroActions">
+              <a class="primaryLink" href="/app">Entrar a la herramienta privada</a>
+              <a class="ghostLinkBtn" href="#contacto">Consultar un proyecto</a>
+            </div>
 
-        <div class="ctaRow">
-          <a class="primaryLink" href="/app">
-            🔒 Entrar a la herramienta (privado)
-          </a>
+            <div class="heroPills" aria-label="Ventajas del servicio">
+              <span>Interiores</span>
+              <span>Fachadas</span>
+              <span>Materiales</span>
+              <span>Iluminacion</span>
+            </div>
+          </div>
+
+          <div class="heroVisual">
+            <div class="visualFrame">
+              <img src="/preview.jpg" alt="Vista previa de un proyecto de diseno interior" class="landingPreview" loading="eager">
+              <div class="visualBadge">
+                <strong>Decision mas segura</strong>
+                <span>Menos duda. Mas claridad antes de ejecutar.</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- SERVICIOS -->
-      <section class="card">
-        <h2>Servicios de Diseño de Interiores</h2>
-
-        <ul class="bullets">
-          <li>Visualización arquitectónica hiperrealista</li>
-          <li>Renovación y rediseño de fachadas</li>
-          <li>Propuestas de mobiliario y materiales</li>
-          <li>Rediseño de barandas y carpinterías</li>
-          <li>Iluminación interior y exterior</li>
-        </ul>
-      </section>
-
-      <!-- COMO FUNCIONA -->
-      <section class="card">
-        <h2>¿Cómo funciona?</h2>
-
-        <p class="muted">
-          Subís una imagen del espacio que querés modificar y detallás qué cambios buscás realizar.
-          La herramienta genera una propuesta visual realista respetando la estructura original.
-        </p>
-
-        <p class="muted">
-          Ideal para desarrolladores inmobiliarios, arquitectos y clientes que quieren visualizar resultados antes de invertir.
+      <section class="landingBand">
+        <p>
+          Pensado para clientes particulares, desarrollos inmobiliarios, estudios y equipos que necesitan mostrar una idea con credibilidad visual.
         </p>
       </section>
 
-      <!-- CONTACTO -->
-      <section class="card">
-        <h2>Contacto</h2>
-        <p class="muted">
-          Para consultas comerciales o proyectos personalizados:
-        </p>
+      <section id="servicios" class="landingSection">
+        <div class="sectionHeading">
+          <p class="eyebrow">Servicios</p>
+          <h2>Una herramienta visual para decidir mejor</h2>
+        </div>
 
-        <div class="ctaRow">
-          <a class="ghostLinkBtn" href="mailto:ulevineumann@gmail.com">
-            ✉️ Email
-          </a>
+        <div class="serviceGrid">
+          <article class="serviceCard">
+            <h3>Interiorismo aplicado</h3>
+            <p>Redistribucion visual de materiales, mobiliario, color, textura e iluminacion sin perder la identidad del espacio original.</p>
+          </article>
+
+          <article class="serviceCard">
+            <h3>Fachadas y remodelacion</h3>
+            <p>Pruebas visuales para renovar frentes, barandas, carpinterias y lenguaje exterior antes de construir.</p>
+          </article>
+
+          <article class="serviceCard">
+            <h3>Soporte para venta o presentacion</h3>
+            <p>Imagenes claras para explicar decisiones de proyecto a clientes, socios, inversores o equipos de obra.</p>
+          </article>
         </div>
       </section>
 
-      <footer class="footer">
-        © Ulises — Diseño de interiores y visualización arquitectónica en Argentina
+      <section id="proceso" class="card processCard">
+        <div class="sectionHeading">
+          <p class="eyebrow">Proceso</p>
+          <h2>De una foto a una propuesta util</h2>
+        </div>
+
+        <div class="processGrid">
+          <article class="processStep">
+            <span>01</span>
+            <h3>Subis una imagen</h3>
+            <p>Partimos de una foto real del ambiente o fachada para trabajar sobre un caso concreto.</p>
+          </article>
+
+          <article class="processStep">
+            <span>02</span>
+            <h3>Definis el cambio</h3>
+            <p>Indicás materiales, atmósfera, correcciones puntuales o zonas exactas para editar.</p>
+          </article>
+
+          <article class="processStep">
+            <span>03</span>
+            <h3>Recibis una propuesta visual</h3>
+            <p>Obtenés una imagen comparativa y una recomendacion breve para seguir tomando decisiones.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="insightSplit">
+        <article class="insightCard card">
+          <p class="eyebrow">Diferencial</p>
+          <h2>No se trata solo de renderizar: se trata de respetar el espacio real.</h2>
+          <p class="muted">
+            El enfoque prioriza que la propuesta se sienta creible, cercana a obra y fiel a la foto original. Eso hace que la herramienta sirva para decidir, no solo para inspirar.
+          </p>
+        </article>
+
+        <article class="insightList card">
+          <div class="checkRow">
+            <strong>Mas contexto</strong>
+            <p>La imagen base sigue siendo la referencia principal del proyecto.</p>
+          </div>
+          <div class="checkRow">
+            <strong>Mas precision</strong>
+            <p>Se pueden marcar sectores puntuales para corregir o reemplazar.</p>
+          </div>
+          <div class="checkRow">
+            <strong>Mas claridad comercial</strong>
+            <p>El resultado ayuda a mostrar una idea sin depender de explicaciones largas.</p>
+          </div>
+        </article>
+      </section>
+
+      <section id="contacto" class="contactCard card">
+        <div>
+          <p class="eyebrow">Contacto</p>
+          <h2>Si tenes un proyecto, podemos convertirlo en una imagen que convenza.</h2>
+          <p class="muted">
+            Para consultas comerciales, proyectos personalizados o acceso a la herramienta privada:
+          </p>
+        </div>
+
+        <div class="ctaRow">
+          <a class="primaryLink" href="mailto:ulevineumann@gmail.com">ulevineumann@gmail.com</a>
+          <a class="ghostLinkBtn" href="/app">Abrir herramienta</a>
+        </div>
+      </section>
+
+      <footer class="footer landingFooter">
+        Ulises · Diseno de interiores y visualizacion arquitectonica en Argentina
       </footer>
 
     </main>
@@ -100,46 +187,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

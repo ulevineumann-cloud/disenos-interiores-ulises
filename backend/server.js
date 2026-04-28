@@ -101,7 +101,8 @@ app.post(
       if (!ENABLE_AI) return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
       if (!openai) return res.status(500).json({ error: "Falta OPENAI_API_KEY" });
 
-  
+      const texto = (req.body.texto || "").trim();
+      const modoEspecial = (req.body.modoEspecial || "").trim();
       const imagen = req.files?.imagen?.[0];
       const mask = req.files?.mask?.[0] || null;
       const referencia = req.files?.imagenReferencia?.[0] || null;
@@ -116,9 +117,6 @@ app.post(
       if (mask && mask.mimetype !== "image/png") {
         return res.status(400).json({ error: "Mask inválida (debe ser PNG)" });
       }
-
-const texto = (req.body.texto || "").trim();
-const modoEspecial = (req.body.modoEspecial || "").trim();
 
 let prompt = `
 Sos un sistema avanzado de edición fotográfica arquitectónica.
@@ -331,6 +329,7 @@ fs.writeFileSync(
 
 return res.json({
   recomendacion: materialesTexto || `Propuesta generada según:\n"${texto}"`,
+  originalUrl: `/uploads/${imagen.filename}`,
   imagenUrl: `/uploads/${outputName}`,
   modo: maskFile
     ? "IA_CON_MASK"
