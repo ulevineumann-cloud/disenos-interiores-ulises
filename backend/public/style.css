@@ -954,11 +954,11 @@ border-radius:8px;
 }
 
 .appPage .top{
-  padding: 32px 0 12px;
+  padding: 24px 0 8px;
 }
 
 .appPage .sidebar{
-  width: 342px;
+  width: 316px;
   border-right-color: var(--app-line);
   background:
     linear-gradient(180deg, rgba(37, 29, 22, .94), rgba(21, 18, 15, .96));
@@ -995,8 +995,8 @@ border-radius:8px;
 }
 
 .appPage .brandText h1{
-  font-size: clamp(34px, 4.2vw, 48px);
-  line-height: .94;
+  font-size: clamp(28px, 3.6vw, 40px);
+  line-height: .96;
   letter-spacing: -.02em;
 }
 
@@ -1004,7 +1004,7 @@ border-radius:8px;
   margin: 0 0 6px;
   text-transform: uppercase;
   letter-spacing: .16em;
-  font-size: 11px;
+  font-size: 10px;
   color: rgba(246, 221, 191, .74);
 }
 
@@ -1016,18 +1016,19 @@ border-radius:8px;
 }
 
 .workspaceBar span{
-  padding: 7px 11px;
+  padding: 6px 10px;
   border-radius: 999px;
   border: 1px solid var(--app-line);
   background: rgba(255,255,255,.04);
   color: rgba(246, 239, 229, .82);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .appPage .frase{
   font-style: italic;
   max-width: 52ch;
-  margin-top: 14px;
+  margin-top: 10px;
+  font-size: 13px;
 }
 
 .appPage .card,
@@ -1049,7 +1050,7 @@ border-radius:8px;
 }
 
 .appPage .toolCard{
-  padding: 30px;
+  padding: 22px;
 }
 
 .appPage .toolEyebrow{
@@ -1072,8 +1073,8 @@ border-radius:8px;
 }
 
 .appPage .sbBtnPrimary{
-  padding: 12px 14px;
-  border-radius: 16px;
+  padding: 11px 13px;
+  border-radius: 14px;
   font-weight: 800;
 }
 
@@ -1127,37 +1128,37 @@ border-radius:8px;
 }
 
 .appPage .projThumb{
-  width: 68px;
-  height: 54px;
-  border-radius: 12px;
+  width: 58px;
+  height: 46px;
+  border-radius: 10px;
 }
 
 .appPage .projRow{
-  padding: 12px;
-  border-radius: 18px;
+  padding: 10px;
+  border-radius: 16px;
 }
 
 .appPage .projName{
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .appPage .sbHelp,
 .appPage .precisionCard{
-  border-radius: 18px;
+  border-radius: 16px;
 }
 
 .appPage .requestGrid{
-  gap: 22px;
+  gap: 16px;
   grid-template-columns: minmax(0, 1.4fr) minmax(290px, .6fr);
 }
 
 .appPage .panel{
-  padding: 16px;
-  border-radius: 18px;
+  padding: 14px;
+  border-radius: 16px;
 }
 
 .appPage .previewBox{
-  padding: 16px;
+  padding: 14px;
   border-style: solid;
 }
 
@@ -1179,31 +1180,36 @@ border-radius:8px;
 }
 
 .appPage .resultGrid{
-  gap: 18px;
+  gap: 14px;
 }
 
 .appPage .reco{
-  min-height: 240px;
+  min-height: 200px;
+  max-height: 220px;
   border-color: var(--app-line);
   background: rgba(24, 19, 15, .48);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .appPage .imgWrap{
-  padding: 14px;
-  border-radius: 18px;
-}
-
-.appPage .imgResultadoSmall{
-  max-height: 320px;
+  padding: 10px;
   border-radius: 16px;
 }
 
+.appPage .imgResultadoSmall{
+  max-height: 240px;
+  border-radius: 14px;
+}
+
 .appPage .compareBox{
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .appPage .compareWrapper{
-  border-radius: 18px;
+  min-height: 220px;
+  aspect-ratio: 16 / 11;
+  border-radius: 16px;
 }
 
 .appPage .footer{
@@ -1211,6 +1217,82 @@ border-radius:8px;
   color: rgba(246, 239, 229, .52);
   letter-spacing: .04em;
   text-transform: uppercase;
+  font-size: 11px;
+}
+
+.appPage .resultHeader{
+  margin-bottom: 12px;
+}
+
+.appPage .resultHeader h2{
+  font-size: 36px;
+  line-height: .96;
+  margin-bottom: 6px;
+}
+
+.appPage .resultHeader .muted.small{
+  margin: 0;
+  max-width: 52ch;
+  font-size: 13px;
+}
+
+.appPage .previewTitle{
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.appPage .modeInfo{
+  font-size: 11px;
+  max-width: 320px;
+}
+
+.appPage .toolStatusPill,
+.appPage .chip{
+  font-size: 12px;
+}
+
+.appPage .precisionCard{
+  padding: 12px;
+}
+
+.appPage .precisionCard h3,
+.appPage .panel h3{
+  font-size: 17px;
+  margin-bottom: 10px;
+}
+
+.appPage .precisionOption{
+  padding: 8px 0;
+  font-size: 13px;
+}
+
+.appPage .modeBar,
+.appPage .toolMini,
+.appPage .uploadBar{
+  gap: 10px;
+}
+
+.appPage .compareSlider::after{
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+}
+
+.appPage .sbTop,
+.appPage .sbBottom,
+.appPage .sbListWrap{
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.appPage .sbHelpTitle,
+.appPage .sbTitle{
+  font-size: 11px;
+}
+
+.appPage .sbSub,
+.appPage .sbHelpText,
+.appPage .projMeta{
   font-size: 11px;
 }
 

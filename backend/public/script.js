@@ -634,8 +634,15 @@ function setImageVisibility(imgEl, src) {
     return;
   }
 
+  imgEl.style.display = "none";
+  imgEl.onload = () => {
+    imgEl.style.display = "block";
+  };
+  imgEl.onerror = () => {
+    imgEl.removeAttribute("src");
+    imgEl.style.display = "none";
+  };
   imgEl.src = src;
-  imgEl.style.display = "block";
 }
 
 function clearCurrentWorkspace() {
@@ -965,6 +972,8 @@ function hideCompare() {
 function showCompare(originalSrc, resultSrc) {
   if (!compareBox || !compareOriginal || !compareResult) return;
 
+  compareOriginal.onerror = hideCompare;
+  compareResult.onerror = hideCompare;
   compareOriginal.src = originalSrc || "";
   compareResult.src = resultSrc || "";
   compareOriginal.onload = syncCompareAspect;
