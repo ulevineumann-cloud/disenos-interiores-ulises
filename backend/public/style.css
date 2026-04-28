@@ -924,6 +924,199 @@ border-radius:8px;
   margin-bottom: 8px;
 }
 
+/* ===== APP STUDIO LOOK ===== */
+.appPage{
+  --app-bg: #15120f;
+  --app-surface: rgba(48, 37, 28, .72);
+  --app-surface-strong: rgba(67, 52, 38, .82);
+  --app-panel: rgba(29, 23, 18, .78);
+  --app-line: rgba(241, 221, 194, .12);
+  --app-line-strong: rgba(241, 221, 194, .22);
+  --app-text: #f6efe5;
+  --app-muted: rgba(246, 239, 229, .72);
+  --app-accent: rgba(190, 132, 74, .95);
+  --app-accent-2: rgba(143, 165, 112, .82);
+  background: var(--app-bg);
+  color: var(--app-text);
+}
+
+.appPage .bg{
+  background:
+    radial-gradient(900px 540px at 12% 10%, rgba(188, 117, 70, .28), transparent 60%),
+    radial-gradient(760px 460px at 84% 22%, rgba(138, 154, 110, .16), transparent 58%),
+    radial-gradient(780px 500px at 50% 100%, rgba(214, 179, 126, .12), transparent 60%);
+  filter: saturate(108%);
+}
+
+.appPage .wrap,
+.appPage .brand{
+  width: min(1180px, 92vw);
+}
+
+.appPage .sidebar{
+  border-right-color: var(--app-line);
+  background:
+    linear-gradient(180deg, rgba(37, 29, 22, .94), rgba(21, 18, 15, .96));
+  box-shadow: 0 18px 48px rgba(0,0,0,.28);
+}
+
+.appPage .sbTop,
+.appPage .sbBottom{
+  border-color: var(--app-line);
+}
+
+.appPage .sbLogo,
+.appPage .logo{
+  background: linear-gradient(135deg, rgba(211, 164, 107, .28), rgba(123, 148, 108, .18));
+  border-color: rgba(238, 217, 192, .18);
+  box-shadow: 0 18px 44px rgba(0,0,0,.24);
+}
+
+.appPage .sbSub,
+.appPage .seoLine,
+.appPage .frase,
+.appPage .muted,
+.appPage .modeHint,
+.appPage .precisionList,
+.appPage .sbHelpText{
+  color: var(--app-muted);
+}
+
+.appPage .brandText h1,
+.appPage h2,
+.appPage .panel h3,
+.appPage .precisionCard h3{
+  font-family: "Cormorant Garamond", Georgia, serif;
+}
+
+.appPage .brandText h1{
+  font-size: clamp(34px, 4.2vw, 48px);
+  line-height: .94;
+  letter-spacing: -.02em;
+}
+
+.appPage .frase{
+  font-style: italic;
+  max-width: 52ch;
+}
+
+.appPage .card,
+.appPage .panel,
+.appPage .previewBox,
+.appPage .paintAviso,
+.appPage .paintBox,
+.appPage .precisionCard,
+.appPage .sbHelp,
+.appPage .projRow{
+  border-color: var(--app-line);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01)),
+    var(--app-surface);
+}
+
+.appPage .card{
+  box-shadow: 0 18px 48px rgba(0,0,0,.24);
+}
+
+.appPage .toolCard{
+  padding: 26px;
+}
+
+.appPage .toolEyebrow{
+  color: rgba(246, 221, 191, .78);
+}
+
+.appPage .toolStatusPill,
+.appPage .projBadge{
+  border-color: var(--app-line);
+  background: rgba(255,255,255,.04);
+  color: rgba(246, 239, 229, .86);
+}
+
+.appPage .sbBtnPrimary,
+.appPage .primary{
+  background: linear-gradient(135deg, var(--app-accent), var(--app-accent-2));
+  color: #18120f;
+  border-color: rgba(255,255,255,.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.24);
+}
+
+.appPage .fileBtn,
+.appPage .ghost,
+.appPage .ghostLink,
+.appPage .ghostLinkBtn,
+.appPage .sbMiniBtn{
+  border-color: var(--app-line);
+  background: rgba(24, 19, 15, .54);
+  color: var(--app-text);
+}
+
+.appPage .fileBtnStrong{
+  background: linear-gradient(135deg, rgba(255,255,255,.08), rgba(190, 132, 74, .18));
+}
+
+.appPage .textInput,
+.appPage textarea,
+.appPage .sbSearch input,
+.appPage .miniTest select{
+  border-color: var(--app-line);
+  background: rgba(24, 19, 15, .62);
+  color: var(--app-text);
+}
+
+.appPage .textInput::placeholder,
+.appPage textarea::placeholder,
+.appPage .sbSearch input::placeholder{
+  color: rgba(246, 239, 229, .42);
+}
+
+.appPage .textInput:focus,
+.appPage textarea:focus,
+.appPage .sbSearch input:focus,
+.appPage .miniTest select:focus{
+  border-color: var(--app-line-strong);
+  box-shadow: 0 0 0 3px rgba(190, 132, 74, .08);
+}
+
+.appPage .projRow.active{
+  border-color: rgba(214, 179, 126, .26);
+  background:
+    linear-gradient(135deg, rgba(190, 132, 74, .14), rgba(143, 165, 112, .08)),
+    rgba(37, 29, 22, .94);
+}
+
+.appPage .projRow:hover{
+  border-color: rgba(241, 221, 194, .22);
+}
+
+.appPage .modeToggle{
+  border-color: var(--app-line);
+  background: rgba(24, 19, 15, .52);
+}
+
+.appPage .modeBtn.active{
+  background: linear-gradient(135deg, rgba(190, 132, 74, .92), rgba(143, 165, 112, .78));
+  color: #17120f;
+}
+
+.appPage .compareSlider{
+  background: rgba(246, 239, 229, .92);
+}
+
+.appPage .compareSlider::after{
+  background: rgba(29, 23, 18, .88);
+  border-color: var(--app-line);
+  color: rgba(246, 239, 229, .92);
+}
+
+.appPage .modeInfo{
+  color: rgba(246, 221, 191, .82);
+}
+
+.appPage .resultado-estilo span{
+  color: #d9b77d;
+}
+
 @media (max-width: 980px){
   .toolIntro,
   .requestGrid,
