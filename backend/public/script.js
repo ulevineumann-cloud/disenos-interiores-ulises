@@ -85,6 +85,8 @@ const videoInfo = document.getElementById("videoInfo");
 
 // ZIP UI
 const btnZip = document.getElementById("btnZip");
+const styleDiscoverBtn = document.getElementById("calcularEstilo");
+const styleResultEl = document.getElementById("resultadoEstilo");
 
 // Estado actual
 let originalObjectUrl = "";
@@ -113,6 +115,16 @@ function humanFileSize(size) {
 function setMetaText(el, text) {
   if (!el) return;
   el.textContent = text;
+}
+
+function collapseWhitespace(text) {
+  return String(text || "").replace(/\s+/g, " ").trim();
+}
+
+function truncateText(text, max = 120) {
+  const clean = collapseWhitespace(text);
+  if (clean.length <= max) return clean;
+  return clean.slice(0, max - 1).trimEnd() + "…";
 }
 
 function describeImageFile(file, label) {
@@ -399,6 +411,251 @@ setMode(false);
   el?.addEventListener("change", () => {
     updatePrecisionSummary();
   });
+});
+
+const STYLE_LABELS = {
+  color: {
+    claro: "claros y neutros",
+    oscuro: "oscuros profundos",
+    tierra: "tonos tierra",
+    vibrante: "colores vibrantes",
+    pastel: "pasteles suaves",
+  },
+  material: {
+    madera: "madera",
+    metal: "metal",
+    marmol: "marmol",
+    hormigon: "hormigon",
+    vidrio: "vidrio",
+  },
+  estetica: {
+    minimalista: "minimalista",
+    moderno: "moderna",
+    cargado: "decorativa",
+    clasico: "clasica",
+  },
+  espacio: {
+    living: "living",
+    cocina: "cocina",
+    bano: "bano",
+    dormitorio: "dormitorio",
+    oficina: "oficina",
+  },
+};
+
+const STYLE_LIBRARY = [
+  {
+    name: "Japandi calido",
+    matches: {
+      color: ["claro", "tierra"],
+      material: ["madera"],
+      estetica: ["minimalista"],
+      espacio: ["living", "dormitorio"],
+    },
+    summary: "Una mezcla serena entre calidez natural y limpieza visual, ideal para mostrar un espacio premium sin ruido.",
+    points: [
+      "Madera natural, textiles nobles y pocos acentos oscuros.",
+      "Composicion despejada con atmosfera calma.",
+      "Muy bueno para livings y dormitorios con tono premium.",
+    ],
+    prompt: "Aplicar un estilo Japandi calido con madera natural, paleta neutra y tonos tierra suaves, composicion limpia, textiles nobles y pocos acentos oscuros, manteniendo una lectura serena y elegante.",
+  },
+  {
+    name: "Industrial elegante",
+    matches: {
+      color: ["oscuro"],
+      material: ["metal", "hormigon"],
+      estetica: ["moderno", "minimalista"],
+      espacio: ["oficina", "cocina", "living"],
+    },
+    summary: "Una direccion mas urbana y sofisticada, con peso material y un aire de estudio contemporaneo.",
+    points: [
+      "Metal negro, hormigon limpio y madera oscura.",
+      "Contraste alto sin perder orden visual.",
+      "Ideal para oficinas y areas sociales con caracter.",
+    ],
+    prompt: "Aplicar un estilo industrial elegante con metal negro, hormigon refinado, madera oscura y una composicion ordenada, sobria y contemporanea, sin sobrecargar el ambiente.",
+  },
+  {
+    name: "Nordico soft",
+    matches: {
+      color: ["pastel", "claro"],
+      material: ["madera", "vidrio"],
+      estetica: ["minimalista", "moderno"],
+      espacio: ["dormitorio", "living", "bano"],
+    },
+    summary: "Una direccion luminosa y amable, pensada para dar claridad, frescura y una sensacion muy habitable.",
+    points: [
+      "Paleta suave, maderas claras y blancos rotos.",
+      "Texturas livianas y atmosfera limpia.",
+      "Perfecto para espacios donde la luz sea protagonista.",
+    ],
+    prompt: "Aplicar un estilo nordico soft con tonos claros, maderas suaves, blancos rotos y textiles livianos, priorizando luminosidad, calma y una sensacion fresca y habitable.",
+  },
+  {
+    name: "Contemporaneo petreo",
+    matches: {
+      color: ["oscuro", "tierra"],
+      material: ["marmol", "hormigon"],
+      estetica: ["moderno"],
+      espacio: ["cocina", "bano", "living"],
+    },
+    summary: "Se apoya en materiales nobles de presencia fuerte para lograr una imagen sobria, solida y muy arquitectonica.",
+    points: [
+      "Piedra, marmol o superficies minerales bien definidas.",
+      "Menos decoracion, mas materialidad protagonista.",
+      "Ideal para cocinas, banos y areas de recepcion.",
+    ],
+    prompt: "Aplicar un estilo contemporaneo petreo con materiales minerales nobles, presencia de marmol u hormigon refinado, tonos profundos y una composicion arquitectonica sobria y precisa.",
+  },
+  {
+    name: "Clasico sereno",
+    matches: {
+      color: ["claro", "tierra"],
+      material: ["marmol", "madera"],
+      estetica: ["clasico"],
+      espacio: ["living", "dormitorio"],
+    },
+    summary: "Toma referencias clasicas pero las mantiene medidas, elegantes y actuales, sin caer en exceso ornamental.",
+    points: [
+      "Detalles clasicos controlados y simetria suave.",
+      "Materiales nobles con una paleta calma.",
+      "Perfecto para una elegancia mas tradicional.",
+    ],
+    prompt: "Aplicar un estilo clasico sereno con materiales nobles, detalles sutiles, paleta calida controlada y una composicion elegante sin exceso ornamental.",
+  },
+  {
+    name: "Minimalismo ejecutivo",
+    matches: {
+      color: ["oscuro", "claro"],
+      material: ["metal", "vidrio", "madera"],
+      estetica: ["minimalista"],
+      espacio: ["oficina"],
+    },
+    summary: "Un lenguaje limpio, profesional y muy enfocado, pensado para que el espacio se vea premium y funcional.",
+    points: [
+      "Lineas limpias, pocos objetos y contraste controlado.",
+      "Materiales sobrios con terminacion prolija.",
+      "Ideal para oficinas y estudios privados.",
+    ],
+    prompt: "Aplicar un estilo de minimalismo ejecutivo con lineas limpias, pocos objetos, materiales sobrios y una imagen profesional, refinada y funcional.",
+  },
+];
+
+function getStyleSelections() {
+  return {
+    color: document.getElementById("q-color")?.value || "",
+    material: document.getElementById("q-material")?.value || "",
+    estetica: document.getElementById("q-estetica")?.value || "",
+    espacio: document.getElementById("q-espacio")?.value || "",
+  };
+}
+
+function scoreStyleProfile(profile, selections) {
+  let score = 0;
+  for (const key of Object.keys(profile.matches)) {
+    const wanted = profile.matches[key] || [];
+    const actual = selections[key];
+    if (wanted.includes(actual)) score += 3;
+  }
+  return score;
+}
+
+function buildFallbackStyle(selections) {
+  const color = STYLE_LABELS.color[selections.color] || "tonos equilibrados";
+  const material = STYLE_LABELS.material[selections.material] || "materiales nobles";
+  const estetica = STYLE_LABELS.estetica[selections.estetica] || "contemporanea";
+  const espacio = STYLE_LABELS.espacio[selections.espacio] || "espacio";
+
+  return {
+    name: "Estudio contemporaneo",
+    summary: "No cae en una etiqueta cerrada; arma una direccion mas a medida a partir de tus elecciones actuales.",
+    points: [
+      `Paleta base sugerida: ${color}.`,
+      `Material protagonista: ${material}.`,
+      `Lectura general: ${estetica} para ${espacio}.`,
+    ],
+    prompt: `Aplicar un estilo contemporaneo a medida para ${espacio}, con paleta ${color}, materialidad protagonista en ${material} y una lectura ${estetica}, manteniendo un resultado sobrio, profesional y coherente.`,
+  };
+}
+
+function discoverStyleProfile(selections) {
+  let best = null;
+  let bestScore = -1;
+
+  for (const profile of STYLE_LIBRARY) {
+    const score = scoreStyleProfile(profile, selections);
+    if (score > bestScore) {
+      best = profile;
+      bestScore = score;
+    }
+  }
+
+  return bestScore >= 6 && best ? best : buildFallbackStyle(selections);
+}
+
+function renderStyleResult(profile) {
+  if (!styleResultEl) return;
+  styleResultEl.dataset.prompt = profile.prompt;
+  styleResultEl.innerHTML = `
+    <div class="styleResultHead">
+      <div class="styleResultTitle">Perfil sugerido</div>
+      <span class="styleBadge">${profile.name}</span>
+    </div>
+    <p class="styleSummary">${profile.summary}</p>
+    <ul class="stylePoints">
+      ${profile.points.map((point) => `<li>${point}</li>`).join("")}
+    </ul>
+    <button type="button" class="sbMiniBtn styleApplyBtn" data-apply-style="1">Pasar al pedido</button>
+  `;
+}
+
+function handleStyleDiscover() {
+  const selections = getStyleSelections();
+  if (!selections.color || !selections.material || !selections.estetica || !selections.espacio) {
+    if (styleResultEl) {
+      styleResultEl.removeAttribute("data-prompt");
+      styleResultEl.textContent = "Completa las cuatro senales y te propongo una direccion mas precisa.";
+    }
+    return;
+  }
+
+  renderStyleResult(discoverStyleProfile(selections));
+}
+
+styleDiscoverBtn?.addEventListener("click", handleStyleDiscover);
+
+styleResultEl?.addEventListener("click", (event) => {
+  const trigger = event.target.closest("[data-apply-style]");
+  if (!trigger) return;
+
+  const stylePrompt = styleResultEl.dataset.prompt || "";
+  if (!stylePrompt) return;
+
+  const currentText = collapseWhitespace(textoEl.value);
+  textoEl.value = currentText ? `${currentText}\n\n${stylePrompt}` : stylePrompt;
+  textoEl.focus();
+  textoEl.setSelectionRange(textoEl.value.length, textoEl.value.length);
+
+  document.querySelector(".toolCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (estado) estado.textContent = "Sugerencia de estilo aplicada al pedido.";
+});
+
+["q-color", "q-material", "q-estetica", "q-espacio"].forEach((id) => {
+  document.getElementById(id)?.addEventListener("change", () => {
+    if (!styleResultEl) return;
+    styleResultEl.removeAttribute("data-prompt");
+    styleResultEl.textContent = "Actualiza la combinacion y volve a descubrir tu estilo.";
+  });
+});
+
+queueMicrotask(() => {
+  const currentBtn = document.getElementById("calcularEstilo");
+  if (!currentBtn || !currentBtn.parentNode) return;
+
+  const freshBtn = currentBtn.cloneNode(true);
+  currentBtn.parentNode.replaceChild(freshBtn, currentBtn);
+  freshBtn.addEventListener("click", handleStyleDiscover);
 });
 
 /* =========================
@@ -1214,8 +1471,84 @@ function loadImg(src) {
   });
 }
 
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
 function easeInOut(t) {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+}
+
+function roundedRectPath(ctx, x, y, w, h, radius) {
+  const r = Math.min(radius, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawContainedImage(ctx, img, x, y, w, h, options = {}) {
+  const zoom = options.zoom || 1;
+  const alpha = options.alpha ?? 1;
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  if (!iw || !ih) return;
+
+  const scale = Math.min(w / iw, h / ih) * zoom;
+  const dw = iw * scale;
+  const dh = ih * scale;
+  const dx = x + (w - dw) / 2;
+  const dy = y + (h - dh) / 2;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(img, dx, dy, dw, dh);
+  ctx.restore();
+}
+
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+  const words = collapseWhitespace(text).split(" ").filter(Boolean);
+  const lines = [];
+  let current = "";
+
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word;
+    if (ctx.measureText(test).width <= maxWidth || !current) {
+      current = test;
+      continue;
+    }
+    lines.push(current);
+    current = word;
+    if (lines.length === maxLines - 1) break;
+  }
+
+  if (current && lines.length < maxLines) lines.push(current);
+  if (!lines.length) return y;
+
+  if (words.length && lines.length === maxLines) {
+    const usedWordCount = lines.join(" ").split(" ").length;
+    if (usedWordCount < words.length) {
+      lines[lines.length - 1] = truncateText(lines[lines.length - 1], Math.max(24, Math.floor(maxWidth / 8)));
+    }
+  }
+
+  lines.forEach((line, idx) => {
+    ctx.fillText(line, x, y + idx * lineHeight);
+  });
+
+  return y + (lines.length - 1) * lineHeight;
+}
+
+function buildShowcaseLabel() {
+  const title = collapseWhitespace(proyectoEl?.value) || "Proyecto Ulises";
+  const prompt = truncateText(textoEl?.value || "", 120);
+  return {
+    title,
+    subtitle: prompt || "Edicion arquitectonica precisa, lista para presentar al cliente.",
+  };
 }
 
 async function generarVideoTransicion(originalSrc, resultadoSrc) {
@@ -1225,16 +1558,20 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
   const imgA = await loadImg(originalSrc);
   const imgB = await loadImg(resultadoSrc);
 
-  const maxW = 1080;
-  const w = Math.min(maxW, imgA.naturalWidth || imgA.width);
-  const h = Math.round((w / (imgA.naturalWidth || imgA.width)) * (imgA.naturalHeight || imgA.height));
+  const baseW = imgA.naturalWidth || imgA.width;
+  const baseH = imgA.naturalHeight || imgA.height;
+  const maxSide = 1280;
+  const scale = Math.min(1, maxSide / Math.max(baseW, baseH));
+  const w = Math.max(1, Math.round(baseW * scale));
+  const h = Math.max(1, Math.round(baseH * scale));
 
   canvas.width = w;
   canvas.height = h;
 
   const fps = 30;
-  const seconds = 2.2;
+  const seconds = 3.4;
   const frames = Math.floor(fps * seconds);
+  const labels = buildShowcaseLabel();
 
   const stream = canvas.captureStream(fps);
   const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
@@ -1252,31 +1589,140 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
   recorder.start();
 
   for (let i = 0; i < frames; i++) {
-    const t = i / (frames - 1);
-    const k = easeInOut(t);
+    const t = frames <= 1 ? 1 : i / (frames - 1);
+    const intro = clamp(t / 0.18, 0, 1);
+    const reveal = clamp((t - 0.16) / 0.56, 0, 1);
+    const revealEase = easeInOut(reveal);
+    const finalHold = clamp((t - 0.76) / 0.24, 0, 1);
 
-    ctx.fillStyle = "#0b1220";
+    const bg = ctx.createLinearGradient(0, 0, w, h);
+    bg.addColorStop(0, "#1b1511");
+    bg.addColorStop(1, "#0f0d0b");
+    ctx.fillStyle = bg;
     ctx.fillRect(0, 0, w, h);
 
-    function drawCover(img, zoom, alpha) {
+    ctx.save();
+    ctx.globalAlpha = 0.45;
+    ctx.fillStyle = "#8d6d4a";
+    ctx.beginPath();
+    ctx.arc(w * 0.18, h * 0.12, Math.max(w, h) * 0.16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#75875d";
+    ctx.beginPath();
+    ctx.arc(w * 0.82, h * 0.18, Math.max(w, h) * 0.14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    const pad = Math.round(Math.min(w, h) * 0.055);
+    const infoH = Math.max(68, Math.round(h * 0.15));
+    const frameX = pad;
+    const frameY = pad + infoH;
+    const frameW = w - pad * 2;
+    const frameH = h - frameY - pad;
+    const radius = Math.max(18, Math.round(Math.min(frameW, frameH) * 0.03));
+
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    roundedRectPath(ctx, frameX, frameY, frameW, frameH, radius);
+    const stage = ctx.createLinearGradient(frameX, frameY, frameX, frameY + frameH);
+    stage.addColorStop(0, "rgba(42,33,25,.96)");
+    stage.addColorStop(1, "rgba(20,16,13,.98)");
+    ctx.fillStyle = stage;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(244, 224, 196, .18)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.clip();
+
+    drawContainedImage(ctx, imgA, frameX, frameY, frameW, frameH, {
+      zoom: 1.018 - revealEase * 0.018,
+      alpha: 1,
+    });
+
+    if (reveal > 0) {
       ctx.save();
-      ctx.globalAlpha = alpha;
-
-      const iw = img.naturalWidth || img.width;
-      const ih = img.naturalHeight || img.height;
-
-      const scale = Math.max(w / iw, h / ih) * zoom;
-      const dw = iw * scale;
-      const dh = ih * scale;
-      const dx = (w - dw) / 2;
-      const dy = (h - dh) / 2;
-
-      ctx.drawImage(img, dx, dy, dw, dh);
+      ctx.beginPath();
+      ctx.rect(frameX, frameY, frameW * revealEase, frameH);
+      ctx.clip();
+      drawContainedImage(ctx, imgB, frameX, frameY, frameW, frameH, {
+        zoom: 1.006 + revealEase * 0.006,
+        alpha: 0.9 + revealEase * 0.1,
+      });
       ctx.restore();
     }
 
-    drawCover(imgA, 1.02 - 0.02 * k, 1);
-    drawCover(imgB, 1.00 + 0.02 * k, k);
+    const shade = ctx.createLinearGradient(frameX, frameY, frameX, frameY + frameH);
+    shade.addColorStop(0, "rgba(0,0,0,.02)");
+    shade.addColorStop(1, "rgba(0,0,0,.20)");
+    ctx.fillStyle = shade;
+    ctx.fillRect(frameX, frameY, frameW, frameH);
+    ctx.restore();
+
+    const sliderX = frameX + frameW * revealEase;
+    if (reveal > 0.02 && reveal < 0.985) {
+      ctx.fillStyle = "rgba(248, 240, 230, .92)";
+      ctx.fillRect(sliderX - 1.5, frameY, 3, frameH);
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(28, 22, 17, .90)";
+      ctx.arc(sliderX, frameY + frameH / 2, Math.max(14, Math.min(w, h) * 0.022), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(244, 224, 196, .22)";
+      ctx.stroke();
+      ctx.fillStyle = "rgba(248, 240, 230, .92)";
+      ctx.font = `700 ${Math.max(12, Math.round(Math.min(w, h) * 0.024))}px Manrope, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("↔", sliderX, frameY + frameH / 2 + 1);
+    }
+
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillStyle = `rgba(246, 239, 229, ${0.58 + intro * 0.42})`;
+    ctx.font = `700 ${Math.max(11, Math.round(w * 0.013))}px Manrope, sans-serif`;
+    ctx.fillText("ULISES · PRESENTACION", frameX, pad);
+
+    ctx.fillStyle = `rgba(246, 239, 229, ${0.82 + intro * 0.18})`;
+    ctx.font = `600 ${Math.max(26, Math.round(w * 0.04))}px "Cormorant Garamond", Georgia, serif`;
+    ctx.fillText(labels.title, frameX, pad + Math.max(18, h * 0.035));
+
+    ctx.fillStyle = `rgba(246, 239, 229, ${0.58 + intro * 0.24})`;
+    ctx.font = `500 ${Math.max(13, Math.round(w * 0.0155))}px Manrope, sans-serif`;
+    drawWrappedText(
+      ctx,
+      labels.subtitle,
+      frameX,
+      pad + Math.max(52, h * 0.08),
+      frameW * 0.76,
+      Math.max(16, Math.round(h * 0.03)),
+      2
+    );
+
+    const pillY = frameY + 14;
+    const leftPillW = Math.max(92, Math.round(frameW * 0.14));
+    const rightPillW = Math.max(102, Math.round(frameW * 0.16));
+
+    ctx.save();
+    ctx.globalAlpha = 0.92;
+    roundedRectPath(ctx, frameX + 14, pillY, leftPillW, 34, 17);
+    ctx.fillStyle = "rgba(18,15,12,.64)";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(244, 224, 196, .12)";
+    ctx.stroke();
+
+    roundedRectPath(ctx, frameX + frameW - rightPillW - 14, pillY, rightPillW, 34, 17);
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = "rgba(246, 239, 229, .88)";
+    ctx.font = `700 ${Math.max(11, Math.round(w * 0.012))}px Manrope, sans-serif`;
+    ctx.fillText("ORIGINAL", frameX + 28, pillY + 11);
+    ctx.fillText("RESULTADO", frameX + frameW - rightPillW, pillY + 11);
+
+    const footerAlpha = 0.35 + 0.65 * Math.max(intro, finalHold);
+    ctx.fillStyle = `rgba(246, 221, 191, ${footerAlpha})`;
+    ctx.font = `600 ${Math.max(12, Math.round(w * 0.0135))}px Manrope, sans-serif`;
+    ctx.fillText("Cambio puntual. Misma lectura espacial. Misma foto.", frameX, h - pad + 4);
 
     await new Promise((r) => setTimeout(r, 1000 / fps));
   }
