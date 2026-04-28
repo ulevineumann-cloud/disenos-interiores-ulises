@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
+const sharp = require("sharp");
 require("dotenv").config();
 const OpenAI = require("openai");
 const { toFile } = require("openai");
@@ -15,14 +16,18 @@ if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 
 const BASIC_USER = (process.env.BASIC_USER || "").trim();
 const BASIC_PASS = (process.env.BASIC_PASS || "").trim();
-
 const ENABLE_AI = (process.env.ENABLE_AI || "").trim() === "1";
 const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
 
 const BASE_URL = "https://disenos-interiores-ulises.onrender.com";
 
+function isTruthyFlag(value, fallback = true) {
+  if (value === undefined || value === null || value === "") return fallback;
+  const normalized = String(value).trim().toLowerCase();
+  return normalized === "1" || normalized === "true" || normalized === "on" || normalized === "yes";
+}
+
 function basicAuth(req, res, next) {
-  // Si no están seteadas, NO pide auth (por eso puede “no pedir usuario/clave”)
   if (!BASIC_USER || !BASIC_PASS) return next();
 
   const header = req.headers.authorization || "";
@@ -44,11 +49,112 @@ function basicAuth(req, res, next) {
   return res.status(401).send("Credenciales incorrectas");
 }
 
-// parsers
+function buildEditPrompt({
+  texto,
+  width,
+  height,
+  hasMask,
+  hasReference,
+  keepGeometry,
+  keepDimensions,
+  strictEditScope,
+}) {
+  return `
+Sos un sistema experto en edicion fotografica arquitectonica de alta precision.
+
+OBJETIVO:
+Editar la foto original sin redisenar la escena.
+
+PEDIDO DEL USUARIO:
+"${texto}"
+
+TAMANO ORIGINAL:
+- ancho: ${width || "desconocido"} px
+- alto: ${height || "desconocido"} px
+
+REGLAS OBLIGATORIAS:
+- La foto original es la base absoluta y debe seguir siendo reconocible como la misma foto.
+- No crear una escena nueva.
+- No cambiar arquitectura, estructura, camara, lente, punto de vista, horizonte ni encuadre.
+- No mover elementos que no fueron pedidos.
+- No agregar objetos decorativos ni mejoras esteticas no solicitadas.
+- No reinterpretar el pedido.
+- Si el usuario pide cambiar un elemento por otro, reemplazar solo ese elemento manteniendo ubicacion, escala y proporcion.
+- Mantener materiales, sombras, reflejos, profundidad y relaciones fisicas del resto de la imagen.
+- Mantener intactas las zonas no afectadas.
+
+${keepGeometry ? `
+BLOQUEO DE GEOMETRIA:
+- Conservar exactamente las dimensiones visibles de balcones, ventanas, losas, columnas, carpinterias y vacios.
+- No alterar cantidad de modulos, tramos, paneles, apoyos ni separaciones si el usuario no lo pidio.
+- No deformar lineas verticales ni horizontales.
+` : ""}
+
+${keepDimensions ? `
+BLOQUEO DE CANVAS:
+- La salida debe conservar exactamente el mismo tamano final de imagen y la misma proporcion que la original.
+- No recortar.
+- No expandir.
+- No rotar.
+` : ""}
+
+${strictEditScope ? `
+ALCANCE ESTRICTO:
+- Aplicar un cambio quirurgico y minimo.
+- Cambiar exactamente lo pedido y nada mas.
+- Si la instruccion afecta solo un material o una tipologia, sustituir solo ese material o tipologia.
+- Si hay conflicto entre embellecer y respetar la foto original, siempre respetar la foto original.
+` : ""}
+
+${hasMask ? `
+USO DE MASCARA:
+- Modificar solamente la zona marcada por la mascara.
+- Todo lo que quede fuera de la mascara debe permanecer visualmente igual.
+` : ""}
+
+${hasReference ? `
+USO DE REFERENCIA:
+- La referencia sirve solo para materialidad o lenguaje visual.
+- No copiar composicion ni geometria de la referencia.
+` : ""}
+
+RESULTADO ESPERADO:
+- Debe parecer la misma fotografia original con el cambio exacto solicitado.
+- El resultado debe ser fotografico, creible y preciso.
+`.trim();
+}
+
+function buildCleanupPrompt(texto, width, height) {
+  return `
+Sos un sistema experto en limpieza visual fotografica de interiores.
+
+PEDIDO DEL USUARIO:
+"${texto}"
+
+TAMANO ORIGINAL:
+- ancho: ${width || "desconocido"} px
+- alto: ${height || "desconocido"} px
+
+OBJETIVO:
+Eliminar unicamente desorden, basura u objetos sueltos sin redisenar el ambiente.
+
+PROHIBIDO:
+- No cambiar arquitectura.
+- No cambiar encuadre, perspectiva ni lente.
+- No cambiar piso, paredes, ventanas, cortinas, zocalos ni iluminacion.
+- No reinterpretar la escena.
+- No generar una habitacion nueva.
+- No embellecer.
+
+REGLA CENTRAL:
+- Debe verse como la misma foto, solamente mas limpia.
+- Conservar exactamente el mismo tamano y proporcion final de la imagen.
+`.trim();
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ SEO
 app.get("/robots.txt", (req, res) => {
   res.type("text/plain");
   res.send(`User-agent: *
@@ -60,21 +166,17 @@ Sitemap: ${BASE_URL}/sitemap.xml
 `);
 });
 
-// ✅ estáticos (IMPORTANTE: así /style.css y /script.js cargan bien)
 app.use(express.static(publicPath));
 app.use("/uploads", express.static(uploadsPath));
 
-// ✅ landing pública
 app.get("/", (req, res) => {
   res.sendFile(path.join(publicPath, "index.html"));
 });
 
-// ✅ herramienta privada (pide usuario/clave)
 app.get("/app", basicAuth, (req, res) => {
   res.sendFile(path.join(publicPath, "app.html"));
 });
 
-// ===== Multer =====
 const storage = multer.diskStorage({
   destination: uploadsPath,
   filename: (req, file, cb) => {
@@ -82,21 +184,22 @@ const storage = multer.diskStorage({
     cb(null, `img_${Date.now()}${ext}`);
   },
 });
+
 const upload = multer({ storage, limits: { fileSize: 12 * 1024 * 1024 } });
 
-// ===== OpenAI =====
 let openai = null;
-if (ENABLE_AI && OPENAI_API_KEY) openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+if (ENABLE_AI && OPENAI_API_KEY) {
+  openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+}
 
-// ✅ /generar privado + funcional
 app.post(
   "/generar",
   basicAuth,
   upload.fields([
-  { name: "imagen", maxCount: 1 },
-  { name: "mask", maxCount: 1 },
-  { name: "imagenReferencia", maxCount: 1 } // 🔥 NUEVO
-]),
+    { name: "imagen", maxCount: 1 },
+    { name: "mask", maxCount: 1 },
+    { name: "imagenReferencia", maxCount: 1 },
+  ]),
   async (req, res) => {
     try {
       if (!ENABLE_AI) return res.status(500).json({ error: "IA desactivada (ENABLE_AI != 1)" });
@@ -104,240 +207,109 @@ app.post(
 
       const texto = (req.body.texto || "").trim();
       const modoEspecial = (req.body.modoEspecial || "").trim();
+      const keepGeometry = isTruthyFlag(req.body.keepGeometry, true);
+      const keepDimensions = isTruthyFlag(req.body.keepDimensions, true);
+      const strictEditScope = isTruthyFlag(req.body.strictEditScope, true);
+
       const imagen = req.files?.imagen?.[0];
       const mask = req.files?.mask?.[0] || null;
       const referencia = req.files?.imagenReferencia?.[0] || null;
 
-      if (!texto) return res.status(400).json({ error: "Falta descripción" });
+      if (!texto) return res.status(400).json({ error: "Falta descripcion" });
       if (!imagen) return res.status(400).json({ error: "Falta imagen" });
 
-      const ok = ["image/jpeg", "image/png", "image/webp"];
-      if (!ok.includes(imagen.mimetype)) {
-        return res.status(400).json({ error: "Formato no soportado. Usá JPG, PNG o WEBP" });
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(imagen.mimetype)) {
+        return res.status(400).json({ error: "Formato no soportado. Usa JPG, PNG o WEBP" });
       }
       if (mask && mask.mimetype !== "image/png") {
-        return res.status(400).json({ error: "Mask inválida (debe ser PNG)" });
+        return res.status(400).json({ error: "Mask invalida (debe ser PNG)" });
       }
 
-let prompt = `
-Sos un sistema avanzado de edición fotográfica arquitectónica.
+      const imagePath = path.join(uploadsPath, imagen.filename);
+      const originalMeta = await sharp(imagePath).metadata();
+      const originalWidth = originalMeta.width || null;
+      const originalHeight = originalMeta.height || null;
 
-Tu objetivo NO es crear una imagen nueva.
-Tu objetivo es EDITAR la imagen original con precisión extrema.
+      let prompt = buildEditPrompt({
+        texto,
+        width: originalWidth,
+        height: originalHeight,
+        hasMask: Boolean(mask),
+        hasReference: Boolean(referencia),
+        keepGeometry,
+        keepDimensions,
+        strictEditScope,
+      });
 
----
+      if (modoEspecial === "VACIAR") {
+        prompt = buildCleanupPrompt(texto, originalWidth, originalHeight);
+      }
 
-OBJETIVO DEL USUARIO:
-"${texto}"
+      const imageFile = await toFile(
+        fs.createReadStream(imagePath),
+        null,
+        { type: imagen.mimetype }
+      );
 
----
+      let maskFile = null;
+      if (mask) {
+        const maskPath = path.join(uploadsPath, mask.filename);
+        maskFile = await toFile(
+          fs.createReadStream(maskPath),
+          null,
+          { type: mask.mimetype }
+        );
+      }
 
-REGLAS CRÍTICAS (OBLIGATORIAS):
+      const params = {
+        model: "gpt-image-1",
+        image: imageFile,
+        prompt,
+      };
 
-- La imagen original es SIEMPRE la base absoluta.
-- No reinterpretar la escena.
-- No rediseñar el ambiente.
-- No cambiar arquitectura.
-- No modificar dimensiones, proporciones ni perspectiva.
-- No cambiar posición de cámara ni encuadre.
-- No inventar elementos nuevos innecesarios.
-- No mejorar estéticamente si no se pidió.
-- No estilizar.
-- No hacer versiones "inspiradas".
+      if (maskFile) params.mask = maskFile;
 
----
+      const result = await openai.images.edit(params);
 
-REALISMO:
-
-- El resultado debe parecer una fotografía real tomada en el mismo momento.
-- Debe ser indistinguible de una foto original.
-- Mantener iluminación, sombras, reflejos y coherencia física.
-- Mantener imperfecciones reales del ambiente.
-
----
-
-MODIFICACIONES:
-
-- SOLO aplicar exactamente lo que el usuario pidió.
-- Si el cambio afecta elementos repetidos:
-  aplicar en TODOS los elementos iguales.
-
-- Si el usuario cambia materiales:
-  reemplazar en todos los objetos donde exista.
-
----
-
-REFERENCIA (si existe):
-
-- Usarla solo como guía visual.
-- NO copiar objetos.
-- NO cambiar geometría.
-- SOLO aplicar estilo/material.
-
----
-
-PRIORIDAD:
-
-1. Mantener identidad original
-2. Precisión del cambio
-3. Realismo absoluto
-4. Coherencia visual
-
-Si hay conflicto → elegir REALISMO.
-
----
-
-RESULTADO:
-
-La imagen final debe parecer exactamente la misma fotografía original,
-pero con los cambios aplicados de forma perfecta y creíble.
-`;
-
-if (modoEspecial === "VACIAR") {
-  prompt = `
-Sos un sistema experto en limpieza visual fotográfica de interiores.
-
-Tu tarea es ELIMINAR objetos, no rediseñar el ambiente.
-
----
-
-TAREA:
-
-Eliminar únicamente:
-- basura
-- bolsas
-- papeles
-- ropa
-- objetos sueltos
-- recipientes
-- desorden general
-
----
-
-PROHIBIDO:
-
-- NO cambiar paredes
-- NO cambiar piso
-- NO cambiar cortinas
-- NO cambiar ventanas
-- NO cambiar enchufes
-- NO cambiar zócalos
-- NO cambiar iluminación
-- NO cambiar perspectiva
-- NO cambiar encuadre
-- NO modificar arquitectura
-- NO reinterpretar el espacio
-- NO generar una nueva habitación
-- NO “mejorar” el diseño
-
----
-
-REGLA CLAVE:
-
-NO reconstruir el ambiente.
-NO rediseñar.
-NO inventar.
-
-SOLO borrar objetos.
-
----
-
-REALISMO:
-
-- Mantener sombras originales
-- Mantener marcas reales del piso
-- Mantener suciedad leve si existe
-- Mantener desgaste real
-
----
-
-RESULTADO:
-
-Debe parecer la MISMA foto original,
-como si alguien simplemente limpió el lugar en la vida real.
-
-NO debe parecer render.
-NO debe parecer generado por IA.
-
-Debe ser fotográficamente creíble.
-`;
-}
-
-const imagePath = path.join(uploadsPath, imagen.filename);
-const imageFile = await toFile(
-  fs.createReadStream(imagePath),
-  null,
-  { type: imagen.mimetype }
-);
-
-let maskFile = null;
-if (mask) {
-  const maskPath = path.join(uploadsPath, mask.filename);
-  maskFile = await toFile(
-    fs.createReadStream(maskPath),
-    null,
-    { type: mask.mimetype }
-  );
-}
-
-let referenceFile = null;
-
-if (referencia) {
-  const refPath = path.join(uploadsPath, referencia.filename);
-  referenceFile = await toFile(
-    fs.createReadStream(refPath),
-    null,
-    { type: referencia.mimetype }
-  );
-}
-
-const params = {
-  model: "gpt-image-1",
-  image: imageFile,
-  prompt,
-};
-
-if (maskFile) params.mask = maskFile;
-// if (referenceFile) params.reference_image = referenceFile;
-
-
-const result = await openai.images.edit(params);
-
-const materialesResponse = await openai.responses.create({
-  model: "gpt-4.1-mini",
-  input: `
-Basado en esta descripción del proyecto:
+      const materialesResponse = await openai.responses.create({
+        model: "gpt-4.1-mini",
+        input: `
+Basado en esta descripcion del proyecto:
 
 "${texto}"
 
-Generar lista profesional de materiales recomendados.
-Formato claro y corto.
+Generar una lista profesional, corta y accionable de materiales recomendados.
 `,
-});
+      });
 
-const materialesTexto = materialesResponse.output_text;
+      const materialesTexto = materialesResponse.output_text;
+      const base64 = result.data?.[0]?.b64_json;
+      if (!base64) {
+        return res.status(500).json({ error: "La IA no devolvio imagen" });
+      }
 
-const base64 = result.data?.[0]?.b64_json;
-if (!base64) {
-  return res.status(500).json({ error: "La IA no devolvió imagen" });
-}
+      let outputBuffer = Buffer.from(base64, "base64");
+      if (keepDimensions && originalWidth && originalHeight) {
+        outputBuffer = await sharp(outputBuffer)
+          .resize(originalWidth, originalHeight, { fit: "fill" })
+          .png()
+          .toBuffer();
+      }
 
-const outputName = `resultado_${Date.now()}.png`;
-fs.writeFileSync(
-  path.join(uploadsPath, outputName),
-  Buffer.from(base64, "base64")
-);
+      const outputName = `resultado_${Date.now()}.png`;
+      fs.writeFileSync(path.join(uploadsPath, outputName), outputBuffer);
 
-return res.json({
-  recomendacion: materialesTexto || `Propuesta generada según:\n"${texto}"`,
-  originalUrl: `/uploads/${imagen.filename}`,
-  imagenUrl: `/uploads/${outputName}`,
-  modo: maskFile
-    ? "IA_CON_MASK"
-    : referenceFile
-    ? "IA_CON_REFERENCIA"
-    : "IA_SIMPLE",
-});
+      return res.json({
+        recomendacion: materialesTexto || `Propuesta generada segun:\n"${texto}"`,
+        originalUrl: `/uploads/${imagen.filename}`,
+        imagenUrl: `/uploads/${outputName}`,
+        modo: maskFile
+          ? "IA_CON_MASK"
+          : referencia
+          ? "IA_CON_REFERENCIA"
+          : "IA_SIMPLE",
+      });
     } catch (err) {
       console.error(err);
       const status = err?.status || err?.code || 500;
@@ -346,24 +318,9 @@ return res.json({
           error: "OPENAI_API_KEY invalida o desactualizada en el servidor",
         });
       }
-      res.status(500).json({ error: err?.message || "Error interno" });
+      return res.status(500).json({ error: err?.message || "Error interno" });
     }
   }
 );
 
 app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

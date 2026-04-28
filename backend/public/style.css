@@ -658,7 +658,8 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 .compareWrapper{
   position: relative;
   width: 100%;
-  height: 400px;
+  min-height: 280px;
+  aspect-ratio: 16 / 10;
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,.14);
@@ -673,7 +674,8 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   display: block;
   user-select: none;
   pointer-events: none;
-  object-fit: cover;
+  object-fit: contain;
+  background: rgba(10,16,28,.42);
 }
 
 #compareResult{
@@ -681,7 +683,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   clip-path: inset(0 50% 0 0);
 }
 
@@ -689,7 +691,7 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .compareSlider{
@@ -787,6 +789,157 @@ flex-wrap:wrap;
 .previewImg{
 max-width:260px;
 border-radius:8px;
+}
+
+/* ===== TOOL IMPROVEMENTS ===== */
+.toolCard{
+  padding: 20px;
+}
+
+.toolIntro{
+  display:flex;
+  justify-content:space-between;
+  gap:18px;
+  align-items:flex-start;
+}
+
+.toolEyebrow{
+  margin:0 0 8px;
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.14em;
+  color: rgba(173, 222, 255, .72);
+}
+
+.toolStatus{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+.toolStatusPill{
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.05);
+  font-size: 12px;
+  color: rgba(234,240,255,.88);
+}
+
+.requestGrid{
+  display:grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr);
+  gap: 18px;
+  align-items:start;
+}
+
+.requestMain,
+.precisionPanel{
+  min-width:0;
+}
+
+.uploadBar{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  align-items:center;
+  margin-top: 12px;
+}
+
+.fileBtnStrong{
+  background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(120,90,255,.20));
+}
+
+.modeHint{
+  color: rgba(234,240,255,.72);
+  font-size: 13px;
+}
+
+.previewHeader{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+  margin-bottom: 10px;
+}
+
+.modeInfo{
+  max-width: 360px;
+  text-align:right;
+  color: rgba(173, 222, 255, .84);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.precisionPanel{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.precisionCard{
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(10,16,28,.34);
+}
+
+.precisionCard h3{
+  margin-bottom: 12px;
+}
+
+.precisionOption{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  padding: 10px 0;
+  color: rgba(234,240,255,.88);
+}
+
+.precisionOption + .precisionOption{
+  border-top: 1px solid rgba(255,255,255,.08);
+}
+
+.precisionOption input{
+  margin-top: 2px;
+}
+
+.precisionList{
+  margin: 0;
+  padding-left: 18px;
+  color: rgba(234,240,255,.78);
+  line-height: 1.6;
+}
+
+.precisionList li + li{
+  margin-top: 8px;
+}
+
+.resultHeader{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:flex-start;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 980px){
+  .toolIntro,
+  .requestGrid,
+  .previewHeader{
+    grid-template-columns: 1fr;
+    flex-direction:column;
+  }
+
+  .toolStatus{
+    justify-content:flex-start;
+  }
+
+  .modeInfo{
+    max-width:none;
+    text-align:left;
+  }
 }
 
 /* ===== LANDING ===== */

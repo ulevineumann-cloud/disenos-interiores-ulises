@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Herramienta | Ulises</title>
-<meta name="description" content="Herramienta privada de diseño de interiores y visualización arquitectónica." />
+<meta name="description" content="Herramienta privada de diseno de interiores y visualizacion arquitectonica." />
 <meta name="robots" content="noindex, nofollow" />
 <link rel="icon" href="data:," />
 <link rel="stylesheet" href="/style.css" />
@@ -16,40 +16,36 @@
 
 <div class="appShell">
 
-<!-- ================= SIDEBAR ================= -->
 <aside class="sidebar" id="sidebar">
-
 <div class="sbTop">
 <div class="sbBrand">
 <div class="sbLogo">U</div>
 
 <div class="sbText">
 <div class="sbTitle">PROYECTOS</div>
-<div class="sbSub">Ulises · Diseño Interior</div>
+<div class="sbSub">Ulises · Diseno Interior</div>
 </div>
 
-<button id="btnToggleSidebar" class="sbMiniBtn sbToggle">⬅️</button>
-<button id="btnCloseSidebar" class="sbMiniBtn sbClose">✖</button>
+<button id="btnToggleSidebar" class="sbMiniBtn sbToggle">←</button>
+<button id="btnCloseSidebar" class="sbMiniBtn sbClose">✕</button>
 </div>
 
 <div class="sbActions">
-<button id="btnNewProject" class="sbBtnPrimary">➕ Nuevo proyecto</button>
+<button id="btnNewProject" class="sbBtnPrimary">＋ Nuevo proyecto</button>
 </div>
 
 <div class="sbSearch">
-<input id="projectSearch" type="text" placeholder="Buscar proyecto…" />
+<input id="projectSearch" type="text" placeholder="Buscar proyecto..." />
 </div>
 </div>
 
 <div class="sbListWrap">
-
 <div id="projectList" class="projectList">
-<div class="muted small">Todavía no hay proyectos.</div>
+<div class="muted small">Todavia no hay proyectos.</div>
 </div>
 
-<!-- MINI TEST -->
 <div class="sbHelp miniTest" style="margin-top:20px;">
-<div class="sbHelpTitle">🎨 Descubrí tu estilo</div>
+<div class="sbHelpTitle">Paleta de ayuda</div>
 
 <label class="label">Paleta</label>
 <select id="q-color" class="textInput">
@@ -66,18 +62,18 @@
 <option value="">Seleccionar</option>
 <option value="madera">Madera</option>
 <option value="metal">Metal</option>
-<option value="marmol">Mármol</option>
-<option value="hormigon">Hormigón</option>
+<option value="marmol">Marmol</option>
+<option value="hormigon">Hormigon</option>
 <option value="vidrio">Vidrio</option>
 </select>
 
-<label class="label">Estética</label>
+<label class="label">Estetica</label>
 <select id="q-estetica" class="textInput">
 <option value="">Seleccionar</option>
 <option value="minimalista">Minimalista</option>
 <option value="moderno">Moderno</option>
 <option value="cargado">Decorativo</option>
-<option value="clasico">Clásico</option>
+<option value="clasico">Clasico</option>
 </select>
 
 <label class="label">Espacio</label>
@@ -85,7 +81,7 @@
 <option value="">Seleccionar</option>
 <option value="living">Living</option>
 <option value="cocina">Cocina</option>
-<option value="baño">Baño</option>
+<option value="bano">Bano</option>
 <option value="dormitorio">Dormitorio</option>
 <option value="oficina">Oficina</option>
 </select>
@@ -96,33 +92,27 @@ Descubrir estilo
 
 <div id="resultadoEstilo" class="resultado-estilo"></div>
 </div>
-
 </div>
 
 <div class="sbBottom">
 <div class="sbHelp">
-<div class="sbHelpTitle">ℹ️ Tip rápido</div>
+<div class="sbHelpTitle">Tip rapido</div>
 <div class="sbHelpText">
-Escribí <b>solo</b> lo que querés cambiar. Si usás Paint, pintá la zona exacta.
+Si el cambio es puntual, activa Paint y marca solo la zona que queres tocar.
 </div>
 </div>
 </div>
-
 </aside>
 
-<!-- ================= MAIN ================= -->
 <div class="mainCol">
-
 <header class="top">
 <div class="brand">
 <div class="logo">U</div>
 
 <div class="brandText">
-<h1>Diseño de interiores Ulises</h1>
-
+<h1>Herramienta de edicion precisa</h1>
 <p class="seoLine">
-Renders realistas, propuestas de interiorismo y visualización de cambios antes de construir.
-Estudio de diseño especializado en visualización arquitectónica.
+Visualizacion arquitectonica orientada a cambios puntuales, con prioridad en conservar encuadre, geometria y escala.
 </p>
 
 <div class="ctaRow" style="margin-top:10px;">
@@ -130,7 +120,7 @@ Estudio de diseño especializado en visualización arquitectónica.
 </div>
 
 <p class="frase">
-"No necesito que sea imposible de copiar, necesito que sea difícil de igualar"
+"No necesito que sea imposible de copiar, necesito que sea dificil de igualar"
 </p>
 </div>
 
@@ -140,97 +130,147 @@ Estudio de diseño especializado en visualización arquitectónica.
 
 <main class="wrap">
 
-<!-- ================= TU PEDIDO ================= -->
-<section class="card">
+<section class="card toolCard">
+<div class="toolIntro">
+<div>
+<p class="toolEyebrow">Edicion precisa</p>
 <h2>Tu pedido</h2>
-
 <p class="muted">
-Subí una foto y escribí qué querés cambiar o agregar.
-Si querés marcar una zona exacta, usá Modo Paint.
+Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localizado, usa Paint para bloquear la zona.
 </p>
+</div>
 
+<div class="toolStatus">
+<span class="toolStatusPill">Geometria protegida</span>
+<span class="toolStatusPill">Mismo encuadre</span>
+<span class="toolStatusPill">Cambio puntual</span>
+</div>
+</div>
+
+<div class="requestGrid">
+<div class="requestMain">
 <label class="label" for="proyecto">Nombre del proyecto</label>
 <input id="proyecto" class="textInput" type="text" maxlength="60" />
 <p id="projHint" class="muted small"></p>
 
-<label class="label" for="texto">Descripción</label>
-<textarea id="texto" rows="4"></textarea>
+<label class="label" for="texto">Descripcion</label>
+<textarea id="texto" rows="4" placeholder="Ejemplo: cambiar balcon de vidrio por balcon de hierro negro sin modificar dimensiones, cantidad de panos ni perspectiva."></textarea>
 
-
-<div class="row">
-  <label class="fileBtn" for="imagen">Seleccionar imagen</label>
-  <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
-
-  <button id="generar" class="primary">Diseñar</button>
+<div class="presetBar">
+<div class="previewTitle">Atajos de pedido</div>
+<div class="presetChips">
+<button class="chip" type="button" data-preset="Cambiar balcon de vidrio por balcon de hierro negro sin modificar dimensiones, cantidad de panos ni perspectiva.">Balcon de hierro</button>
+<button class="chip" type="button" data-preset="Cambiar revestimiento manteniendo exactamente la misma arquitectura, proporciones y encuadre.">Cambiar revestimiento</button>
+<button class="chip" type="button" data-preset="Eliminar objetos sueltos manteniendo intacta la arquitectura, el encuadre y la iluminacion original.">Limpiar escena</button>
+<button class="chip" type="button" data-preset="Cambiar carpinterias manteniendo exactamente el mismo tamano, ubicacion y cantidad de aberturas.">Cambiar carpinterias</button>
+</div>
 </div>
 
+<div class="uploadBar">
+  <label class="fileBtn fileBtnStrong" for="imagen">Seleccionar imagen base</label>
+  <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
+
+  <button id="generar" class="primary">Disenar</button>
+</div>
 
 <div class="row" style="margin-top:10px;">
-  <button id="btnVaciar" class="ghost">
-    🧹 Vaciar ambiente
+  <button id="btnVaciar" class="ghost" type="button">
+    Limpiar ambiente
   </button>
 </div>
 
-<!-- MODO -->
 <div class="modeBar">
 <div class="modeToggle">
-<button id="btnModeSimple" class="modeBtn active">🟢 Simple</button>
-<button id="btnModePaint" class="modeBtn">🟡 Paint</button>
+<button id="btnModeSimple" class="modeBtn active" type="button">Simple</button>
+<button id="btnModePaint" class="modeBtn" type="button">Paint</button>
 </div>
 <input id="usePaint" type="checkbox" style="display:none;">
+<span class="modeHint">Paint fuerza una edicion localizada y reduce cambios accidentales.</span>
 </div>
 
-<!-- HERRAMIENTAS PAINT -->
 <div class="toolMini" id="paintTools" style="display:none;">
 <span class="muted">Pincel</span>
 <input id="brush" type="range" min="6" max="70" value="22">
 <span id="brushVal" class="muted">22</span>
-<button id="btnErase" class="ghost">Borrar</button>
-<button id="btnClear" class="ghost">Limpiar</button>
+<button id="btnErase" class="ghost" type="button">Borrar</button>
+<button id="btnClear" class="ghost" type="button">Limpiar</button>
 </div>
 
 <p id="estado" class="estado"></p>
 <div id="loader" class="loader"></div>
 
-
-
 <div class="previewBox">
-  <div class="previewTitle">Vista previa</div>
+  <div class="previewHeader">
+    <div class="previewTitle">Vista previa</div>
+    <div id="modoInfo" class="modeInfo">Precision alta activa: misma geometria, mismo encuadre y mismo tamano final.</div>
+  </div>
 
   <div class="previewRow">
-    <img id="preview" class="previewImg" style="display:none;">
-    <img id="previewReferencia" class="previewImg" style="display:none;">
+    <img id="preview" class="previewImg" style="display:none;" alt="Vista previa de imagen base">
+    <img id="previewReferencia" class="previewImg" style="display:none;" alt="Vista previa de referencia">
   </div>
+  <p id="fileMeta" class="muted small">Todavia no cargaste una imagen base.</p>
+  <p id="referenceMeta" class="muted small">Sin imagen de referencia adicional.</p>
+</div>
 </div>
 
+<aside class="precisionPanel">
+<div class="precisionCard">
+<h3>Modo precision</h3>
+<label class="precisionOption">
+<input id="keepGeometry" type="checkbox" checked>
+<span>Bloquear geometria y proporciones</span>
+</label>
+<label class="precisionOption">
+<input id="keepDimensions" type="checkbox" checked>
+<span>Conservar el mismo tamano final</span>
+</label>
+<label class="precisionOption">
+<input id="strictEditScope" type="checkbox" checked>
+<span>Modificar solo lo pedido</span>
+</label>
+</div>
+
+<div class="precisionCard">
+<h3>Guia rapida</h3>
+<ul class="precisionList">
+<li>Describe el cambio concreto, no una idea general.</li>
+<li>Si queres corregir una zona, pintala antes de generar.</li>
+<li>Si usas referencia, se toma como materialidad, no como nueva composicion.</li>
+</ul>
+</div>
+</aside>
+</div>
 </section>
 
-<!-- ================= PAINT ================= -->
 <section class="card" id="paintSection" style="display:none;">
 <h2>Paint</h2>
 
 <div class="paintAviso">
-<div class="paintAvisoTitle">⚠️ Importante</div>
+<div class="paintAvisoTitle">Importante</div>
 <div class="paintAvisoText">
-La IA solo va a modificar lo que pintes.
+La IA solo va a modificar lo que pintes. Todo lo demas debe quedar igual.
 </div>
 </div>
 
 <div class="paintBox">
-<img id="paintBase">
+<img id="paintBase" alt="Base para pintar">
 <canvas id="paintCanvas"></canvas>
 </div>
 </section>
 
-<!-- ================= RESULTADO ================= -->
 <section class="card">
-  <h2>Resultado</h2>
+  <div class="resultHeader">
+    <div>
+      <h2>Resultado</h2>
+      <p class="muted small">La comparacion respeta el cuadro completo para evitar recortes enganhosos.</p>
+    </div>
+  </div>
 
   <div class="resultGrid">
-
     <div class="panel">
-      <h3>Recomendación</h3>
-      <pre id="recomendacion" class="reco">—</pre>
+      <h3>Recomendacion</h3>
+      <pre id="recomendacion" class="reco">-</pre>
     </div>
 
     <div class="panel">
@@ -243,7 +283,6 @@ La IA solo va a modificar lo que pintes.
              style="display:none;" />
       </div>
 
-      <!-- Comparador -->
       <div id="compareBox" class="compareBox" style="display:none;">
         <div class="compareWrapper" id="compareWrapper">
           <img id="compareOriginal" class="compareImg" alt="Original" />
@@ -252,30 +291,28 @@ La IA solo va a modificar lo que pintes.
         </div>
 
         <div class="muted small" style="margin-top:8px;">
-          Arrastrá para comparar: <b>Original</b> ↔ <b>Resultado</b>
+          Arrastra para comparar: <b>Original</b> ↔ <b>Resultado</b>
         </div>
       </div>
 
-      <!-- Botones principales -->
       <div class="row" style="margin-top:10px;">
         <button id="btnUseResult"
                 class="ghost"
                 type="button"
                 disabled>
-          🔁 Usar resultado como nueva base
+          Usar resultado como nueva base
         </button>
 
         <button id="btnBackToOriginal"
                 class="ghost"
                 type="button"
                 disabled>
-          ↩ Volver al original
+          Volver al original
         </button>
       </div>
 
-      <!-- Caja referencia -->
       <div class="panel" id="boxReferencia" style="margin-top:18px;">
-        <h3>🔧 Corregir parte del resultado</h3>
+        <h3>Corregir una parte del resultado</h3>
 
         <input type="file"
                id="imagenReferencia"
@@ -283,33 +320,31 @@ La IA solo va a modificar lo que pintes.
                style="display:none;" />
 
         <p class="muted small" style="margin-top:8px;">
-          Tocá acá para cargar una imagen de referencia. Pintá la zona que querés modificar.
-          Si no pintás nada, se usará la descripción escrita.
+          Toca aca para cargar una imagen de referencia. Si luego pintas una zona, se intentara corregir solo ese sector.
         </p>
       </div>
 
-      <!-- Video + ZIP -->
       <div class="videoBlock" style="margin-top:18px;">
         <div class="videoRow">
           <button id="btnVideo"
                   class="ghost"
                   type="button"
                   disabled>
-            🎬 Generar video (Original → Resultado)
+            Generar video (Original → Resultado)
           </button>
 
           <a id="downloadVideo"
              class="ghostLink"
              download="transicion.webm"
              style="display:none;">
-            ⬇️ Descargar video
+            Descargar video
           </a>
 
           <button id="btnZip"
                   class="ghost"
                   type="button"
                   disabled>
-            📦 Descargar pack (ZIP)
+            Descargar pack (ZIP)
           </button>
         </div>
 
@@ -321,12 +356,11 @@ La IA solo va a modificar lo que pintes.
                style="display:none;"></video>
       </div>
     </div>
-
   </div>
 </section>
 
 <footer class="footer">
-  Proyecto experimental de diseño con inteligencia artificial
+  Herramienta privada de edicion con prioridad en precision y continuidad visual
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>

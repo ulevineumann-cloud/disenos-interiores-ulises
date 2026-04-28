@@ -31,6 +31,11 @@ resetEstilo?.addEventListener("click", () => {
 const estado = document.getElementById("estado");
 const loader = document.getElementById("loader");
 const modoInfo = document.getElementById("modoInfo");
+const fileMeta = document.getElementById("fileMeta");
+const referenceMeta = document.getElementById("referenceMeta");
+const keepGeometryEl = document.getElementById("keepGeometry");
+const keepDimensionsEl = document.getElementById("keepDimensions");
+const strictEditScopeEl = document.getElementById("strictEditScope");
 
 const recomendacionEl = document.getElementById("recomendacion");
 const imagenResultadoEl = document.getElementById("imagenResultado");
@@ -96,6 +101,43 @@ function revokeIfBlobUrl(url) {
 function withCacheBust(url, stamp = Date.now()) {
   if (!url) return "";
   return url.includes("?") ? `${url}&v=${stamp}` : `${url}?v=${stamp}`;
+}
+
+function humanFileSize(size) {
+  if (!size) return "0 KB";
+  const kb = size / 1024;
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  return `${(kb / 1024).toFixed(1)} MB`;
+}
+
+function setMetaText(el, text) {
+  if (!el) return;
+  el.textContent = text;
+}
+
+function describeImageFile(file, label) {
+  if (!file) return label;
+  return `${file.name} · ${humanFileSize(file.size)}`;
+}
+
+function updatePrecisionSummary(extraMode = "") {
+  if (!modoInfo) return;
+
+  const flags = [];
+  if (keepGeometryEl?.checked) flags.push("misma geometria");
+  if (keepDimensionsEl?.checked) flags.push("mismo tamano final");
+  if (strictEditScopeEl?.checked) flags.push("cambio puntual");
+  if (usePaint?.checked) flags.push("zona pintada");
+
+  let text = flags.length
+    ? `Precision activa: ${flags.join(", ")}.`
+    : "Precision manual.";
+
+  if (extraMode) {
+    text += ` Modo: ${extraMode}.`;
+  }
+
+  modoInfo.textContent = text;
 }
 
 /* =========================
@@ -345,12 +387,19 @@ function setMode(paintOn) {
 
   paintSection.style.display = paintOn ? "block" : "none";
   paintTools.style.display = paintOn ? "flex" : "none";
+  updatePrecisionSummary();
 
   if (paintOn && imgNaturalW) setTimeout(resizeCanvasesToImage, 0);
 }
 btnModeSimple.addEventListener("click", () => setMode(false));
 btnModePaint.addEventListener("click", () => setMode(true));
 setMode(false);
+
+[keepGeometryEl, keepDimensionsEl, strictEditScopeEl].forEach((el) => {
+  el?.addEventListener("change", () => {
+    updatePrecisionSummary();
+  });
+});
 
 /* =========================
    STORAGE - PROJECTS
@@ -592,8 +641,9 @@ function setImageVisibility(imgEl, src) {
 function clearCurrentWorkspace() {
   textoEl.value = "";
   if (estado) estado.textContent = "";
-  if (modoInfo) modoInfo.textContent = "";
   if (recomendacionEl) recomendacionEl.textContent = "-";
+  setMetaText(fileMeta, "Todavia no cargaste una imagen base.");
+  setMetaText(referenceMeta, "Sin imagen de referencia adicional.");
 
   setImageVisibility(imagenResultadoEl, "");
   setImageVisibility(preview, "");
@@ -619,6 +669,7 @@ function clearCurrentWorkspace() {
   paintBase.removeAttribute("src");
   imgNaturalW = 0;
   imgNaturalH = 0;
+  updatePrecisionSummary();
 }
 
 async function hydrateInputFromStoredUrl(url, filename = "proyecto-base.png") {
@@ -632,12 +683,15 @@ async function hydrateInputFromStoredUrl(url, filename = "proyecto-base.png") {
   dt.items.add(file);
   inputImagen.files = dt.files;
   originalBaseFile = file;
+  setMetaText(fileMeta, describeImageFile(file, "Imagen base recuperada."));
 
   try {
     currentOriginalThumb = await fileToThumbDataUrl(file);
   } catch {
     currentOriginalThumb = "";
   }
+
+  setMetaText(fileMeta, describeImageFile(file, "Imagen base cargada."));
 
   revokeIfBlobUrl(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(file);
@@ -675,7 +729,8 @@ async function restoreCurrentProjectState() {
   textoEl.value = latest.prompt || "";
   if (estado) estado.textContent = "";
   if (recomendacionEl) recomendacionEl.textContent = latest.recommendation || "-";
-  if (modoInfo) modoInfo.textContent = latest.mode ? "Modo: " + latest.mode : "";
+  setMetaText(fileMeta, latest.originalName ? `Proyecto recuperado: ${latest.originalName}` : "Imagen base recuperada.");
+  setMetaText(referenceMeta, "Sin imagen de referencia guardada.");
 
   const originalSrc = latest.originalUrl ? withCacheBust(latest.originalUrl, latest.createdAt || Date.now()) : "";
   const resultSrc = latest.resultUrl ? withCacheBust(latest.resultUrl, latest.createdAt || Date.now()) : "";
@@ -722,6 +777,8 @@ async function restoreCurrentProjectState() {
   } catch (err) {
     console.error(err);
   }
+
+  updatePrecisionSummary(latest.mode || "");
 }
 
 function persistCurrentProjectName() {
@@ -891,6 +948,15 @@ function fileToThumbDataUrl(file, maxW = 420) {
 ========================= */
 let compareReady = false;
 
+function syncCompareAspect() {
+  if (!compareWrapper) return;
+  const w = compareOriginal?.naturalWidth || compareResult?.naturalWidth || imgNaturalW;
+  const h = compareOriginal?.naturalHeight || compareResult?.naturalHeight || imgNaturalH;
+  if (w && h) {
+    compareWrapper.style.aspectRatio = `${w} / ${h}`;
+  }
+}
+
 function hideCompare() {
   if (!compareBox) return;
   compareBox.style.display = "none";
@@ -901,6 +967,8 @@ function showCompare(originalSrc, resultSrc) {
 
   compareOriginal.src = originalSrc || "";
   compareResult.src = resultSrc || "";
+  compareOriginal.onload = syncCompareAspect;
+  compareResult.onload = syncCompareAspect;
 
   compareBox.style.display = "block";
 
@@ -974,10 +1042,12 @@ inputReferencia?.addEventListener("change", () => {
       previewReferencia.style.display = "none";
       previewReferencia.src = "";
     }
+    setMetaText(referenceMeta, "Sin imagen de referencia adicional.");
     return;
   }
 
   const url = URL.createObjectURL(file);
+  setMetaText(referenceMeta, describeImageFile(file, "Referencia cargada."));
 
   if (previewReferencia) {
     previewReferencia.src = url;
@@ -993,6 +1063,7 @@ inputImagen?.addEventListener("change", async () => {
       preview.src = "";
       preview.style.display = "none";
     }
+    setMetaText(fileMeta, "Todavia no cargaste una imagen base.");
     return;
   }
 
@@ -1048,6 +1119,7 @@ function volverAlOriginal() {
 
   revokeIfBlobUrl(originalObjectUrl);
   originalObjectUrl = URL.createObjectURL(originalBaseFile);
+  setMetaText(fileMeta, describeImageFile(originalBaseFile, "Imagen base restaurada."));
 
   preview.src = originalObjectUrl;
   preview.style.display = "block";
@@ -1090,6 +1162,7 @@ async function usarResultadoComoBase() {
   dt.items.add(file);
   inputImagen.files = dt.files;
   originalBaseFile = file;
+  setMetaText(fileMeta, `Nueva base desde resultado · ${humanFileSize(file.size)}`);
 
   resetVideoUI();
   resultadoUrlFinal = "";
@@ -1352,7 +1425,7 @@ ${texto}
 
     if (estado) estado.textContent = "";
     if (recomendacionEl) recomendacionEl.textContent = "—";
-    if (modoInfo) modoInfo.textContent = "";
+    updatePrecisionSummary();
     if (imagenResultadoEl) {
       imagenResultadoEl.style.display = "none";
       imagenResultadoEl.src = "";
@@ -1373,6 +1446,9 @@ ${texto}
       const formData = new FormData();
       formData.append("texto", promptFinal);
       formData.append("imagen", imagen);
+      formData.append("keepGeometry", keepGeometryEl?.checked ? "1" : "0");
+      formData.append("keepDimensions", keepDimensionsEl?.checked ? "1" : "0");
+      formData.append("strictEditScope", strictEditScopeEl?.checked ? "1" : "0");
 
       if (hayReferencia) {
         formData.append("imagenReferencia", refInput.files[0]);
@@ -1420,7 +1496,7 @@ ${texto}
 
         // 🔥 Mostrar modo
         if (modoInfo && data.modo) {
-          modoInfo.textContent = "Modo: " + data.modo;
+          updatePrecisionSummary(data.modo || "");
         }
 
         saveCurrentVersion({
