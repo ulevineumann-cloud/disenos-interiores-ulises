@@ -2,6 +2,7 @@ const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const multer = require("multer");
+require("dotenv").config();
 const OpenAI = require("openai");
 const { toFile } = require("openai");
 
@@ -12,11 +13,11 @@ const publicPath = path.join(__dirname, "public");
 const uploadsPath = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadsPath)) fs.mkdirSync(uploadsPath, { recursive: true });
 
-const BASIC_USER = process.env.BASIC_USER;
-const BASIC_PASS = process.env.BASIC_PASS;
+const BASIC_USER = (process.env.BASIC_USER || "").trim();
+const BASIC_PASS = (process.env.BASIC_PASS || "").trim();
 
-const ENABLE_AI = process.env.ENABLE_AI === "1";
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const ENABLE_AI = (process.env.ENABLE_AI || "").trim() === "1";
+const OPENAI_API_KEY = (process.env.OPENAI_API_KEY || "").trim();
 
 const BASE_URL = "https://disenos-interiores-ulises.onrender.com";
 
@@ -339,6 +340,12 @@ return res.json({
 });
     } catch (err) {
       console.error(err);
+      const status = err?.status || err?.code || 500;
+      if (status === 401) {
+        return res.status(500).json({
+          error: "OPENAI_API_KEY invalida o desactualizada en el servidor",
+        });
+      }
       res.status(500).json({ error: err?.message || "Error interno" });
     }
   }
