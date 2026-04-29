@@ -2018,7 +2018,7 @@ ${texto}
       setLoading(true);
 
       const formData = new FormData();
-      formData.append("texto", promptFinal);
+      formData.append("texto", texto);
       formData.append("imagen", imagen);
       formData.append("keepGeometry", keepGeometryEl?.checked ? "1" : "0");
       formData.append("keepDimensions", keepDimensionsEl?.checked ? "1" : "0");

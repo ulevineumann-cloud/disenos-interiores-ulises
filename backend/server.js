@@ -27,6 +27,15 @@ function isTruthyFlag(value, fallback = true) {
   return normalized === "1" || normalized === "true" || normalized === "on" || normalized === "yes";
 }
 
+function isCleanupRequest(text) {
+  const normalized = String(text || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  return /\b(limpiar|limpia|limpieza|vaciar|vacia|despejar|despeja|ordenar|ordena|quitar basura|sacar basura|eliminar basura|sacar desorden|eliminar desorden)\b/.test(normalized);
+}
+
 function basicAuth(req, res, next) {
   if (!BASIC_USER || !BASIC_PASS) return next();
 
@@ -61,11 +70,10 @@ function buildEditPrompt({
   strictEditScope,
 }) {
   return `
-Sos un sistema experto en edicion fotografica arquitectonica de alta precision para interiores, fachadas y renders realistas.
+Sos un sistema experto en edicion fotografica arquitectonica de alta precision para interiores, exteriores, fachadas y renders realistas.
 
-OBJETIVO:
-Editar la foto original como si fuera una correccion profesional puntual.
-La imagen final debe conservar la identidad visual, camara, perspectiva, escala, luz y composicion de la foto base.
+PRINCIPIO CENTRAL:
+La imagen original es la base absoluta. El resultado debe ser la misma imagen, con el mismo encuadre, perspectiva, lente, escala, iluminacion general y dimensiones finales, modificada solamente segun el pedido del usuario.
 
 PEDIDO DEL USUARIO:
 "${texto}"
@@ -74,18 +82,23 @@ TAMANO ORIGINAL:
 - ancho: ${width || "desconocido"} px
 - alto: ${height || "desconocido"} px
 
-REGLAS OBLIGATORIAS:
-- La foto original es la base absoluta y debe seguir siendo reconocible como la misma foto.
+REGLAS BASE, SIEMPRE OBLIGATORIAS:
+- Entregar una imagen final con exactamente el mismo ancho, alto y proporcion que la original.
+- No recortar, no expandir, no rotar, no cambiar el punto de vista y no cambiar el encuadre.
+- La foto resultante debe seguir pareciendo la misma foto original, no una escena nueva.
 - No crear una escena nueva.
-- No cambiar arquitectura, estructura, camara, lente, punto de vista, horizonte ni encuadre.
-- No mover elementos que no fueron pedidos.
-- No agregar objetos decorativos, muebles, plantas, luminarias, personas ni mejoras esteticas no solicitadas.
-- No reinterpretar el pedido.
-- Si el usuario pide cambiar un elemento por otro, reemplazar solo ese elemento manteniendo ubicacion, escala y proporcion.
-- Mantener materiales, sombras, reflejos, profundidad y relaciones fisicas del resto de la imagen.
-- Mantener intactas las zonas no afectadas.
-- Si el pedido es ambiguo, elegir la interpretacion mas conservadora y localizada.
-- Evitar cambios globales de color, contraste, nitidez, exposicion o estilo fotografico salvo que el usuario lo pida explicitamente.
+- No inventar arquitectura, distribucion, aberturas, estructura, camara, horizonte, profundidad ni proporciones.
+- No mover, borrar, agregar ni transformar elementos fuera del alcance pedido.
+- Mantener sombras, reflejos, textura, profundidad, escala y relaciones fisicas coherentes con la foto original.
+- Evitar cambios globales de exposicion, contraste, nitidez, color grading o estilo fotografico salvo que el usuario lo pida explicitamente.
+
+ALCANCE SEGUN EL PEDIDO:
+- Si el usuario pide una cosa exacta o un elemento concreto, modificar solamente ese elemento o superficie concreta.
+- Si el usuario pide reemplazar un material, color, terminacion o tipologia especifica, aplicar el cambio solo a esa materialidad/tipologia y conservar forma, ubicacion, cantidad, tamano y perspectiva.
+- Si el usuario pide un cambio completo, general, integral o de toda la escena, aplicar el cambio a todas las areas visibles que correspondan al pedido, pero sin cambiar la camara, arquitectura base, dimensiones ni composicion.
+- Si el usuario pide estilo general, rediseno visual o renovacion completa, transformar la apariencia de la escena de manera coherente, manteniendo la misma geometria, encuadre, escala y lectura espacial.
+- Si el usuario pide limpiar, vaciar o despejar, eliminar solamente basura, objetos sueltos, desorden y elementos temporales; reconstruir naturalmente lo que queda detras sin redisenar el ambiente.
+- Si el pedido es ambiguo, elegir la interpretacion mas conservadora que cumpla el texto.
 
 ${keepGeometry ? `
 BLOQUEO DE GEOMETRIA:
@@ -95,29 +108,27 @@ BLOQUEO DE GEOMETRIA:
 - No inventar aberturas, barandas, muros, juntas, molduras, columnas o divisiones nuevas.
 ` : ""}
 
-${keepDimensions ? `
 BLOQUEO DE CANVAS:
 - La salida debe conservar exactamente el mismo tamano final de imagen y la misma proporcion que la original.
 - No recortar.
 - No expandir.
 - No rotar.
-` : ""}
 
 ${strictEditScope ? `
-ALCANCE ESTRICTO:
-- Aplicar un cambio quirurgico y minimo.
-- Cambiar exactamente lo pedido y nada mas.
-- Si la instruccion afecta solo un material o una tipologia, sustituir solo ese material o tipologia.
+FIDELIDAD AL PEDIDO:
+- Hacer exactamente lo que el usuario pidio: ni menos ni mas.
+- No embellecer ni completar con ideas propias.
+- No agregar muebles, plantas, personas, objetos decorativos, luminarias o materiales que el usuario no pidio.
+- Si el usuario pide algo puntual, el cambio debe ser puntual.
+- Si el usuario pide algo completo, el cambio debe ser completo dentro del alcance visible correspondiente.
 - Si hay conflicto entre embellecer y respetar la foto original, siempre respetar la foto original.
-- No mejorar el resto de la escena.
-- No homogeneizar toda la imagen por estilo.
 ` : ""}
 
 ${hasMask ? `
 USO DE MASCARA:
 - La mascara usa transparencia: los pixeles transparentes son la unica zona editable.
 - Modificar solamente la zona transparente de la mascara.
-- Todo lo que quede fuera de la mascara debe permanecer visualmente igual, pixel-compatible en composicion, color, luz, textura y geometria.
+- Todo lo que quede fuera de la mascara debe permanecer visualmente igual en composicion, color, luz, textura y geometria.
 - La mascara tiene prioridad sobre cualquier interpretacion amplia del texto.
 - Si el texto menciona un cambio amplio pero hay mascara, aplicar ese cambio solo dentro de la zona marcada.
 - Respetar el borde de la seleccion: integrar sombras, reflejos y textura sin expandir el cambio fuera del area editable.
@@ -130,25 +141,27 @@ USO DE REFERENCIA:
 - No copiar composicion, camara, perspectiva, objetos, geometria, distribucion, mobiliario ni iluminacion de la referencia.
 - Adaptar la referencia a la geometria real de la foto base.
 - Si hay mascara, aplicar la referencia solo dentro de la zona editable.
+- Si no hay mascara y el usuario pide un cambio completo con referencia, aplicar la referencia a las areas visibles que correspondan al pedido.
 ` : ""}
 
 JERARQUIA DE DECISION:
-1. Respetar la foto original.
+1. Mantener misma imagen, mismas dimensiones, mismo encuadre y misma perspectiva.
 2. Respetar la mascara si existe.
-3. Ejecutar literalmente el pedido del usuario.
+3. Ejecutar literalmente el alcance pedido por el usuario: puntual si es puntual, completo si es completo.
 4. Usar la referencia solo como apoyo visual si existe.
-5. Mantener realismo fotografico.
+5. Mantener realismo fotografico y coherencia fisica.
 
 RESULTADO ESPERADO:
-- Debe parecer la misma fotografia original con el cambio exacto solicitado.
-- El resultado debe ser fotografico, creible y preciso.
+- Misma imagen base, modificada solo con lo que pidio el usuario.
+- Mismas dimensiones finales que la original.
+- Resultado fotografico, creible, limpio y preciso.
 - La intervencion debe sentirse natural, no como collage ni render nuevo.
 `.trim();
 }
 
 function buildCleanupPrompt(texto, width, height) {
   return `
-Sos un sistema experto en limpieza visual fotografica de interiores.
+Sos un sistema experto en limpieza visual fotografica de interiores, exteriores y espacios en obra.
 
 PEDIDO DEL USUARIO:
 "${texto}"
@@ -158,21 +171,23 @@ TAMANO ORIGINAL:
 - alto: ${height || "desconocido"} px
 
 OBJETIVO:
-Eliminar unicamente desorden, basura u objetos sueltos sin redisenar el ambiente.
-Reconstruir de forma natural solo las pequenas areas que quedan debajo de los objetos eliminados.
+Limpiar o vaciar el ambiente segun el pedido, eliminando unicamente basura, objetos sueltos, desorden, elementos temporales y cosas que no forman parte permanente del espacio.
+Reconstruir de forma natural solo las areas que quedan debajo o detras de los objetos eliminados.
 
 PROHIBIDO:
 - No cambiar arquitectura.
 - No cambiar encuadre, perspectiva ni lente.
-- No cambiar piso, paredes, ventanas, cortinas, zocalos ni iluminacion.
+- No cambiar piso, paredes, ventanas, cortinas, zocalos, cielorraso, estructura ni iluminacion general.
 - No reinterpretar la escena.
 - No generar una habitacion nueva.
 - No embellecer.
 - No agregar muebles, decoracion, plantas, luminarias, alfombras ni cambios de estilo.
+- No modificar elementos fijos salvo que esten cubiertos por basura u objetos retirados y sea necesario reconstruirlos.
 
 REGLA CENTRAL:
-- Debe verse como la misma foto, solamente mas limpia.
+- Debe verse como la misma foto, solamente mas limpia, despejada o vacia segun el pedido.
 - Conservar exactamente el mismo tamano y proporcion final de la imagen.
+- No recortar, no expandir, no rotar y no cambiar la perspectiva.
 - Las zonas que no son basura, objetos sueltos o desorden deben quedar intactas.
 `.trim();
 }
@@ -234,7 +249,7 @@ app.post(
       const modoEspecial = (req.body.modoEspecial || "").trim();
       const maskContext = (req.body.maskContext || "").trim().slice(0, 1200);
       const keepGeometry = isTruthyFlag(req.body.keepGeometry, true);
-      const keepDimensions = isTruthyFlag(req.body.keepDimensions, true);
+      const keepDimensions = true;
       const strictEditScope = isTruthyFlag(req.body.strictEditScope, true);
 
       const imagen = req.files?.imagen?.[0];
@@ -272,7 +287,7 @@ app.post(
         strictEditScope,
       });
 
-      if (modoEspecial === "VACIAR") {
+      if (modoEspecial === "VACIAR" || isCleanupRequest(texto)) {
         prompt = buildCleanupPrompt(texto, originalWidth, originalHeight);
       }
 
