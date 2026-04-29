@@ -250,12 +250,18 @@ const brush = document.getElementById("brush");
 const brushVal = document.getElementById("brushVal");
 const btnErase = document.getElementById("btnErase");
 const btnClear = document.getElementById("btnClear");
+const btnUndoPaint = document.getElementById("btnUndoPaint");
+const btnBrushSmall = document.getElementById("btnBrushSmall");
+const btnBrushLarge = document.getElementById("btnBrushLarge");
 
 let imgNaturalW = 0;
 let imgNaturalH = 0;
 
 let drawing = false;
 let eraseMode = false;
+let lastStrokePoint = null;
+const maskHistory = [];
+const MAX_MASK_HISTORY = 12;
 
 const pctx = paintCanvas.getContext("2d", { willReadFrequently: true });
 
@@ -269,15 +275,42 @@ function setBrushUI() {
 setBrushUI();
 brush.addEventListener("input", setBrushUI);
 
+function setBrushSize(size) {
+  brush.value = String(Math.max(Number(brush.min), Math.min(Number(brush.max), size)));
+  setBrushUI();
+}
+
+btnBrushSmall?.addEventListener("click", () => setBrushSize(14));
+btnBrushLarge?.addEventListener("click", () => setBrushSize(42));
+
 btnErase.addEventListener("click", () => {
   eraseMode = !eraseMode;
   btnErase.textContent = eraseMode ? "Pintar" : "Borrar";
+  btnErase.classList.toggle("active", eraseMode);
 });
 
 btnClear.addEventListener("click", () => {
+  saveMaskHistory();
   clearMask();
   renderOverlay();
 });
+
+btnUndoPaint?.addEventListener("click", () => {
+  restoreMaskHistory();
+});
+
+function saveMaskHistory() {
+  if (!maskCanvas.width || !maskCanvas.height) return;
+  maskHistory.push(mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height));
+  if (maskHistory.length > MAX_MASK_HISTORY) maskHistory.shift();
+}
+
+function restoreMaskHistory() {
+  const previous = maskHistory.pop();
+  if (!previous) return;
+  mctx.putImageData(previous, 0, 0);
+  renderOverlay();
+}
 
 function clearMask() {
   mctx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
@@ -292,6 +325,7 @@ function resizeCanvasesToImage() {
 
   maskCanvas.width = imgNaturalW;
   maskCanvas.height = imgNaturalH;
+  maskHistory.length = 0;
   clearMask();
   renderOverlay();
 }
@@ -306,8 +340,8 @@ function renderOverlay() {
   const imgData = mctx.getImageData(0, 0, imgNaturalW, imgNaturalH);
   const data = imgData.data;
 
-  const step = 4;
-  pctx.fillStyle = "rgba(255, 60, 90, 0.40)";
+  const step = Math.max(2, Math.round(Math.max(imgNaturalW, imgNaturalH) / 520));
+  pctx.fillStyle = "rgba(255, 74, 96, 0.42)";
   for (let y = 0; y < imgNaturalH; y += step) {
     for (let x = 0; x < imgNaturalW; x += step) {
       const i = (y * imgNaturalW + x) * 4;
@@ -326,7 +360,7 @@ function getPosOnCanvas(evt) {
   return { mx, my };
 }
 
-function applyStroke(mx, my, radius) {
+function drawMaskCircle(mx, my, radius) {
   if (!imgNaturalW || !imgNaturalH) return;
 
   if (!eraseMode) {
@@ -347,46 +381,128 @@ function applyStroke(mx, my, radius) {
   }
 }
 
+function drawMaskLine(from, to, radius) {
+  if (!from) {
+    drawMaskCircle(to.mx, to.my, radius);
+    return;
+  }
+
+  const dx = to.mx - from.mx;
+  const dy = to.my - from.my;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const steps = Math.max(1, Math.ceil(distance / Math.max(2, radius * 0.45)));
+
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    drawMaskCircle(from.mx + dx * t, from.my + dy * t, radius);
+  }
+}
+
 paintCanvas.addEventListener("pointerdown", (e) => {
   if (!imgNaturalW) return;
   if (!usePaint.checked) return;
 
+  e.preventDefault();
+  saveMaskHistory();
   drawing = true;
   paintCanvas.setPointerCapture(e.pointerId);
-  const { mx, my } = getPosOnCanvas(e);
-  applyStroke(mx, my, Number(brush.value));
+  lastStrokePoint = getPosOnCanvas(e);
+  drawMaskCircle(lastStrokePoint.mx, lastStrokePoint.my, Number(brush.value));
   renderOverlay();
 });
 
 paintCanvas.addEventListener("pointermove", (e) => {
   if (!drawing) return;
-  const { mx, my } = getPosOnCanvas(e);
-  applyStroke(mx, my, Number(brush.value));
+  e.preventDefault();
+  const point = getPosOnCanvas(e);
+  drawMaskLine(lastStrokePoint, point, Number(brush.value));
+  lastStrokePoint = point;
   renderOverlay();
 });
 
 paintCanvas.addEventListener("pointerup", () => {
   drawing = false;
+  lastStrokePoint = null;
 });
 paintCanvas.addEventListener("pointercancel", () => {
   drawing = false;
+  lastStrokePoint = null;
 });
 
-function maskHasEdits() {
+function getMaskStats() {
   if (!maskCanvas.width || !maskCanvas.height) return false;
   const imgData = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
   const data = imgData.data;
-  for (let i = 3; i < data.length; i += 4) {
-    if (data[i] === 0) return true;
+  let minX = maskCanvas.width;
+  let minY = maskCanvas.height;
+  let maxX = -1;
+  let maxY = -1;
+  let edited = 0;
+
+  const sample = Math.max(1, Math.round(Math.max(maskCanvas.width, maskCanvas.height) / 1200));
+  for (let y = 0; y < maskCanvas.height; y += sample) {
+    for (let x = 0; x < maskCanvas.width; x += sample) {
+      const i = (y * maskCanvas.width + x) * 4;
+      if (data[i + 3] === 0) {
+        edited += sample * sample;
+        minX = Math.min(minX, x);
+        minY = Math.min(minY, y);
+        maxX = Math.max(maxX, x);
+        maxY = Math.max(maxY, y);
+      }
+    }
   }
-  return false;
+
+  if (maxX < 0) return null;
+
+  return {
+    minX,
+    minY,
+    maxX: Math.min(maskCanvas.width, maxX + sample),
+    maxY: Math.min(maskCanvas.height, maxY + sample),
+    percent: Math.min(100, (edited / (maskCanvas.width * maskCanvas.height)) * 100),
+    width: maskCanvas.width,
+    height: maskCanvas.height,
+  };
+}
+
+function maskHasEdits() {
+  return Boolean(getMaskStats());
+}
+
+function describeMaskZone() {
+  const stats = getMaskStats();
+  if (!stats) return "";
+
+  const cx = ((stats.minX + stats.maxX) / 2) / stats.width;
+  const cy = ((stats.minY + stats.maxY) / 2) / stats.height;
+  const h = cx < 0.34 ? "izquierda" : cx > 0.66 ? "derecha" : "centro";
+  const v = cy < 0.34 ? "superior" : cy > 0.66 ? "inferior" : "media";
+  const boxW = Math.round(((stats.maxX - stats.minX) / stats.width) * 100);
+  const boxH = Math.round(((stats.maxY - stats.minY) / stats.height) * 100);
+
+  return [
+    `Zona pintada: sector ${v} ${h} de la imagen.`,
+    `Caja aproximada: x ${Math.round((stats.minX / stats.width) * 100)}% a ${Math.round((stats.maxX / stats.width) * 100)}%, y ${Math.round((stats.minY / stats.height) * 100)}% a ${Math.round((stats.maxY / stats.height) * 100)}%.`,
+    `Tamano de la zona: ${boxW}% del ancho por ${boxH}% del alto; area pintada aproximada ${stats.percent.toFixed(1)}%.`,
+    "Solo el area transparente de la mascara debe editarse; el resto debe quedar igual.",
+  ].join(" ");
+}
+
+function prepareMaskForUpload() {
+  if (!maskCanvas.width || !maskCanvas.height) return null;
+  // GPT Image edita los pixeles totalmente transparentes de la mascara.
+  return maskCanvas;
 }
 
 function maskBlobPNG() {
+  const uploadCanvas = prepareMaskForUpload();
   return new Promise((resolve) => {
-    maskCanvas.toBlob((b) => resolve(b), "image/png");
+    if (!uploadCanvas) return resolve(null);
+    uploadCanvas.toBlob((b) => resolve(b), "image/png");
   });
 }
+
 
 function setMode(paintOn) {
   usePaint.checked = !!paintOn;
@@ -1864,11 +1980,14 @@ la imagen de referencia como guía visual.
 REGLAS:
 
 - La imagen original es la base principal.
+- La mascara pintada define la unica zona editable.
 - La imagen de referencia solo sirve como inspiración visual.
 - No copiar ni pegar partes de la referencia.
 - Aplicar únicamente los materiales, formas o estilo de la referencia.
 - Mantener perspectiva, iluminación y geometría de la imagen original.
-- Aplicar el cambio en toda la escena si corresponde.
+- No extender el cambio fuera de la zona pintada.
+- Usar la referencia solo como materialidad, color, textura o terminacion dentro de esa zona.
+- Si hay conflicto entre la referencia y la imagen original, gana la imagen original.
 
 Descripción del usuario:
 ${texto}
@@ -1912,7 +2031,9 @@ ${texto}
       if (hayMascara) {
         if (!imgNaturalW) return niceError("Esperá que cargue la imagen.");
         if (!maskHasEdits()) return niceError("Pintá una zona.");
+        formData.append("maskContext", describeMaskZone());
         const mb = await maskBlobPNG();
+        if (!mb) return niceError("No se pudo preparar la mascara.");
         formData.append("mask", mb, "mask.png");
       }
 

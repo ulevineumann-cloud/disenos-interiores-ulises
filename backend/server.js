@@ -55,15 +55,17 @@ function buildEditPrompt({
   height,
   hasMask,
   hasReference,
+  maskContext,
   keepGeometry,
   keepDimensions,
   strictEditScope,
 }) {
   return `
-Sos un sistema experto en edicion fotografica arquitectonica de alta precision.
+Sos un sistema experto en edicion fotografica arquitectonica de alta precision para interiores, fachadas y renders realistas.
 
 OBJETIVO:
-Editar la foto original sin redisenar la escena.
+Editar la foto original como si fuera una correccion profesional puntual.
+La imagen final debe conservar la identidad visual, camara, perspectiva, escala, luz y composicion de la foto base.
 
 PEDIDO DEL USUARIO:
 "${texto}"
@@ -77,17 +79,20 @@ REGLAS OBLIGATORIAS:
 - No crear una escena nueva.
 - No cambiar arquitectura, estructura, camara, lente, punto de vista, horizonte ni encuadre.
 - No mover elementos que no fueron pedidos.
-- No agregar objetos decorativos ni mejoras esteticas no solicitadas.
+- No agregar objetos decorativos, muebles, plantas, luminarias, personas ni mejoras esteticas no solicitadas.
 - No reinterpretar el pedido.
 - Si el usuario pide cambiar un elemento por otro, reemplazar solo ese elemento manteniendo ubicacion, escala y proporcion.
 - Mantener materiales, sombras, reflejos, profundidad y relaciones fisicas del resto de la imagen.
 - Mantener intactas las zonas no afectadas.
+- Si el pedido es ambiguo, elegir la interpretacion mas conservadora y localizada.
+- Evitar cambios globales de color, contraste, nitidez, exposicion o estilo fotografico salvo que el usuario lo pida explicitamente.
 
 ${keepGeometry ? `
 BLOQUEO DE GEOMETRIA:
 - Conservar exactamente las dimensiones visibles de balcones, ventanas, losas, columnas, carpinterias y vacios.
 - No alterar cantidad de modulos, tramos, paneles, apoyos ni separaciones si el usuario no lo pidio.
 - No deformar lineas verticales ni horizontales.
+- No inventar aberturas, barandas, muros, juntas, molduras, columnas o divisiones nuevas.
 ` : ""}
 
 ${keepDimensions ? `
@@ -104,23 +109,40 @@ ALCANCE ESTRICTO:
 - Cambiar exactamente lo pedido y nada mas.
 - Si la instruccion afecta solo un material o una tipologia, sustituir solo ese material o tipologia.
 - Si hay conflicto entre embellecer y respetar la foto original, siempre respetar la foto original.
+- No mejorar el resto de la escena.
+- No homogeneizar toda la imagen por estilo.
 ` : ""}
 
 ${hasMask ? `
 USO DE MASCARA:
-- Modificar solamente la zona marcada por la mascara.
-- Todo lo que quede fuera de la mascara debe permanecer visualmente igual.
+- La mascara usa transparencia: los pixeles transparentes son la unica zona editable.
+- Modificar solamente la zona transparente de la mascara.
+- Todo lo que quede fuera de la mascara debe permanecer visualmente igual, pixel-compatible en composicion, color, luz, textura y geometria.
+- La mascara tiene prioridad sobre cualquier interpretacion amplia del texto.
+- Si el texto menciona un cambio amplio pero hay mascara, aplicar ese cambio solo dentro de la zona marcada.
+- Respetar el borde de la seleccion: integrar sombras, reflejos y textura sin expandir el cambio fuera del area editable.
+${maskContext ? `- Contexto de ubicacion de la mascara: ${maskContext}` : ""}
 ` : ""}
 
 ${hasReference ? `
 USO DE REFERENCIA:
-- La referencia sirve solo para materialidad o lenguaje visual.
-- No copiar composicion ni geometria de la referencia.
+- La imagen de referencia sirve solo como guia de materialidad, color, textura, terminacion o lenguaje visual.
+- No copiar composicion, camara, perspectiva, objetos, geometria, distribucion, mobiliario ni iluminacion de la referencia.
+- Adaptar la referencia a la geometria real de la foto base.
+- Si hay mascara, aplicar la referencia solo dentro de la zona editable.
 ` : ""}
+
+JERARQUIA DE DECISION:
+1. Respetar la foto original.
+2. Respetar la mascara si existe.
+3. Ejecutar literalmente el pedido del usuario.
+4. Usar la referencia solo como apoyo visual si existe.
+5. Mantener realismo fotografico.
 
 RESULTADO ESPERADO:
 - Debe parecer la misma fotografia original con el cambio exacto solicitado.
 - El resultado debe ser fotografico, creible y preciso.
+- La intervencion debe sentirse natural, no como collage ni render nuevo.
 `.trim();
 }
 
@@ -137,6 +159,7 @@ TAMANO ORIGINAL:
 
 OBJETIVO:
 Eliminar unicamente desorden, basura u objetos sueltos sin redisenar el ambiente.
+Reconstruir de forma natural solo las pequenas areas que quedan debajo de los objetos eliminados.
 
 PROHIBIDO:
 - No cambiar arquitectura.
@@ -145,10 +168,12 @@ PROHIBIDO:
 - No reinterpretar la escena.
 - No generar una habitacion nueva.
 - No embellecer.
+- No agregar muebles, decoracion, plantas, luminarias, alfombras ni cambios de estilo.
 
 REGLA CENTRAL:
 - Debe verse como la misma foto, solamente mas limpia.
 - Conservar exactamente el mismo tamano y proporcion final de la imagen.
+- Las zonas que no son basura, objetos sueltos o desorden deben quedar intactas.
 `.trim();
 }
 
@@ -207,6 +232,7 @@ app.post(
 
       const texto = (req.body.texto || "").trim();
       const modoEspecial = (req.body.modoEspecial || "").trim();
+      const maskContext = (req.body.maskContext || "").trim().slice(0, 1200);
       const keepGeometry = isTruthyFlag(req.body.keepGeometry, true);
       const keepDimensions = isTruthyFlag(req.body.keepDimensions, true);
       const strictEditScope = isTruthyFlag(req.body.strictEditScope, true);
@@ -225,6 +251,9 @@ app.post(
       if (mask && mask.mimetype !== "image/png") {
         return res.status(400).json({ error: "Mask invalida (debe ser PNG)" });
       }
+      if (referencia && !allowedTypes.includes(referencia.mimetype)) {
+        return res.status(400).json({ error: "Formato de referencia no soportado. Usa JPG, PNG o WEBP" });
+      }
 
       const imagePath = path.join(uploadsPath, imagen.filename);
       const originalMeta = await sharp(imagePath).metadata();
@@ -237,6 +266,7 @@ app.post(
         height: originalHeight,
         hasMask: Boolean(mask),
         hasReference: Boolean(referencia),
+        maskContext,
         keepGeometry,
         keepDimensions,
         strictEditScope,
@@ -255,6 +285,16 @@ app.post(
       let maskFile = null;
       if (mask) {
         const maskPath = path.join(uploadsPath, mask.filename);
+        const maskMeta = await sharp(maskPath).metadata();
+        if (
+          originalWidth &&
+          originalHeight &&
+          (maskMeta.width !== originalWidth || maskMeta.height !== originalHeight)
+        ) {
+          return res.status(400).json({
+            error: "La mascara no coincide con el tamano de la imagen base",
+          });
+        }
         maskFile = await toFile(
           fs.createReadStream(maskPath),
           null,
@@ -262,10 +302,22 @@ app.post(
         );
       }
 
+      let referenceFile = null;
+      if (referencia) {
+        const referencePath = path.join(uploadsPath, referencia.filename);
+        referenceFile = await toFile(
+          fs.createReadStream(referencePath),
+          null,
+          { type: referencia.mimetype }
+        );
+      }
+
       const params = {
         model: "gpt-image-1",
-        image: imageFile,
+        image: referenceFile ? [imageFile, referenceFile] : imageFile,
         prompt,
+        input_fidelity: "high",
+        output_format: "png",
       };
 
       if (maskFile) params.mask = maskFile;

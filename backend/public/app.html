@@ -198,10 +198,13 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
 </div>
 
 <div class="toolMini" id="paintTools" style="display:none;">
-<span class="muted">Pincel</span>
+<span class="paintToolLabel">Pincel</span>
 <input id="brush" type="range" min="6" max="70" value="22">
 <span id="brushVal" class="muted">22</span>
+<button id="btnBrushSmall" class="ghost iconGhost" type="button" title="Pincel fino">Fino</button>
+<button id="btnBrushLarge" class="ghost iconGhost" type="button" title="Pincel grande">Grande</button>
 <button id="btnErase" class="ghost" type="button">Borrar</button>
+<button id="btnUndoPaint" class="ghost" type="button">Deshacer</button>
 <button id="btnClear" class="ghost" type="button">Limpiar</button>
 </div>
 
@@ -258,7 +261,7 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
 <div class="paintAviso">
 <div class="paintAvisoTitle">Importante</div>
 <div class="paintAvisoText">
-La IA solo va a modificar lo que pintes. Todo lo demas debe quedar igual.
+Pinta exactamente la zona que queres cambiar. La IA recibira esa seleccion como mascara real y una descripcion automatica de ubicacion para interpretar mejor el sector.
 </div>
 </div>
 
