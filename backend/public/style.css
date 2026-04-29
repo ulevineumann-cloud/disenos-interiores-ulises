@@ -994,6 +994,10 @@ background: rgba(10,16,28,.30);
   margin-bottom: 12px;
 }
 
+.scopeSelect{
+  margin: 6px 0 12px;
+}
+
 .precisionOption{
   display:flex;
   gap:10px;

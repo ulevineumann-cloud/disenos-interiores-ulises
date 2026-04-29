@@ -229,6 +229,13 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
 <aside class="precisionPanel">
 <div class="precisionCard">
 <h3>Modo precision</h3>
+<label class="label" for="editScope">Alcance de edicion</label>
+<select id="editScope" class="textInput scopeSelect">
+<option value="auto">Automatico segun el pedido</option>
+<option value="puntual">Cambio puntual</option>
+<option value="completo">Cambio completo</option>
+<option value="limpiar">Limpiar ambiente</option>
+</select>
 <label class="precisionOption">
 <input id="keepGeometry" type="checkbox" checked>
 <span>Bloquear geometria y proporciones</span>

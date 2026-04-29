@@ -36,6 +36,44 @@ function isCleanupRequest(text) {
   return /\b(limpiar|limpia|limpieza|vaciar|vacia|despejar|despeja|ordenar|ordena|quitar basura|sacar basura|eliminar basura|sacar desorden|eliminar desorden)\b/.test(normalized);
 }
 
+function positiveInt(value) {
+  const num = Number.parseInt(String(value || ""), 10);
+  return Number.isFinite(num) && num > 0 ? num : null;
+}
+
+function publicGenerationError(err) {
+  const status = err?.status || err?.code || 500;
+  const message = String(err?.message || "").toLowerCase();
+
+  if (status === 401) {
+    return "La clave de IA del servidor no esta funcionando. Revisá OPENAI_API_KEY en Render.";
+  }
+
+  if (status === 400) {
+    if (message.includes("mask")) {
+      return "La mascara de Paint no pudo procesarse. Volvé a pintar la zona y probá otra vez.";
+    }
+    if (message.includes("image") || message.includes("file")) {
+      return "La imagen no pudo procesarse. Probá con JPG, PNG o WEBP y una imagen menos pesada.";
+    }
+    return "La IA no pudo interpretar este pedido. Probá con una instruccion mas concreta.";
+  }
+
+  if (status === 413 || message.includes("too large") || message.includes("maximum")) {
+    return "La imagen es demasiado pesada. Probá con una imagen mas liviana o comprimida.";
+  }
+
+  if (status === 429 || message.includes("rate limit") || message.includes("quota")) {
+    return "La IA esta con limite de uso en este momento. Esperá un poco y probá de nuevo.";
+  }
+
+  if (status === 500 || status === 503 || message.includes("timeout") || message.includes("temporarily")) {
+    return "Hubo un problema temporal generando la imagen. Probá de nuevo en unos segundos.";
+  }
+
+  return "No se pudo generar la imagen. Probá con una imagen mas liviana o una instruccion mas concreta.";
+}
+
 function basicAuth(req, res, next) {
   if (!BASIC_USER || !BASIC_PASS) return next();
 
@@ -65,10 +103,18 @@ function buildEditPrompt({
   hasMask,
   hasReference,
   maskContext,
+  editScope,
   keepGeometry,
   keepDimensions,
   strictEditScope,
 }) {
+  const scopeText = {
+    auto: "Inferir el alcance desde el pedido del usuario.",
+    puntual: "Modo cambio puntual: modificar solamente el elemento, material o zona concreta pedida.",
+    completo: "Modo cambio completo: aplicar una transformacion integral a todas las areas visibles que correspondan al pedido, conservando la misma imagen base.",
+    limpiar: "Modo limpiar ambiente: eliminar desorden, basura y objetos temporales sin redisenar el espacio.",
+  }[editScope] || "Inferir el alcance desde el pedido del usuario.";
+
   return `
 Sos un sistema experto en edicion fotografica arquitectonica de alta precision para interiores, exteriores, fachadas y renders realistas.
 
@@ -77,6 +123,9 @@ La imagen original es la base absoluta. El resultado debe ser la misma imagen, c
 
 PEDIDO DEL USUARIO:
 "${texto}"
+
+ALCANCE SELECCIONADO:
+${scopeText}
 
 TAMANO ORIGINAL:
 - ancho: ${width || "desconocido"} px
@@ -248,6 +297,10 @@ app.post(
       const texto = (req.body.texto || "").trim();
       const modoEspecial = (req.body.modoEspecial || "").trim();
       const maskContext = (req.body.maskContext || "").trim().slice(0, 1200);
+      const editScopeRaw = (req.body.editScope || "auto").trim().toLowerCase();
+      const editScope = ["auto", "puntual", "completo", "limpiar"].includes(editScopeRaw)
+        ? editScopeRaw
+        : "auto";
       const keepGeometry = isTruthyFlag(req.body.keepGeometry, true);
       const keepDimensions = true;
       const strictEditScope = isTruthyFlag(req.body.strictEditScope, true);
@@ -274,21 +327,24 @@ app.post(
       const originalMeta = await sharp(imagePath).metadata();
       const originalWidth = originalMeta.width || null;
       const originalHeight = originalMeta.height || null;
+      const sourceWidth = positiveInt(req.body.sourceWidth) || originalWidth;
+      const sourceHeight = positiveInt(req.body.sourceHeight) || originalHeight;
 
       let prompt = buildEditPrompt({
         texto,
-        width: originalWidth,
-        height: originalHeight,
+        width: sourceWidth,
+        height: sourceHeight,
         hasMask: Boolean(mask),
         hasReference: Boolean(referencia),
         maskContext,
+        editScope,
         keepGeometry,
         keepDimensions,
         strictEditScope,
       });
 
-      if (modoEspecial === "VACIAR" || isCleanupRequest(texto)) {
-        prompt = buildCleanupPrompt(texto, originalWidth, originalHeight);
+      if (modoEspecial === "VACIAR" || editScope === "limpiar" || isCleanupRequest(texto)) {
+        prompt = buildCleanupPrompt(texto, sourceWidth, sourceHeight);
       }
 
       const imageFile = await toFile(
@@ -357,9 +413,11 @@ Generar una lista profesional, corta y accionable de materiales recomendados.
       }
 
       let outputBuffer = Buffer.from(base64, "base64");
-      if (keepDimensions && originalWidth && originalHeight) {
+      const outputWidth = sourceWidth || originalWidth;
+      const outputHeight = sourceHeight || originalHeight;
+      if (keepDimensions && outputWidth && outputHeight) {
         outputBuffer = await sharp(outputBuffer)
-          .resize(originalWidth, originalHeight, { fit: "fill" })
+          .resize(outputWidth, outputHeight, { fit: "fill" })
           .png()
           .toBuffer();
       }
@@ -379,13 +437,7 @@ Generar una lista profesional, corta y accionable de materiales recomendados.
       });
     } catch (err) {
       console.error(err);
-      const status = err?.status || err?.code || 500;
-      if (status === 401) {
-        return res.status(500).json({
-          error: "OPENAI_API_KEY invalida o desactualizada en el servidor",
-        });
-      }
-      return res.status(500).json({ error: err?.message || "Error interno" });
+      return res.status(500).json({ error: publicGenerationError(err) });
     }
   }
 );

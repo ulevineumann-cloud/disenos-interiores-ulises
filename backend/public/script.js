@@ -36,6 +36,7 @@ const referenceMeta = document.getElementById("referenceMeta");
 const keepGeometryEl = document.getElementById("keepGeometry");
 const keepDimensionsEl = document.getElementById("keepDimensions");
 const strictEditScopeEl = document.getElementById("strictEditScope");
+const editScopeEl = document.getElementById("editScope");
 
 const recomendacionEl = document.getElementById("recomendacion");
 const imagenResultadoEl = document.getElementById("imagenResultado");
@@ -136,6 +137,7 @@ function updatePrecisionSummary(extraMode = "") {
   if (!modoInfo) return;
 
   const flags = [];
+  if (editScopeEl?.value && editScopeEl.value !== "auto") flags.push(`alcance ${editScopeEl.value}`);
   if (keepGeometryEl?.checked) flags.push("misma geometria");
   if (keepDimensionsEl?.checked) flags.push("mismo tamano final");
   if (strictEditScopeEl?.checked) flags.push("cambio puntual");
@@ -489,14 +491,40 @@ function describeMaskZone() {
   ].join(" ");
 }
 
-function prepareMaskForUpload() {
+function prepareMaskForUpload(targetWidth = maskCanvas.width, targetHeight = maskCanvas.height) {
   if (!maskCanvas.width || !maskCanvas.height) return null;
   // GPT Image edita los pixeles totalmente transparentes de la mascara.
-  return maskCanvas;
+  if (targetWidth === maskCanvas.width && targetHeight === maskCanvas.height) return maskCanvas;
+
+  const uploadCanvas = document.createElement("canvas");
+  uploadCanvas.width = targetWidth;
+  uploadCanvas.height = targetHeight;
+  const uctx = uploadCanvas.getContext("2d", { willReadFrequently: true });
+  uctx.imageSmoothingEnabled = true;
+  uctx.drawImage(maskCanvas, 0, 0, targetWidth, targetHeight);
+
+  const imgData = uctx.getImageData(0, 0, targetWidth, targetHeight);
+  const data = imgData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const alpha = data[i + 3];
+    if (alpha < 220) {
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+      data[i + 3] = 0;
+    } else {
+      data[i] = 0;
+      data[i + 1] = 0;
+      data[i + 2] = 0;
+      data[i + 3] = 255;
+    }
+  }
+  uctx.putImageData(imgData, 0, 0);
+  return uploadCanvas;
 }
 
-function maskBlobPNG() {
-  const uploadCanvas = prepareMaskForUpload();
+function maskBlobPNG(targetWidth, targetHeight) {
+  const uploadCanvas = prepareMaskForUpload(targetWidth, targetHeight);
   return new Promise((resolve) => {
     if (!uploadCanvas) return resolve(null);
     uploadCanvas.toBlob((b) => resolve(b), "image/png");
@@ -523,7 +551,7 @@ btnModeSimple.addEventListener("click", () => setMode(false));
 btnModePaint.addEventListener("click", () => setMode(true));
 setMode(false);
 
-[keepGeometryEl, keepDimensionsEl, strictEditScopeEl].forEach((el) => {
+[keepGeometryEl, keepDimensionsEl, strictEditScopeEl, editScopeEl].forEach((el) => {
   el?.addEventListener("change", () => {
     updatePrecisionSummary();
   });
@@ -1276,8 +1304,47 @@ function setLoading(on) {
 }
 
 function niceError(msg) {
-  estado.textContent = "Error ❌";
+  estado.textContent = msg || "No se pudo generar la imagen.";
   alert(msg);
+}
+
+function generationErrorMessage(err) {
+  const raw = String(err?.message || "").trim();
+  const msg = raw.toLowerCase();
+
+  if (!raw) {
+    return "No se pudo generar la imagen. Proba con una instruccion mas concreta.";
+  }
+
+  if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("load failed")) {
+    return "No se pudo conectar con el servidor. Revisa tu conexion y proba de nuevo.";
+  }
+
+  if (msg.includes("falta imagen") || msg.includes("seleccion")) {
+    return "Selecciona una imagen base antes de generar.";
+  }
+
+  if (msg.includes("descripcion") || msg.includes("instruccion") || msg.includes("interpretar")) {
+    return "La IA no pudo interpretar el pedido. Proba escribirlo mas concreto, por ejemplo: cambiar solo la pared del fondo a microcemento claro.";
+  }
+
+  if (msg.includes("mascara") || msg.includes("mask") || msg.includes("paint")) {
+    return "La zona pintada no se pudo procesar. Volve a pintar el area y proba otra vez.";
+  }
+
+  if (msg.includes("pesada") || msg.includes("large") || msg.includes("maximum") || msg.includes("12mb")) {
+    return "La imagen es demasiado pesada. Proba con una version mas liviana.";
+  }
+
+  if (msg.includes("limite") || msg.includes("quota") || msg.includes("rate limit")) {
+    return "La IA esta con limite de uso en este momento. Espera un poco y proba de nuevo.";
+  }
+
+  if (msg.includes("openai_api_key") || msg.includes("clave")) {
+    return "La clave de IA del servidor no esta funcionando. Revisa la variable OPENAI_API_KEY en Render.";
+  }
+
+  return raw;
 }
 
 function resetVideoUI() {
@@ -1585,6 +1652,54 @@ function loadImg(src) {
     img.crossOrigin = "anonymous";
     img.src = src;
   });
+}
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+    img.onerror = (e) => {
+      URL.revokeObjectURL(url);
+      reject(e);
+    };
+    img.src = url;
+  });
+}
+
+async function optimizeImageFile(file, options = {}) {
+  const maxSide = options.maxSide || 2200;
+  const quality = options.quality || 0.88;
+  const prefix = options.prefix || "optimized";
+  const img = await loadImageFromFile(file);
+  const sourceW = img.naturalWidth || img.width;
+  const sourceH = img.naturalHeight || img.height;
+  const scale = Math.min(1, maxSide / Math.max(sourceW, sourceH));
+  const outW = Math.max(1, Math.round(sourceW * scale));
+  const outH = Math.max(1, Math.round(sourceH * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = outW;
+  canvas.height = outH;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, outW, outH);
+  ctx.drawImage(img, 0, 0, outW, outH);
+
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+  if (!blob) return { file, sourceW, sourceH, uploadW: sourceW, uploadH: sourceH };
+
+  const baseName = String(file.name || prefix).replace(/\.[^.]+$/, "");
+  const optimizedFile = new File([blob], `${baseName}_${prefix}.jpg`, { type: "image/jpeg" });
+
+  if (optimizedFile.size >= file.size && scale === 1) {
+    return { file, sourceW, sourceH, uploadW: sourceW, uploadH: sourceH };
+  }
+
+  return { file: optimizedFile, sourceW, sourceH, uploadW: outW, uploadH: outH };
 }
 
 function clamp(value, min, max) {
@@ -1941,6 +2056,8 @@ btnZip.addEventListener("click", async () => {
 const btnVaciar = document.getElementById("btnVaciar");
 
 btnVaciar?.addEventListener("click", () => {
+  if (editScopeEl) editScopeEl.value = "limpiar";
+  updatePrecisionSummary();
   textoEl.value = `
 Vaciar el ambiente eliminando únicamente basura, objetos sueltos, bolsas, papeles, ropa, recipientes, muebles pequeños y desorden.
 
@@ -2016,23 +2133,32 @@ ${texto}
 
     try {
       setLoading(true);
+      const optimizedBase = await optimizeImageFile(imagen, { prefix: "base" });
 
       const formData = new FormData();
       formData.append("texto", texto);
-      formData.append("imagen", imagen);
+      formData.append("imagen", optimizedBase.file);
+      formData.append("sourceWidth", String(optimizedBase.sourceW || ""));
+      formData.append("sourceHeight", String(optimizedBase.sourceH || ""));
+      formData.append("editScope", editScopeEl?.value || "auto");
       formData.append("keepGeometry", keepGeometryEl?.checked ? "1" : "0");
       formData.append("keepDimensions", keepDimensionsEl?.checked ? "1" : "0");
       formData.append("strictEditScope", strictEditScopeEl?.checked ? "1" : "0");
 
       if (hayReferencia) {
-        formData.append("imagenReferencia", refInput.files[0]);
+        const optimizedReference = await optimizeImageFile(refInput.files[0], {
+          prefix: "referencia",
+          maxSide: 1600,
+          quality: 0.86,
+        });
+        formData.append("imagenReferencia", optimizedReference.file);
       }
 
       if (hayMascara) {
         if (!imgNaturalW) return niceError("Esperá que cargue la imagen.");
         if (!maskHasEdits()) return niceError("Pintá una zona.");
         formData.append("maskContext", describeMaskZone());
-        const mb = await maskBlobPNG();
+        const mb = await maskBlobPNG(optimizedBase.uploadW, optimizedBase.uploadH);
         if (!mb) return niceError("No se pudo preparar la mascara.");
         formData.append("mask", mb, "mask.png");
       }
@@ -2090,7 +2216,7 @@ ${texto}
 
     } catch (err) {
       console.error(err);
-      niceError("Error al generar");
+      niceError(generationErrorMessage(err));
     } finally {
       setLoading(false);
     }
