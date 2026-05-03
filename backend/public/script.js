@@ -67,6 +67,15 @@ const compareSlider = document.getElementById("compareSlider");
 const btnNewProject = document.getElementById("btnNewProject");
 const projectSearch = document.getElementById("projectSearch");
 const projectList = document.getElementById("projectList");
+const projectHistoryList = document.getElementById("projectHistoryList");
+const historyCount = document.getElementById("historyCount");
+const sidebarEditState = document.getElementById("sidebarEditState");
+const requestChecklist = document.getElementById("requestChecklist");
+const sidebarImageInfo = document.getElementById("sidebarImageInfo");
+const sbUseResult = document.getElementById("sbUseResult");
+const sbBackOriginal = document.getElementById("sbBackOriginal");
+const sbVideo = document.getElementById("sbVideo");
+const sbZip = document.getElementById("sbZip");
 
 // Sidebar toggle (desktop collapse)
 const btnToggleSidebar = document.getElementById("btnToggleSidebar");
@@ -232,6 +241,23 @@ document.querySelectorAll("[data-preset]").forEach((btn) => {
     textoEl.value = btn.getAttribute("data-preset") || "";
     textoEl.focus();
     textoEl.setSelectionRange(textoEl.value.length, textoEl.value.length);
+    updateSidebarWorkspaceControls();
+  });
+});
+
+document.querySelectorAll("[data-sidebar-preset]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const preset = btn.getAttribute("data-sidebar-preset") || "";
+    const scope = btn.getAttribute("data-scope") || "auto";
+    textoEl.value = preset;
+    if (editScopeEl) {
+      editScopeEl.value = scope;
+      editScopeEl.dispatchEvent(new Event("change"));
+    }
+    textoEl.focus();
+    textoEl.setSelectionRange(textoEl.value.length, textoEl.value.length);
+    document.querySelector(".toolCard")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    updateSidebarWorkspaceControls();
   });
 });
 
@@ -425,10 +451,12 @@ paintCanvas.addEventListener("pointermove", (e) => {
 paintCanvas.addEventListener("pointerup", () => {
   drawing = false;
   lastStrokePoint = null;
+  updateSidebarWorkspaceControls();
 });
 paintCanvas.addEventListener("pointercancel", () => {
   drawing = false;
   lastStrokePoint = null;
+  updateSidebarWorkspaceControls();
 });
 
 function getMaskStats() {
@@ -544,6 +572,7 @@ function setMode(paintOn) {
   paintSection.style.display = paintOn ? "block" : "none";
   paintTools.style.display = paintOn ? "flex" : "none";
   updatePrecisionSummary();
+  updateSidebarWorkspaceControls();
 
   if (paintOn && imgNaturalW) setTimeout(resizeCanvasesToImage, 0);
 }
@@ -554,6 +583,7 @@ setMode(false);
 [keepGeometryEl, keepDimensionsEl, strictEditScopeEl, editScopeEl].forEach((el) => {
   el?.addEventListener("change", () => {
     updatePrecisionSummary();
+    updateSidebarWorkspaceControls();
   });
 });
 
@@ -959,6 +989,115 @@ function renderSidebar() {
       });
     });
   });
+
+  renderProjectHistory();
+  updateSidebarWorkspaceControls();
+}
+
+function versionThumb(version) {
+  return version?.resultUrl || version?.originalThumb || version?.originalUrl || "";
+}
+
+function renderProjectHistory() {
+  if (!projectHistoryList) return;
+
+  const project = findProjectById(loadProjects(), getCurrentProjectId());
+  const versions = Array.isArray(project?.versions) ? project.versions : [];
+  if (historyCount) historyCount.textContent = String(versions.length);
+
+  if (!project || !versions.length) {
+    projectHistoryList.innerHTML = `<div class="muted small">Todavia no hay versiones guardadas.</div>`;
+    return;
+  }
+
+  projectHistoryList.innerHTML = versions
+    .map((version, index) => {
+      const thumb = versionThumb(version);
+      const title = truncateText(version.prompt || `Version ${versions.length - index}`, 48);
+      const mode = version.mode ? ` · ${version.mode}` : "";
+      return `
+        <button class="historyRow" type="button" data-version-id="${version.id}">
+          <img class="historyThumb" src="${withCacheBust(thumb, version.createdAt || Date.now())}" alt="Version ${index + 1}" onerror="this.style.display='none'">
+          <span>
+            <p class="historyTitle">${escapeHtml(title)}</p>
+            <div class="historyMeta">${escapeHtml(formatDate(version.createdAt))}${escapeHtml(mode)}</div>
+          </span>
+        </button>
+      `;
+    })
+    .join("");
+
+  projectHistoryList.querySelectorAll(".historyRow").forEach((row) => {
+    row.addEventListener("click", async () => {
+      const versionId = row.getAttribute("data-version-id");
+      if (!versionId) return;
+      await restoreProjectVersion(versionId);
+      if (isMobile()) closeSidebarDrawer();
+    });
+  });
+}
+
+function updateSidebarWorkspaceControls() {
+  const hasResult = Boolean(resultadoUrlFinal || imagenResultadoEl?.src);
+  const hasOriginal = Boolean(originalBaseFile || originalObjectUrl);
+  if (sbUseResult) sbUseResult.disabled = !hasResult;
+  if (sbVideo) sbVideo.disabled = !hasResult;
+  if (sbZip) sbZip.disabled = !hasResult;
+  if (sbBackOriginal) sbBackOriginal.disabled = !hasOriginal;
+
+  document.querySelectorAll(".scopeQuick").forEach((btn) => {
+    btn.classList.toggle("active", btn.getAttribute("data-scope") === (editScopeEl?.value || "auto"));
+  });
+
+  if (sidebarEditState) {
+    const scope = editScopeEl?.value || "auto";
+    const paint = usePaint?.checked ? "Paint activo" : "Paint apagado";
+    const ref = inputReferencia?.files?.length ? "Referencia cargada" : "Sin referencia";
+    sidebarEditState.textContent = `Alcance: ${scope}. ${paint}. ${ref}.`;
+  }
+
+  renderRequestChecklist();
+  renderSidebarImageInfo();
+}
+
+function renderRequestChecklist() {
+  if (!requestChecklist) return;
+  const text = collapseWhitespace(textoEl?.value || "");
+  const hasImage = Boolean(inputImagen?.files?.[0] || originalObjectUrl);
+  const scope = editScopeEl?.value || "auto";
+  const paintReady = !usePaint?.checked || maskHasEdits();
+  const hasConcreteText = text.length >= 12;
+
+  const items = [
+    { label: "Imagen base cargada", done: hasImage },
+    { label: "Pedido escrito con suficiente detalle", done: hasConcreteText },
+    { label: `Alcance definido: ${scope}`, done: Boolean(scope) },
+    { label: usePaint?.checked ? "Zona Paint marcada" : "Paint opcional", done: paintReady },
+  ];
+
+  requestChecklist.innerHTML = items
+    .map((item) => `
+      <div class="checkItem ${item.done ? "done" : ""}">
+        <span class="checkDot">${item.done ? "✓" : ""}</span>
+        <span>${escapeHtml(item.label)}</span>
+      </div>
+    `)
+    .join("");
+}
+
+function renderSidebarImageInfo() {
+  if (!sidebarImageInfo) return;
+  const file = inputImagen?.files?.[0] || originalBaseFile;
+  if (!file && !originalObjectUrl) {
+    sidebarImageInfo.textContent = "Sin imagen cargada.";
+    return;
+  }
+
+  const dims = imgNaturalW && imgNaturalH ? `${imgNaturalW} × ${imgNaturalH}px` : "Dimensiones cargando";
+  const size = file?.size ? humanFileSize(file.size) : "peso no disponible";
+  const name = file?.name || "imagen recuperada";
+  const paint = usePaint?.checked ? "Paint activo" : "Paint apagado";
+  sidebarImageInfo.textContent = `${name}\n${dims} · ${size}\n${paint}`;
 }
 
 async function selectProject(id) {
@@ -1109,6 +1248,7 @@ async function hydrateInputFromStoredUrl(url, filename = "proyecto-base.png") {
     imgNaturalW = paintBase.naturalWidth;
     imgNaturalH = paintBase.naturalHeight;
     if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+    updateSidebarWorkspaceControls();
   };
   paintBase.src = originalObjectUrl;
 
@@ -1159,6 +1299,7 @@ async function restoreCurrentProjectState() {
       imgNaturalW = paintBase.naturalWidth;
       imgNaturalH = paintBase.naturalHeight;
       if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+      updateSidebarWorkspaceControls();
     };
     paintBase.src = originalSrc;
   } else {
@@ -1187,6 +1328,49 @@ async function restoreCurrentProjectState() {
   }
 
   updatePrecisionSummary(latest.mode || "");
+}
+
+async function restoreProjectVersion(versionId) {
+  const list = loadProjects();
+  const project = findProjectById(list, getCurrentProjectId());
+  const version = project?.versions?.find((item) => item.id === versionId);
+  if (!project || !version) return;
+
+  proyectoEl.value = project.name || "Proyecto sin nombre";
+  textoEl.value = version.prompt || "";
+  if (estado) estado.textContent = `Version recuperada: ${formatDate(version.createdAt)}`;
+  if (recomendacionEl) recomendacionEl.textContent = version.recommendation || "-";
+
+  const originalSrc = version.originalUrl ? withCacheBust(version.originalUrl, version.createdAt || Date.now()) : "";
+  const resultSrc = version.resultUrl ? withCacheBust(version.resultUrl, version.createdAt || Date.now()) : "";
+
+  resultadoUrlFinal = resultSrc;
+  setImageVisibility(imagenResultadoEl, resultSrc);
+  setImageVisibility(preview, originalSrc || version.originalThumb || "");
+  currentOriginalThumb = version.originalThumb || "";
+
+  resetVideoUI();
+  if (btnUseResult) btnUseResult.disabled = !resultSrc;
+  if (btnVideo) btnVideo.disabled = !resultSrc;
+  if (btnZip) btnZip.disabled = !resultSrc;
+
+  if (originalSrc && resultSrc) {
+    showCompare(originalSrc, resultSrc);
+  } else {
+    hideCompare();
+  }
+
+  if (version.originalUrl) {
+    try {
+      await hydrateInputFromStoredUrl(version.originalUrl, version.originalName || "proyecto-base.png");
+      if (resultSrc) showCompare(originalObjectUrl || originalSrc, resultSrc);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  updatePrecisionSummary(version.mode || "");
+  updateSidebarWorkspaceControls();
 }
 
 function persistCurrentProjectName() {
@@ -1293,6 +1477,23 @@ btnNewProject.addEventListener("click", () => {
 });
 
 projectSearch.addEventListener("input", renderSidebar);
+textoEl?.addEventListener("input", updateSidebarWorkspaceControls);
+
+sbUseResult?.addEventListener("click", () => btnUseResult?.click());
+sbBackOriginal?.addEventListener("click", () => btnBackToOriginal?.click());
+sbVideo?.addEventListener("click", () => btnVideo?.click());
+sbZip?.addEventListener("click", () => btnZip?.click());
+
+document.querySelectorAll(".scopeQuick").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const scope = btn.getAttribute("data-scope") || "auto";
+    if (editScopeEl) {
+      editScopeEl.value = scope;
+      editScopeEl.dispatchEvent(new Event("change"));
+    }
+    updateSidebarWorkspaceControls();
+  });
+});
 
 /* =========================
    UI HELPERS
@@ -1502,6 +1703,7 @@ inputReferencia?.addEventListener("change", () => {
     previewReferencia.src = url;
     previewReferencia.style.display = "block";
   }
+  updateSidebarWorkspaceControls();
 });
 
 /* Input image */
@@ -1545,6 +1747,7 @@ inputImagen?.addEventListener("change", async () => {
     imgNaturalW = paintBase.naturalWidth;
     imgNaturalH = paintBase.naturalHeight;
     if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+    updateSidebarWorkspaceControls();
   };
   paintBase.src = originalObjectUrl;
 });
@@ -1577,6 +1780,7 @@ function volverAlOriginal() {
     imgNaturalW = paintBase.naturalWidth;
     imgNaturalH = paintBase.naturalHeight;
     if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+    updateSidebarWorkspaceControls();
   };
   paintBase.src = originalObjectUrl;
 
@@ -1627,6 +1831,7 @@ async function usarResultadoComoBase() {
     imgNaturalW = paintBase.naturalWidth;
     imgNaturalH = paintBase.naturalHeight;
     if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+    updateSidebarWorkspaceControls();
   };
   paintBase.src = originalObjectUrl;
 

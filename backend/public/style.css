@@ -128,6 +128,129 @@ body{
 .sbListWrap{ flex: 1; overflow:auto; padding: 12px; }
 .projectList{ display:flex; flex-direction: column; gap: 10px; }
 
+.sbPanel{
+  margin-top: 14px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(10,16,28,.25);
+  border-radius: 14px;
+  padding: 12px;
+}
+
+.sbPanelHead{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom: 8px;
+}
+
+.historyList{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.historyRow{
+  width:100%;
+  display:grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  gap:10px;
+  align-items:center;
+  text-align:left;
+  padding:8px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.03);
+  color: var(--text);
+  cursor:pointer;
+}
+
+.historyRow:hover{
+  border-color: rgba(255,255,255,.22);
+}
+
+.historyThumb{
+  width:58px;
+  height:42px;
+  border-radius:10px;
+  object-fit:cover;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+}
+
+.historyTitle{
+  margin:0;
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.historyMeta{
+  margin-top:3px;
+  font-size:10px;
+  color: rgba(234,240,255,.68);
+}
+
+.quickActions,
+.scopeButtons,
+.presetMiniGrid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:8px;
+}
+
+.scopeQuick.active{
+  border-color: rgba(214, 179, 126, .34);
+  background: rgba(190, 132, 74, .18);
+}
+
+.sidebarEditState{
+  margin-top:10px;
+  font-size:12px;
+}
+
+.checkList{
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+}
+
+.checkItem{
+  display:flex;
+  gap:8px;
+  align-items:flex-start;
+  font-size:12px;
+  color: rgba(234,240,255,.78);
+}
+
+.checkDot{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  flex:0 0 auto;
+  border:1px solid rgba(255,255,255,.14);
+  color: rgba(234,240,255,.56);
+  font-size:11px;
+}
+
+.checkItem.done{
+  color: rgba(234,240,255,.92);
+}
+
+.checkItem.done .checkDot{
+  border-color: rgba(143,165,112,.55);
+  background: rgba(143,165,112,.18);
+  color: rgba(246,239,229,.95);
+}
+
+.sidebarImageInfo{
+  white-space:pre-line;
+}
+
 .projRow{
   display:flex;
   gap: 10px;
@@ -213,6 +336,7 @@ body{
 .sidebar.collapsed .sbText,
 .sidebar.collapsed .sbSearch,
 .sidebar.collapsed .sbHelp,
+.sidebar.collapsed .sbPanel,
 .sidebar.collapsed .projMain,
 .sidebar.collapsed .projBtns{ display:none; }
 .sidebar.collapsed .sbActions{ display:none; }
@@ -1147,6 +1271,7 @@ background: rgba(10,16,28,.30);
 .appPage .paintBox,
 .appPage .precisionCard,
 .appPage .sbHelp,
+.appPage .sbPanel,
 .appPage .projRow{
   border-color: var(--app-line);
   background:

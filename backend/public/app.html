@@ -47,6 +47,57 @@
 <div class="muted small">Todavia no hay proyectos.</div>
 </div>
 
+<div class="sbPanel" id="projectHistoryPanel">
+<div class="sbPanelHead">
+<div class="sbHelpTitle">Historial del proyecto</div>
+<span id="historyCount" class="projBadge">0</span>
+</div>
+<div id="projectHistoryList" class="historyList">
+<div class="muted small">Todavia no hay versiones guardadas.</div>
+</div>
+</div>
+
+<div class="sbPanel" id="quickActionsPanel">
+<div class="sbHelpTitle">Acciones rapidas</div>
+<div class="quickActions">
+<button id="sbUseResult" class="sbMiniBtn" type="button" disabled>Usar resultado</button>
+<button id="sbBackOriginal" class="sbMiniBtn" type="button" disabled>Volver original</button>
+<button id="sbVideo" class="sbMiniBtn" type="button" disabled>Video</button>
+<button id="sbZip" class="sbMiniBtn" type="button" disabled>ZIP</button>
+</div>
+</div>
+
+<div class="sbPanel" id="sidebarEditModePanel">
+<div class="sbHelpTitle">Modo de edicion</div>
+<div class="scopeButtons">
+<button class="sbMiniBtn scopeQuick active" type="button" data-scope="auto">Auto</button>
+<button class="sbMiniBtn scopeQuick" type="button" data-scope="puntual">Puntual</button>
+<button class="sbMiniBtn scopeQuick" type="button" data-scope="completo">Completo</button>
+<button class="sbMiniBtn scopeQuick" type="button" data-scope="limpiar">Limpiar</button>
+</div>
+<div id="sidebarEditState" class="sbHelpText sidebarEditState"></div>
+</div>
+
+<div class="sbPanel">
+<div class="sbHelpTitle">Presets profesionales</div>
+<div class="presetMiniGrid">
+<button class="sbMiniBtn sidebarPreset" type="button" data-scope="puntual" data-sidebar-preset="Cambiar solo el revestimiento indicado por un material contemporaneo, manteniendo exactamente la misma arquitectura, juntas, escala, iluminacion y encuadre.">Revestimiento</button>
+<button class="sbMiniBtn sidebarPreset" type="button" data-scope="puntual" data-sidebar-preset="Cambiar solo las carpinterias por perfileria negra moderna, manteniendo la misma cantidad, tamano, ubicacion, perspectiva y reflejos.">Carpinterias</button>
+<button class="sbMiniBtn sidebarPreset" type="button" data-scope="completo" data-sidebar-preset="Renovar todo el ambiente con una estetica minimalista calida, manteniendo exactamente la misma distribucion, arquitectura, encuadre, perspectiva y dimensiones finales.">Renovar todo</button>
+<button class="sbMiniBtn sidebarPreset" type="button" data-scope="limpiar" data-sidebar-preset="Limpiar y despejar el ambiente eliminando basura, objetos sueltos y desorden, sin cambiar arquitectura, luz, perspectiva ni dimensiones.">Limpiar</button>
+</div>
+</div>
+
+<div class="sbPanel">
+<div class="sbHelpTitle">Checklist del pedido</div>
+<div id="requestChecklist" class="checkList"></div>
+</div>
+
+<div class="sbPanel">
+<div class="sbHelpTitle">Datos de imagen</div>
+<div id="sidebarImageInfo" class="sbHelpText sidebarImageInfo">Sin imagen cargada.</div>
+</div>
+
 <div class="sbHelp miniTest" style="margin-top:20px;">
 <div class="sbHelpTitle">Paleta de ayuda</div>
 
