@@ -233,6 +233,14 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
   <button id="generar" class="primary">Disenar</button>
 </div>
 
+<label class="uploadDropzone" id="uploadDropzone" for="imagen">
+  <span class="uploadDropIcon">+</span>
+  <span>
+    <strong>Cargar imagen base</strong>
+    <small>JPG, PNG o WEBP. La IA conserva encuadre y dimensiones.</small>
+  </span>
+</label>
+
 <div class="row" style="margin-top:10px;">
   <button id="btnVaciar" class="ghost" type="button">
     Limpiar ambiente
@@ -260,6 +268,7 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
 </div>
 
 <p id="estado" class="estado"></p>
+<div id="errorBox" class="statusBox errorBox" style="display:none;"></div>
 <div id="loader" class="loader"></div>
 
 <div class="previewBox">
@@ -346,6 +355,14 @@ Pinta exactamente la zona que queres cambiar. La IA recibira esa seleccion como 
     <div class="panel">
       <h3>Imagen resultante</h3>
 
+      <div id="resultLoading" class="resultLoading" style="display:none;">
+        <div class="loadingOrb"></div>
+        <div>
+          <strong>Generando propuesta visual</strong>
+          <span>Esto puede tardar unos segundos. Estamos conservando la imagen base.</span>
+        </div>
+      </div>
+
       <div class="imgWrap">
         <img id="imagenResultado"
              class="imgResultadoSmall"
@@ -379,6 +396,13 @@ Pinta exactamente la zona que queres cambiar. La IA recibira esa seleccion como 
                 disabled>
           Volver al original
         </button>
+
+        <a id="downloadResult"
+           class="ghostLink"
+           download="resultado-ulises.png"
+           style="display:none;">
+          Descargar resultado
+        </a>
       </div>
 
       <div class="panel" id="boxReferencia" style="margin-top:18px;">

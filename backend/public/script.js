@@ -30,6 +30,8 @@ resetEstilo?.addEventListener("click", () => {
 });
 const estado = document.getElementById("estado");
 const loader = document.getElementById("loader");
+const errorBox = document.getElementById("errorBox");
+const resultLoading = document.getElementById("resultLoading");
 const modoInfo = document.getElementById("modoInfo");
 const fileMeta = document.getElementById("fileMeta");
 const referenceMeta = document.getElementById("referenceMeta");
@@ -43,6 +45,7 @@ const imagenResultadoEl = document.getElementById("imagenResultado");
 
 const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
+const uploadDropzone = document.getElementById("uploadDropzone");
 
 const inputReferencia = document.getElementById("imagenReferencia");
 const previewReferencia = document.getElementById("previewReferencia");
@@ -92,6 +95,7 @@ const btnVideo = document.getElementById("btnVideo");
 const downloadVideo = document.getElementById("downloadVideo");
 const videoPreview = document.getElementById("videoPreview");
 const videoInfo = document.getElementById("videoInfo");
+const downloadResult = document.getElementById("downloadResult");
 
 // ZIP UI
 const btnZip = document.getElementById("btnZip");
@@ -1195,6 +1199,8 @@ function clearCurrentWorkspace() {
   setImageVisibility(imagenResultadoEl, "");
   setImageVisibility(preview, "");
   setImageVisibility(previewReferencia, "");
+  setDownloadResult("");
+  clearError();
 
   resultadoUrlFinal = "";
   resetVideoUI();
@@ -1212,6 +1218,7 @@ function clearCurrentWorkspace() {
 
   inputImagen.value = "";
   if (inputReferencia) inputReferencia.value = "";
+  updateUploadDropzone(null);
 
   paintBase.removeAttribute("src");
   imgNaturalW = 0;
@@ -1230,6 +1237,7 @@ async function hydrateInputFromStoredUrl(url, filename = "proyecto-base.png") {
   dt.items.add(file);
   inputImagen.files = dt.files;
   originalBaseFile = file;
+  updateUploadDropzone(file);
   setMetaText(fileMeta, describeImageFile(file, "Imagen base recuperada."));
 
   try {
@@ -1285,6 +1293,7 @@ async function restoreCurrentProjectState() {
 
   setImageVisibility(imagenResultadoEl, resultSrc);
   resultadoUrlFinal = resultSrc;
+  setDownloadResult(resultSrc);
   resetVideoUI();
 
   if (btnUseResult) btnUseResult.disabled = !resultSrc;
@@ -1346,6 +1355,7 @@ async function restoreProjectVersion(versionId) {
 
   resultadoUrlFinal = resultSrc;
   setImageVisibility(imagenResultadoEl, resultSrc);
+  setDownloadResult(resultSrc);
   setImageVisibility(preview, originalSrc || version.originalThumb || "");
   currentOriginalThumb = version.originalThumb || "";
 
@@ -1499,14 +1509,26 @@ document.querySelectorAll(".scopeQuick").forEach((btn) => {
    UI HELPERS
 ========================= */
 function setLoading(on) {
+  if (on) clearError();
   loader.style.display = on ? "block" : "none";
+  if (resultLoading) resultLoading.style.display = on ? "flex" : "none";
   boton.disabled = on;
+  if (estado) estado.textContent = on ? "Generando imagen..." : "";
   boton.textContent = on ? "Diseñando..." : "Diseñar";
 }
 
 function niceError(msg) {
-  estado.textContent = msg || "No se pudo generar la imagen.";
-  alert(msg);
+  if (estado) estado.textContent = "";
+  if (errorBox) {
+    errorBox.textContent = msg || "No se pudo generar la imagen.";
+    errorBox.style.display = "block";
+  }
+}
+
+function clearError() {
+  if (!errorBox) return;
+  errorBox.textContent = "";
+  errorBox.style.display = "none";
 }
 
 function generationErrorMessage(err) {
@@ -1560,6 +1582,33 @@ function resetVideoUI() {
 
   videoInfo.textContent = "";
   videoBlobUrl = "";
+}
+
+function setDownloadResult(url) {
+  if (!downloadResult) return;
+  if (!url) {
+    downloadResult.style.display = "none";
+    downloadResult.removeAttribute("href");
+    return;
+  }
+  downloadResult.href = url;
+  downloadResult.style.display = "inline-flex";
+}
+
+function updateUploadDropzone(file) {
+  if (!uploadDropzone) return;
+  uploadDropzone.classList.toggle("hasImage", Boolean(file || originalObjectUrl));
+  const title = uploadDropzone.querySelector("strong");
+  const detail = uploadDropzone.querySelector("small");
+  if (!title || !detail) return;
+
+  if (file) {
+    title.textContent = "Imagen base cargada";
+    detail.textContent = `${file.name} · ${humanFileSize(file.size)}`;
+  } else {
+    title.textContent = "Cargar imagen base";
+    detail.textContent = "JPG, PNG o WEBP. La IA conserva encuadre y dimensiones.";
+  }
 }
 
 /* Thumbnail */
@@ -1715,10 +1764,12 @@ inputImagen?.addEventListener("change", async () => {
       preview.style.display = "none";
     }
     setMetaText(fileMeta, "Todavia no cargaste una imagen base.");
+    updateUploadDropzone(null);
     return;
   }
 
   originalBaseFile = file;
+  updateUploadDropzone(file);
   if (btnBackToOriginal) btnBackToOriginal.disabled = false;
 
   resetVideoUI();
@@ -1815,6 +1866,7 @@ async function usarResultadoComoBase() {
   dt.items.add(file);
   inputImagen.files = dt.files;
   originalBaseFile = file;
+  updateUploadDropzone(file);
   setMetaText(fileMeta, `Nueva base desde resultado · ${humanFileSize(file.size)}`);
 
   resetVideoUI();
@@ -1844,7 +1896,7 @@ async function usarResultadoComoBase() {
 btnUseResult?.addEventListener("click", () => {
   usarResultadoComoBase().catch((err) => {
     console.error(err);
-    alert("No se pudo usar el resultado como base. Probá recargar y de nuevo.");
+    niceError("No se pudo usar el resultado como base. Proba recargar y volver a intentar.");
   });
 });
 
@@ -2188,7 +2240,7 @@ btnVideo.addEventListener("click", async () => {
   } catch (e) {
     console.error(e);
     videoInfo.textContent = "Error generando el video ❌";
-    alert("No se pudo generar el video. Probá con Chrome.");
+    niceError("No se pudo generar el video. Proba con Chrome.");
   } finally {
     btnVideo.disabled = false;
   }
@@ -2206,11 +2258,11 @@ btnZip.addEventListener("click", async () => {
     btnZip.disabled = true;
 
     if (!window.JSZip) {
-      alert("Falta JSZip (revisá que agregaste el script del CDN).");
+      niceError("No se pudo preparar el ZIP porque falta JSZip.");
       return;
     }
     if (!originalObjectUrl || !resultadoUrlFinal) {
-      alert("Necesitás una imagen original y un resultado primero.");
+      niceError("Necesitas una imagen original y un resultado primero.");
       return;
     }
 
@@ -2248,7 +2300,7 @@ btnZip.addEventListener("click", async () => {
     setTimeout(() => URL.revokeObjectURL(zipUrl), 2000);
   } catch (e) {
     console.error(e);
-    alert("No se pudo generar el ZIP. Probá de nuevo.");
+    niceError("No se pudo generar el ZIP. Proba de nuevo.");
   } finally {
     btnZip.disabled = false;
   }
@@ -2320,12 +2372,14 @@ ${texto}
     const imagen = inputImagen.files?.[0];
 
     if (estado) estado.textContent = "";
+    clearError();
     if (recomendacionEl) recomendacionEl.textContent = "—";
     updatePrecisionSummary();
     if (imagenResultadoEl) {
       imagenResultadoEl.style.display = "none";
       imagenResultadoEl.src = "";
     }
+    setDownloadResult("");
 
     resetVideoUI();
     resultadoUrlFinal = "";
@@ -2390,6 +2444,7 @@ ${texto}
         imagenResultadoEl.style.display = "block";
 
         resultadoUrlFinal = url;
+        setDownloadResult(url);
 
         // 🔥 REACTIVAR BOTONES
         if (btnUseResult) btnUseResult.disabled = false;
