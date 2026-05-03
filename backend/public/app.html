@@ -241,6 +241,13 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
   </span>
 </label>
 
+<div class="onboardingSteps" id="onboardingSteps">
+  <div><span>1</span>Carga una foto</div>
+  <div><span>2</span>Define el alcance</div>
+  <div><span>3</span>Escribe el cambio</div>
+  <div><span>4</span>Genera y compara</div>
+</div>
+
 <div class="row" style="margin-top:10px;">
   <button id="btnVaciar" class="ghost" type="button">
     Limpiar ambiente
@@ -364,6 +371,10 @@ Pinta exactamente la zona que queres cambiar. La IA recibira esa seleccion como 
       </div>
 
       <div class="imgWrap">
+        <div id="resultEmpty" class="resultEmpty">
+          <strong>Todavia no hay resultado</strong>
+          <span>Cuando generes una propuesta, la vas a ver aca con comparacion antes/despues y descarga directa.</span>
+        </div>
         <img id="imagenResultado"
              class="imgResultadoSmall"
              alt="Resultado"
@@ -403,6 +414,20 @@ Pinta exactamente la zona que queres cambiar. La IA recibira esa seleccion como 
            style="display:none;">
           Descargar resultado
         </a>
+
+        <button id="btnOpenResult"
+                class="ghost"
+                type="button"
+                disabled>
+          Ver grande
+        </button>
+
+        <button id="btnCopyResult"
+                class="ghost"
+                type="button"
+                disabled>
+          Copiar link
+        </button>
       </div>
 
       <div class="panel" id="boxReferencia" style="margin-top:18px;">
@@ -471,11 +496,22 @@ Pinta exactamente la zona que queres cambiar. La IA recibira esa seleccion como 
   Herramienta privada de edicion con prioridad en precision y continuidad visual
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-<script src="/script.js"></script>
-
 </main>
 </div>
 </div>
+
+<div id="resultLightbox" class="resultLightbox" aria-hidden="true">
+  <div class="lightboxTop">
+    <div>
+      <strong>Resultado</strong>
+      <span id="lightboxMeta">Vista ampliada</span>
+    </div>
+    <button id="btnCloseLightbox" class="sbMiniBtn" type="button">Cerrar</button>
+  </div>
+  <img id="lightboxImage" alt="Resultado ampliado">
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="/script.js"></script>
 </body>
 </html>

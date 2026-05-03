@@ -513,6 +513,37 @@ input[type="file"]{ display:none; }
   border-color: rgba(143,165,112,.34);
 }
 
+.onboardingSteps{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap:8px;
+  margin-top:12px;
+}
+
+.onboardingSteps div{
+  min-width:0;
+  padding:10px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.035);
+  color: rgba(234,240,255,.78);
+  font-size:12px;
+  line-height:1.35;
+}
+
+.onboardingSteps span{
+  display:inline-grid;
+  place-items:center;
+  width:20px;
+  height:20px;
+  margin-right:6px;
+  border-radius:50%;
+  background: rgba(214,179,126,.14);
+  color: rgba(246,239,229,.92);
+  font-weight:900;
+  font-size:11px;
+}
+
 button{
   padding: 10px 14px;
   border-radius: 14px;
@@ -633,6 +664,33 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   padding: 10px;
 }
 
+.resultEmpty{
+  min-height: 260px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:8px;
+  text-align:center;
+  padding:28px;
+  border-radius:12px;
+  border:1px dashed rgba(255,255,255,.14);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.015)),
+    rgba(255,255,255,.025);
+}
+
+.resultEmpty strong,
+.resultEmpty span{
+  display:block;
+}
+
+.resultEmpty span{
+  max-width: 46ch;
+  color: var(--muted);
+  line-height:1.5;
+  font-size:14px;
+}
+
 .imgResultadoSmall{
   width: 100%;
   height: auto;
@@ -675,6 +733,51 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 }
 @keyframes spin{
   to{ transform: rotate(360deg); }
+}
+
+.resultLightbox{
+  position:fixed;
+  inset:0;
+  z-index:100;
+  display:none;
+  grid-template-rows:auto minmax(0, 1fr);
+  gap:16px;
+  padding:18px;
+  background: rgba(12, 9, 7, .92);
+  backdrop-filter: blur(14px);
+}
+
+.resultLightbox.open{
+  display:grid;
+}
+
+.lightboxTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  color: var(--text);
+}
+
+.lightboxTop strong,
+.lightboxTop span{
+  display:block;
+}
+
+.lightboxTop span{
+  margin-top:3px;
+  color: var(--muted);
+  font-size:13px;
+}
+
+.resultLightbox img{
+  width:100%;
+  height:100%;
+  min-height:0;
+  object-fit:contain;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
 }
 
 /* ====== PRESETS ====== */
@@ -1781,6 +1884,10 @@ background: rgba(10,16,28,.30);
   .toolMini input[type="range"]{
     width:100%;
     min-width:0;
+  }
+
+  .onboardingSteps{
+    grid-template-columns: 1fr 1fr;
   }
 
   .previewRow{

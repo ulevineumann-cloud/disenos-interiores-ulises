@@ -42,6 +42,7 @@ const editScopeEl = document.getElementById("editScope");
 
 const recomendacionEl = document.getElementById("recomendacion");
 const imagenResultadoEl = document.getElementById("imagenResultado");
+const resultEmpty = document.getElementById("resultEmpty");
 
 const inputImagen = document.getElementById("imagen");
 const preview = document.getElementById("preview");
@@ -96,6 +97,12 @@ const downloadVideo = document.getElementById("downloadVideo");
 const videoPreview = document.getElementById("videoPreview");
 const videoInfo = document.getElementById("videoInfo");
 const downloadResult = document.getElementById("downloadResult");
+const btnOpenResult = document.getElementById("btnOpenResult");
+const btnCopyResult = document.getElementById("btnCopyResult");
+const resultLightbox = document.getElementById("resultLightbox");
+const lightboxImage = document.getElementById("lightboxImage");
+const lightboxMeta = document.getElementById("lightboxMeta");
+const btnCloseLightbox = document.getElementById("btnCloseLightbox");
 
 // ZIP UI
 const btnZip = document.getElementById("btnZip");
@@ -206,6 +213,7 @@ sidebarOverlay?.addEventListener("click", closeSidebarDrawer);
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeSidebarDrawer();
+  if (e.key === "Escape") closeResultLightbox();
 });
 
 window.addEventListener("resize", () => {
@@ -1175,16 +1183,19 @@ function setImageVisibility(imgEl, src) {
   if (!src) {
     imgEl.removeAttribute("src");
     imgEl.style.display = "none";
+    if (imgEl === imagenResultadoEl) updateResultEmpty();
     return;
   }
 
   imgEl.style.display = "none";
   imgEl.onload = () => {
     imgEl.style.display = "block";
+    if (imgEl === imagenResultadoEl) updateResultEmpty();
   };
   imgEl.onerror = () => {
     imgEl.removeAttribute("src");
     imgEl.style.display = "none";
+    if (imgEl === imagenResultadoEl) updateResultEmpty();
   };
   imgEl.src = src;
 }
@@ -1493,6 +1504,12 @@ sbUseResult?.addEventListener("click", () => btnUseResult?.click());
 sbBackOriginal?.addEventListener("click", () => btnBackToOriginal?.click());
 sbVideo?.addEventListener("click", () => btnVideo?.click());
 sbZip?.addEventListener("click", () => btnZip?.click());
+btnOpenResult?.addEventListener("click", openResultLightbox);
+btnCopyResult?.addEventListener("click", copyResultLink);
+btnCloseLightbox?.addEventListener("click", closeResultLightbox);
+resultLightbox?.addEventListener("click", (event) => {
+  if (event.target === resultLightbox) closeResultLightbox();
+});
 
 document.querySelectorAll(".scopeQuick").forEach((btn) => {
   btn.addEventListener("click", () => {
@@ -1512,6 +1529,7 @@ function setLoading(on) {
   if (on) clearError();
   loader.style.display = on ? "block" : "none";
   if (resultLoading) resultLoading.style.display = on ? "flex" : "none";
+  updateResultEmpty();
   boton.disabled = on;
   if (estado) estado.textContent = on ? "Generando imagen..." : "";
   boton.textContent = on ? "Diseñando..." : "Diseñar";
@@ -1589,10 +1607,61 @@ function setDownloadResult(url) {
   if (!url) {
     downloadResult.style.display = "none";
     downloadResult.removeAttribute("href");
+    if (btnOpenResult) btnOpenResult.disabled = true;
+    if (btnCopyResult) btnCopyResult.disabled = true;
     return;
   }
   downloadResult.href = url;
+  downloadResult.download = resultFileName();
   downloadResult.style.display = "inline-flex";
+  if (btnOpenResult) btnOpenResult.disabled = false;
+  if (btnCopyResult) btnCopyResult.disabled = false;
+}
+
+function updateResultEmpty() {
+  if (!resultEmpty) return;
+  const hasResult = Boolean(resultadoUrlFinal || imagenResultadoEl?.src);
+  const isLoading = resultLoading?.style.display === "flex";
+  resultEmpty.style.display = hasResult || isLoading ? "none" : "grid";
+}
+
+function resultFileName() {
+  const raw = (proyectoEl?.value || "resultado-ulises").trim().toLowerCase();
+  const slug = raw
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 54) || "resultado-ulises";
+  return `${slug}-resultado.png`;
+}
+
+function openResultLightbox() {
+  if (!resultadoUrlFinal || !resultLightbox || !lightboxImage) return;
+  lightboxImage.src = resultadoUrlFinal;
+  if (lightboxMeta) lightboxMeta.textContent = proyectoEl?.value || "Vista ampliada";
+  resultLightbox.classList.add("open");
+  resultLightbox.setAttribute("aria-hidden", "false");
+  lockBodyScroll();
+}
+
+function closeResultLightbox() {
+  if (!resultLightbox) return;
+  resultLightbox.classList.remove("open");
+  resultLightbox.setAttribute("aria-hidden", "true");
+  if (lightboxImage) lightboxImage.removeAttribute("src");
+  unlockBodyScroll();
+}
+
+async function copyResultLink() {
+  if (!resultadoUrlFinal) return;
+  const absoluteUrl = new URL(resultadoUrlFinal, window.location.origin).href;
+  try {
+    await navigator.clipboard.writeText(absoluteUrl);
+    if (estado) estado.textContent = "Link del resultado copiado.";
+  } catch {
+    niceError("No se pudo copiar el link. Abrilo en grande y copialo desde el navegador.");
+  }
 }
 
 function updateUploadDropzone(file) {
@@ -2445,6 +2514,7 @@ ${texto}
 
         resultadoUrlFinal = url;
         setDownloadResult(url);
+        updateResultEmpty();
 
         // 🔥 REACTIVAR BOTONES
         if (btnUseResult) btnUseResult.disabled = false;
