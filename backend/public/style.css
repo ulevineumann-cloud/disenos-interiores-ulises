@@ -1779,24 +1779,24 @@ background: rgba(10,16,28,.30);
 
 /* ===== APP PROFESSIONAL REFRESH ===== */
 .appPage{
-  --app-bg: #101411;
-  --app-surface: rgba(30, 37, 31, .88);
-  --app-surface-strong: rgba(43, 50, 42, .92);
-  --app-panel: rgba(18, 22, 19, .86);
-  --app-line: rgba(210, 220, 199, .14);
-  --app-line-strong: rgba(210, 220, 199, .28);
+  --app-bg: #17100b;
+  --app-surface: rgba(48, 35, 25, .88);
+  --app-surface-strong: rgba(64, 47, 34, .92);
+  --app-panel: rgba(25, 18, 13, .88);
+  --app-line: rgba(236, 212, 183, .15);
+  --app-line-strong: rgba(236, 212, 183, .30);
   --app-text: #f4f0e8;
   --app-muted: rgba(244, 240, 232, .68);
-  --app-accent: #c58b50;
-  --app-accent-2: #97a86f;
+  --app-accent: #c78d55;
+  --app-accent-2: #9b7048;
   background:
-    linear-gradient(120deg, rgba(151, 168, 111, .08), transparent 34%),
-    linear-gradient(180deg, #151913 0%, #101411 48%, #0d100e 100%);
+    linear-gradient(120deg, rgba(199, 141, 85, .10), transparent 34%),
+    linear-gradient(180deg, #21160f 0%, #17100b 48%, #100b08 100%);
 }
 
 .appPage .bg{
   background:
-    linear-gradient(90deg, rgba(197, 139, 80, .08), transparent 28%, rgba(151, 168, 111, .07)),
+    linear-gradient(90deg, rgba(199, 141, 85, .10), transparent 30%, rgba(120, 78, 47, .10)),
     linear-gradient(180deg, rgba(255,255,255,.025), transparent 36%);
   filter: none;
 }
@@ -1804,7 +1804,7 @@ background: rgba(10,16,28,.30);
 .appPage .sidebar{
   width: 340px;
   background:
-    linear-gradient(180deg, rgba(24, 29, 24, .98), rgba(13, 16, 14, .98));
+    linear-gradient(180deg, rgba(35, 24, 17, .98), rgba(17, 12, 9, .98));
 }
 
 .appPage .wrap,
@@ -1896,18 +1896,18 @@ background: rgba(10,16,28,.30);
 .appPage .primary,
 .appPage .sbBtnPrimary{
   border-radius: 10px;
-  background: linear-gradient(135deg, #ca9257, #9baa74);
+  background: linear-gradient(135deg, #cf965e, #9b7048);
 }
 
 .appPage .uploadDropzone{
   border-radius: 12px;
-  border-color: rgba(210, 220, 199, .18);
-  background: rgba(17, 21, 18, .46);
+  border-color: rgba(236, 212, 183, .18);
+  background: rgba(25, 18, 13, .48);
 }
 
 .appPage .uploadDropIcon{
   border-radius: 10px;
-  background: rgba(151, 168, 111, .16);
+  background: rgba(199, 141, 85, .16);
 }
 
 .appPage .onboardingSteps div,
@@ -1915,7 +1915,7 @@ background: rgba(10,16,28,.30);
 .appPage .toolMini{
   border-radius: 10px;
   border-color: var(--app-line);
-  background: rgba(17, 21, 18, .42);
+  background: rgba(25, 18, 13, .44);
 }
 
 .appPage .modeBtn{
@@ -1923,7 +1923,7 @@ background: rgba(10,16,28,.30);
 }
 
 .appPage .modeBtn.active{
-  background: linear-gradient(135deg, #ca9257, #9baa74);
+  background: linear-gradient(135deg, #cf965e, #9b7048);
 }
 
 .appPage .precisionCard{
@@ -1951,7 +1951,7 @@ background: rgba(10,16,28,.30);
   background:
     linear-gradient(45deg, rgba(255,255,255,.035) 25%, transparent 25%),
     linear-gradient(-45deg, rgba(255,255,255,.035) 25%, transparent 25%),
-    rgba(9, 12, 10, .46);
+    rgba(16, 11, 8, .50);
   background-size: 18px 18px;
 }
 
