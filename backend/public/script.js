@@ -28,6 +28,36 @@ resetEstilo?.addEventListener("click", () => {
   if (estiloNivel) estiloNivel.value = "";
   if (estiloLuz) estiloLuz.value = "";
 });
+
+function buildStylePresetInstruction() {
+  const value = stylePresetEl?.value || "";
+  const presets = {
+    mediterraneo:
+      "Aplicar estilo mediterraneo moderno: revoques claros calidos, maderas naturales, fibras, textiles beige, plantas mediterraneas e iluminacion calida sobria.",
+    japandi:
+      "Aplicar estilo Japandi calido: madera natural, tonos neutros, composicion limpia, materiales nobles, pocos objetos y sensacion serena.",
+    minimalista:
+      "Aplicar estilo minimalista premium: lineas limpias, paleta neutra sofisticada, materiales de alta calidad, orden visual y detalles sobrios.",
+    industrial:
+      "Aplicar estilo industrial elegante: metal oscuro, madera calida, superficies minerales, iluminacion puntual y terminaciones sobrias.",
+    nordico:
+      "Aplicar estilo nordico soft: blancos calidos, madera clara, textiles suaves, luz natural y decoracion simple.",
+  };
+
+  if (!presets[value]) return "";
+
+  return `
+ESTILO AUTOMATICO SELECCIONADO:
+${presets[value]}
+
+REGLAS TECNICAS INTERNAS:
+- Mantener exactamente el mismo encuadre, proporcion y tamano final de la imagen original.
+- No acercar camara, no recortar, no expandir y no cambiar perspectiva.
+- Mantener arquitectura base, ubicacion de paredes, aberturas, estructura, techo, piso y escala.
+- Adaptar el estilo al espacio existente sin generar una escena nueva.
+`.trim();
+}
+
 const estado = document.getElementById("estado");
 const loader = document.getElementById("loader");
 const errorBox = document.getElementById("errorBox");
@@ -39,6 +69,7 @@ const keepGeometryEl = document.getElementById("keepGeometry");
 const keepDimensionsEl = document.getElementById("keepDimensions");
 const strictEditScopeEl = document.getElementById("strictEditScope");
 const editScopeEl = document.getElementById("editScope");
+const stylePresetEl = document.getElementById("stylePreset");
 
 const recomendacionEl = document.getElementById("recomendacion");
 const imagenResultadoEl = document.getElementById("imagenResultado");
@@ -161,6 +192,7 @@ function updatePrecisionSummary(extraMode = "") {
   if (keepGeometryEl?.checked) flags.push("misma geometria");
   if (keepDimensionsEl?.checked) flags.push("mismo tamano final");
   if (strictEditScopeEl?.checked) flags.push("cambio puntual");
+  if (stylePresetEl?.value) flags.push(`estilo ${stylePresetEl.value}`);
   if (usePaint?.checked) flags.push("zona pintada");
 
   let text = flags.length
@@ -592,7 +624,7 @@ btnModeSimple.addEventListener("click", () => setMode(false));
 btnModePaint.addEventListener("click", () => setMode(true));
 setMode(false);
 
-[keepGeometryEl, keepDimensionsEl, strictEditScopeEl, editScopeEl].forEach((el) => {
+[keepGeometryEl, keepDimensionsEl, strictEditScopeEl, editScopeEl, stylePresetEl].forEach((el) => {
   el?.addEventListener("change", () => {
     updatePrecisionSummary();
     updateSidebarWorkspaceControls();
@@ -2415,9 +2447,8 @@ if (boton) {
     // Declarar el texto antes de preparar el pedido.
     const textoBase = (textoEl.value || "").trim();
     const estiloExtra = construirEstiloTexto();
-    const texto = estiloExtra
-      ? textoBase + " " + estiloExtra
-      : textoBase;
+    const estiloPreset = buildStylePresetInstruction();
+    const texto = [textoBase, estiloExtra, estiloPreset].filter(Boolean).join("\n\n");
 
     const refInput = document.getElementById("imagenReferencia");
     const hayReferencia = refInput && refInput.files.length > 0;

@@ -303,6 +303,18 @@ Carga la imagen original, define el alcance y describe solo el cambio que queres
 <option value="completo">Cambio completo</option>
 <option value="limpiar">Limpiar ambiente</option>
 </select>
+
+<label class="label" for="stylePreset">Estilo del resultado</label>
+<select id="stylePreset" class="textInput scopeSelect">
+<option value="">Sin estilo automatico</option>
+<option value="mediterraneo">Mediterraneo moderno</option>
+<option value="japandi">Japandi calido</option>
+<option value="minimalista">Minimalista premium</option>
+<option value="industrial">Industrial elegante</option>
+<option value="nordico">Nordico soft</option>
+</select>
+<p class="muted small">El cliente puede escribir corto. La app agrega las reglas tecnicas por detras.</p>
+
 <label class="precisionOption">
 <input id="keepGeometry" type="checkbox" checked>
 <span>Bloquear geometria y proporciones</span>
@@ -320,7 +332,8 @@ Carga la imagen original, define el alcance y describe solo el cambio que queres
 <div class="precisionCard">
 <h3>Guia rapida</h3>
 <ul class="precisionList">
-<li>Describe el cambio concreto, no una idea general.</li>
+<li>El cliente puede escribir simple: "hacerlo mediterraneo" o "mas premium".</li>
+<li>Usa el selector de estilo para convertir pedidos cortos en instrucciones completas.</li>
 <li>Si queres corregir una zona, pintala antes de generar.</li>
 <li>Si usas referencia, se toma como materialidad, no como nueva composicion.</li>
 </ul>
