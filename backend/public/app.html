@@ -26,15 +26,15 @@
 
 <div class="sbText">
 <div class="sbTitle">PROYECTOS</div>
-<div class="sbSub">Ulises · Diseno Interior</div>
+<div class="sbSub">Ulises / Diseno Interior</div>
 </div>
 
-<button id="btnToggleSidebar" class="sbMiniBtn sbToggle">←</button>
+<button id="btnToggleSidebar" class="sbMiniBtn sbToggle">Cerrar</button>
 <button id="btnCloseSidebar" class="sbMiniBtn sbClose">✕</button>
 </div>
 
 <div class="sbActions">
-<button id="btnNewProject" class="sbBtnPrimary">＋ Nuevo proyecto</button>
+<button id="btnNewProject" class="sbBtnPrimary">Nuevo proyecto</button>
 </div>
 
 <div class="sbSearch">
@@ -165,18 +165,18 @@ Si el cambio es puntual, activa Paint y marca solo la zona que queres tocar.
 
 <div class="brandText">
 <p class="workspaceEyebrow">Workspace privado</p>
-<h1>Herramienta de edicion precisa</h1>
+<h1>Editor arquitectonico de precision</h1>
 <p class="seoLine">
-Visualizacion arquitectonica orientada a cambios puntuales, con prioridad en conservar encuadre, geometria y escala.
+Cambios visuales controlados para conservar encuadre, escala y lectura arquitectonica.
 </p>
 
 <div class="ctaRow" style="margin-top:10px;">
-<a class="ghostLinkBtn" href="/">← Volver a la portada</a>
+<a class="ghostLinkBtn" href="/">Volver a la portada</a>
 </div>
 
 <div class="workspaceBar">
 <span>Edicion arquitectonica</span>
-<span>Precisión de estudio</span>
+<span>Precision de estudio</span>
 </div>
 
 <p class="frase">
@@ -194,9 +194,9 @@ Visualizacion arquitectonica orientada a cambios puntuales, con prioridad en con
 <div class="toolIntro">
 <div>
 <p class="toolEyebrow">Edicion precisa</p>
-<h2>Tu pedido</h2>
+<h2>Pedido del cliente</h2>
 <p class="muted">
-Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localizado, usa Paint para bloquear la zona.
+Carga la imagen original, define el alcance y describe solo el cambio que queres aplicar.
 </p>
 </div>
 
@@ -213,11 +213,11 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
 <input id="proyecto" class="textInput" type="text" maxlength="60" />
 <p id="projHint" class="muted small"></p>
 
-<label class="label" for="texto">Descripcion</label>
+<label class="label" for="texto">Cambio solicitado</label>
 <textarea id="texto" rows="4" placeholder="Ejemplo: cambiar balcon de vidrio por balcon de hierro negro sin modificar dimensiones, cantidad de panos ni perspectiva."></textarea>
 
 <div class="presetBar">
-<div class="previewTitle">Atajos de pedido</div>
+<div class="previewTitle">Atajos profesionales</div>
 <div class="presetChips">
 <button class="chip" type="button" data-preset="Cambiar balcon de vidrio por balcon de hierro negro sin modificar dimensiones, cantidad de panos ni perspectiva.">Balcon de hierro</button>
 <button class="chip" type="button" data-preset="Cambiar revestimiento manteniendo exactamente la misma arquitectura, proporciones y encuadre.">Cambiar revestimiento</button>
@@ -230,14 +230,14 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
   <label class="fileBtn fileBtnStrong" for="imagen">Seleccionar imagen base</label>
   <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" />
 
-  <button id="generar" class="primary">Disenar</button>
+  <button id="generar" class="primary">Generar diseno</button>
 </div>
 
 <label class="uploadDropzone" id="uploadDropzone" for="imagen">
   <span class="uploadDropIcon">+</span>
   <span>
     <strong>Cargar imagen base</strong>
-    <small>JPG, PNG o WEBP. La IA conserva encuadre y dimensiones.</small>
+    <small>JPG, PNG o WEBP. El resultado vuelve al tamano original.</small>
   </span>
 </label>
 
@@ -260,7 +260,7 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
 <button id="btnModePaint" class="modeBtn" type="button">Paint</button>
 </div>
 <input id="usePaint" type="checkbox" style="display:none;">
-<span class="modeHint">Paint fuerza una edicion localizada y reduce cambios accidentales.</span>
+<span class="modeHint">Usa Paint cuando el cambio deba afectar solo una zona concreta.</span>
 </div>
 
 <div class="toolMini" id="paintTools" style="display:none;">
@@ -281,7 +281,7 @@ Subi una foto y escribi exactamente que queres cambiar. Si el ajuste es localiza
 <div class="previewBox">
   <div class="previewHeader">
     <div class="previewTitle">Vista previa</div>
-    <div id="modoInfo" class="modeInfo">Precision alta activa: misma geometria, mismo encuadre y mismo tamano final.</div>
+    <div id="modoInfo" class="modeInfo">Precision activa: misma geometria, mismo encuadre y mismo tamano final.</div>
   </div>
 
   <div class="previewRow">
@@ -349,7 +349,7 @@ Pinta exactamente la zona que queres cambiar. La IA recibira esa seleccion como 
   <div class="resultHeader">
     <div>
       <h2>Resultado</h2>
-      <p class="muted small">La comparacion respeta el cuadro completo para evitar recortes enganhosos.</p>
+      <p class="muted small">La comparacion usa el cuadro completo y el archivo final conserva el tamano original.</p>
     </div>
   </div>
 

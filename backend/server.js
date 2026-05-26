@@ -41,6 +41,105 @@ function positiveInt(value) {
   return Number.isFinite(num) && num > 0 ? num : null;
 }
 
+function getEditCanvasSize(width, height) {
+  if (!width || !height) return { width: 1024, height: 1024, size: "1024x1024" };
+  const aspect = width / height;
+
+  if (aspect > 1.18) return { width: 1536, height: 1024, size: "1536x1024" };
+  if (aspect < 0.85) return { width: 1024, height: 1536, size: "1024x1536" };
+  return { width: 1024, height: 1024, size: "1024x1024" };
+}
+
+function getContainRect(sourceWidth, sourceHeight, targetWidth, targetHeight) {
+  const scale = Math.min(targetWidth / sourceWidth, targetHeight / sourceHeight);
+  const width = Math.max(1, Math.round(sourceWidth * scale));
+  const height = Math.max(1, Math.round(sourceHeight * scale));
+
+  return {
+    left: Math.round((targetWidth - width) / 2),
+    top: Math.round((targetHeight - height) / 2),
+    width,
+    height,
+  };
+}
+
+async function prepareImageForEdit(imagePath, sourceWidth, sourceHeight) {
+  if (!sourceWidth || !sourceHeight) {
+    const meta = await sharp(imagePath).metadata();
+    sourceWidth = meta.width || 1024;
+    sourceHeight = meta.height || 1024;
+  }
+
+  const canvas = getEditCanvasSize(sourceWidth, sourceHeight);
+  const rect = getContainRect(sourceWidth, sourceHeight, canvas.width, canvas.height);
+  const outputPath = path.join(uploadsPath, `edit_base_${Date.now()}.png`);
+
+  const contained = await sharp(imagePath)
+    .rotate()
+    .resize(rect.width, rect.height, { fit: "fill" })
+    .png()
+    .toBuffer();
+
+  await sharp({
+    create: {
+      width: canvas.width,
+      height: canvas.height,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
+    .composite([{ input: contained, left: rect.left, top: rect.top }])
+    .png()
+    .toFile(outputPath);
+
+  return { path: outputPath, canvas, rect };
+}
+
+async function prepareMaskForEdit(maskPath, sourceWidth, sourceHeight, canvas, rect) {
+  const outputPath = path.join(uploadsPath, `edit_mask_${Date.now()}.png`);
+  const contained = await sharp(maskPath)
+    .resize(rect.width, rect.height, { fit: "fill" })
+    .png()
+    .toBuffer();
+
+  await sharp({
+    create: {
+      width: canvas.width,
+      height: canvas.height,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 255 },
+    },
+  })
+    .composite([{ input: contained, left: rect.left, top: rect.top }])
+    .png()
+    .toFile(outputPath);
+
+  return outputPath;
+}
+
+async function restoreOriginalFrame(buffer, editCanvas, rect, outputWidth, outputHeight) {
+  const meta = await sharp(buffer).metadata();
+  const resultWidth = meta.width || editCanvas.width;
+  const resultHeight = meta.height || editCanvas.height;
+  const scaleX = resultWidth / editCanvas.width;
+  const scaleY = resultHeight / editCanvas.height;
+
+  const extractRect = {
+    left: Math.max(0, Math.round(rect.left * scaleX)),
+    top: Math.max(0, Math.round(rect.top * scaleY)),
+    width: Math.min(resultWidth, Math.max(1, Math.round(rect.width * scaleX))),
+    height: Math.min(resultHeight, Math.max(1, Math.round(rect.height * scaleY))),
+  };
+  extractRect.width = Math.max(1, Math.min(extractRect.width, resultWidth - extractRect.left));
+  extractRect.height = Math.max(1, Math.min(extractRect.height, resultHeight - extractRect.top));
+
+  return sharp(buffer)
+    .extract(extractRect)
+    .resize(outputWidth, outputHeight, { fit: "fill" })
+    .png()
+    .toBuffer();
+}
+
 function publicGenerationError(err) {
   const status = err?.status || err?.code || 500;
   const message = String(err?.message || "").toLowerCase();
@@ -329,6 +428,9 @@ app.post(
       const originalHeight = originalMeta.height || null;
       const sourceWidth = positiveInt(req.body.sourceWidth) || originalWidth;
       const sourceHeight = positiveInt(req.body.sourceHeight) || originalHeight;
+      const editBaseWidth = originalWidth || sourceWidth;
+      const editBaseHeight = originalHeight || sourceHeight;
+      const editInput = await prepareImageForEdit(imagePath, editBaseWidth, editBaseHeight);
 
       let prompt = buildEditPrompt({
         texto,
@@ -348,9 +450,9 @@ app.post(
       }
 
       const imageFile = await toFile(
-        fs.createReadStream(imagePath),
+        fs.createReadStream(editInput.path),
         null,
-        { type: imagen.mimetype }
+        { type: "image/png" }
       );
 
       let maskFile = null;
@@ -366,10 +468,17 @@ app.post(
             error: "La mascara no coincide con el tamano de la imagen base",
           });
         }
+        const editMaskPath = await prepareMaskForEdit(
+          maskPath,
+          editBaseWidth,
+          editBaseHeight,
+          editInput.canvas,
+          editInput.rect
+        );
         maskFile = await toFile(
-          fs.createReadStream(maskPath),
+          fs.createReadStream(editMaskPath),
           null,
-          { type: mask.mimetype }
+          { type: "image/png" }
         );
       }
 
@@ -389,6 +498,7 @@ app.post(
         prompt,
         input_fidelity: "high",
         output_format: "png",
+        size: editInput.canvas.size,
       };
 
       if (maskFile) params.mask = maskFile;
@@ -416,19 +526,25 @@ Generar una lista profesional, corta y accionable de materiales recomendados.
       const outputWidth = sourceWidth || originalWidth;
       const outputHeight = sourceHeight || originalHeight;
       if (keepDimensions && outputWidth && outputHeight) {
-        outputBuffer = await sharp(outputBuffer)
-          .resize(outputWidth, outputHeight, { fit: "fill" })
-          .png()
-          .toBuffer();
+        outputBuffer = await restoreOriginalFrame(
+          outputBuffer,
+          editInput.canvas,
+          editInput.rect,
+          outputWidth,
+          outputHeight
+        );
       }
 
       const outputName = `resultado_${Date.now()}.png`;
       fs.writeFileSync(path.join(uploadsPath, outputName), outputBuffer);
+      const finalMeta = await sharp(outputBuffer).metadata();
 
       return res.json({
         recomendacion: materialesTexto || `Propuesta generada segun:\n"${texto}"`,
         originalUrl: `/uploads/${imagen.filename}`,
         imagenUrl: `/uploads/${outputName}`,
+        width: finalMeta.width || outputWidth,
+        height: finalMeta.height || outputHeight,
         modo: maskFile
           ? "IA_CON_MASK"
           : referencia

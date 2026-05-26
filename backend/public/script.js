@@ -1143,13 +1143,13 @@ function syncCurrentProjectUI() {
   let currentId = getCurrentProjectId();
   let p = findProjectById(list, currentId);
 
-  // 🔥 Si no existe proyecto actual pero hay proyectos, usar el primero
+  // Si no existe proyecto actual pero hay proyectos, usar el primero.
   if (!p && list.length) {
     setCurrentProjectId(list[0].id);
     p = list[0];
   }
 
-  // 🔥 Si NO hay proyectos, crear uno automáticamente
+  // Si no hay proyectos, crear uno automaticamente.
   if (!p) {
     const nuevo = {
       id: uid(),
@@ -2000,9 +2000,19 @@ async function optimizeImageFile(file, options = {}) {
   const maxSide = options.maxSide || 2200;
   const quality = options.quality || 0.88;
   const prefix = options.prefix || "optimized";
+  const maxUploadBytes = options.maxUploadBytes || 10.5 * 1024 * 1024;
   const img = await loadImageFromFile(file);
   const sourceW = img.naturalWidth || img.width;
   const sourceH = img.naturalHeight || img.height;
+  const shouldKeepOriginal =
+    file.size <= maxUploadBytes &&
+    Math.max(sourceW, sourceH) <= (options.keepOriginalMaxSide || 5200) &&
+    !options.forceOptimize;
+
+  if (shouldKeepOriginal) {
+    return { file, sourceW, sourceH, uploadW: sourceW, uploadH: sourceH };
+  }
+
   const scale = Math.min(1, maxSide / Math.max(sourceW, sourceH));
   const outW = Math.max(1, Math.round(sourceW * scale));
   const outH = Math.max(1, Math.round(sourceH * scale));
@@ -2305,10 +2315,10 @@ btnVideo.addEventListener("click", async () => {
     videoPreview.src = url;
     videoPreview.style.display = "block";
 
-    videoInfo.textContent = "Listo ✅ (formato .webm)";
+    videoInfo.textContent = "Listo (formato .webm)";
   } catch (e) {
     console.error(e);
-    videoInfo.textContent = "Error generando el video ❌";
+    videoInfo.textContent = "Error generando el video";
     niceError("No se pudo generar el video. Proba con Chrome.");
   } finally {
     btnVideo.disabled = false;
@@ -2402,7 +2412,7 @@ IMPORTANTE:
 if (boton) {
   boton.addEventListener("click", async () => {
     
-    // 🔥 MOVER AQUI - Declarar texto PRIMERO
+    // Declarar el texto antes de preparar el pedido.
     const textoBase = (textoEl.value || "").trim();
     const estiloExtra = construirEstiloTexto();
     const texto = estiloExtra
@@ -2501,7 +2511,7 @@ ${texto}
       if (!res.ok) throw new Error(data?.error);
 
       if (recomendacionEl) {
-        recomendacionEl.textContent = data.recomendacion || "Listo ✅";
+        recomendacionEl.textContent = data.recomendacion || "Listo";
       }
 
       if (data.imagenUrl && imagenResultadoEl) {
@@ -2516,17 +2526,17 @@ ${texto}
         setDownloadResult(url);
         updateResultEmpty();
 
-        // 🔥 REACTIVAR BOTONES
+        // Reactivar botones
         if (btnUseResult) btnUseResult.disabled = false;
         if (btnVideo) btnVideo.disabled = false;
         if (btnZip) btnZip.disabled = false;
 
-        // 🔥 MOSTRAR COMPARADOR
+        // Mostrar comparador
         if (originalObjectUrl) {
           showCompare(originalObjectUrl, url);
         }
 
-        // 🔥 Mostrar modo
+        // Mostrar modo
         if (modoInfo && data.modo) {
           updatePrecisionSummary(data.modo || "");
         }
@@ -2573,29 +2583,29 @@ btnMiniTest?.addEventListener("click", function () {
   const resultado = document.getElementById("resultadoEstilo");
 
   if (!color || !material || !estetica || !espacio) {
-    resultado.innerHTML = "⚠️ Respondé todas las preguntas.";
+    resultado.innerHTML = "Responde todas las preguntas.";
     return;
   }
 
-  let estilo = "Estilo Personalizado ✨";
+  let estilo = "Estilo personalizado";
 
   if (color === "claro" && material === "madera" && estetica === "minimalista") {
-    estilo = "Japandi 🌿";
+    estilo = "Japandi";
   }
   else if (color === "oscuro" && material === "metal") {
-    estilo = "Industrial Moderno 🏭";
+    estilo = "Industrial moderno";
   }
   else if (color === "pastel") {
-    estilo = "Nórdico Soft 🤍";
+    estilo = "Nordico soft";
   }
   else if (color === "tierra" && espacio === "living") {
-    estilo = "Boho Natural 🌾";
+    estilo = "Boho natural";
   }
   else if (espacio === "oficina" && estetica === "minimalista") {
-    estilo = "Minimalismo Ejecutivo 🖤";
+    estilo = "Minimalismo ejecutivo";
   }
 
-  resultado.innerHTML = `👉 Tu estilo ideal es: <span>${estilo}</span>`;
+  resultado.innerHTML = `Estilo sugerido: <span>${estilo}</span>`;
 });
 
 

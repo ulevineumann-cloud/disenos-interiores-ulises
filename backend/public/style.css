@@ -1777,6 +1777,197 @@ background: rgba(10,16,28,.30);
   border-color: rgba(255,255,255,.14);
 }
 
+/* ===== APP PROFESSIONAL REFRESH ===== */
+.appPage{
+  --app-bg: #101411;
+  --app-surface: rgba(30, 37, 31, .88);
+  --app-surface-strong: rgba(43, 50, 42, .92);
+  --app-panel: rgba(18, 22, 19, .86);
+  --app-line: rgba(210, 220, 199, .14);
+  --app-line-strong: rgba(210, 220, 199, .28);
+  --app-text: #f4f0e8;
+  --app-muted: rgba(244, 240, 232, .68);
+  --app-accent: #c58b50;
+  --app-accent-2: #97a86f;
+  background:
+    linear-gradient(120deg, rgba(151, 168, 111, .08), transparent 34%),
+    linear-gradient(180deg, #151913 0%, #101411 48%, #0d100e 100%);
+}
+
+.appPage .bg{
+  background:
+    linear-gradient(90deg, rgba(197, 139, 80, .08), transparent 28%, rgba(151, 168, 111, .07)),
+    linear-gradient(180deg, rgba(255,255,255,.025), transparent 36%);
+  filter: none;
+}
+
+.appPage .sidebar{
+  width: 340px;
+  background:
+    linear-gradient(180deg, rgba(24, 29, 24, .98), rgba(13, 16, 14, .98));
+}
+
+.appPage .wrap,
+.appPage .brand{
+  width: min(1280px, 94vw);
+}
+
+.appPage .brand{
+  align-items:flex-start;
+}
+
+.appPage .brandText h1{
+  max-width: 760px;
+  font-size: clamp(34px, 4.4vw, 56px);
+  line-height: .94;
+  letter-spacing: 0;
+}
+
+.appPage .seoLine{
+  max-width: 760px;
+  font-size: 15px;
+}
+
+.appPage .frase{
+  color: rgba(244, 240, 232, .62);
+  font-size: 14px;
+}
+
+.appPage .card,
+.appPage .panel,
+.appPage .previewBox,
+.appPage .paintAviso,
+.appPage .paintBox,
+.appPage .precisionCard,
+.appPage .sbHelp,
+.appPage .sbPanel,
+.appPage .projRow{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.012)),
+    var(--app-surface);
+  border-color: var(--app-line);
+  box-shadow: 0 16px 42px rgba(0,0,0,.20);
+}
+
+.appPage .toolCard{
+  padding: 28px;
+}
+
+.appPage .toolIntro{
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--app-line);
+  margin-bottom: 18px;
+}
+
+.appPage .toolEyebrow,
+.appPage .workspaceEyebrow,
+.appPage .previewTitle{
+  color: rgba(214, 194, 164, .82);
+}
+
+.appPage .requestGrid{
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 22px;
+}
+
+.appPage .label{
+  margin-top: 14px;
+  color: rgba(244, 240, 232, .92);
+}
+
+.appPage textarea{
+  min-height: 118px;
+  line-height: 1.45;
+}
+
+.appPage .uploadBar{
+  padding-top: 6px;
+}
+
+.appPage .fileBtn,
+.appPage .ghost,
+.appPage .ghostLink,
+.appPage .ghostLinkBtn,
+.appPage .sbMiniBtn,
+.appPage .chip{
+  border-radius: 10px;
+}
+
+.appPage .primary,
+.appPage .sbBtnPrimary{
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ca9257, #9baa74);
+}
+
+.appPage .uploadDropzone{
+  border-radius: 12px;
+  border-color: rgba(210, 220, 199, .18);
+  background: rgba(17, 21, 18, .46);
+}
+
+.appPage .uploadDropIcon{
+  border-radius: 10px;
+  background: rgba(151, 168, 111, .16);
+}
+
+.appPage .onboardingSteps div,
+.appPage .modeToggle,
+.appPage .toolMini{
+  border-radius: 10px;
+  border-color: var(--app-line);
+  background: rgba(17, 21, 18, .42);
+}
+
+.appPage .modeBtn{
+  border-radius: 0;
+}
+
+.appPage .modeBtn.active{
+  background: linear-gradient(135deg, #ca9257, #9baa74);
+}
+
+.appPage .precisionCard{
+  padding: 18px;
+}
+
+.appPage .precisionOption{
+  gap: 10px;
+  color: rgba(244, 240, 232, .78);
+}
+
+.appPage .resultGrid{
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.appPage .reco{
+  min-height: 240px;
+  max-height: 360px;
+  font-size: 13px;
+}
+
+.appPage .imgWrap,
+.appPage .compareWrapper{
+  background:
+    linear-gradient(45deg, rgba(255,255,255,.035) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,.035) 25%, transparent 25%),
+    rgba(9, 12, 10, .46);
+  background-size: 18px 18px;
+}
+
+.appPage .imgResultadoSmall,
+.appPage .compareImg,
+.appPage #compareOriginal,
+.appPage #compareResult,
+.appPage .previewImg{
+  object-fit: contain;
+}
+
+.appPage .compareWrapper{
+  min-height: 360px;
+  max-height: 72vh;
+}
+
 @media (max-width: 980px){
   .toolIntro,
   .requestGrid,
