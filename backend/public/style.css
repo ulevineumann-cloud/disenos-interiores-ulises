@@ -1968,6 +1968,209 @@ background: rgba(10,16,28,.30);
   max-height: 72vh;
 }
 
+/* ===== COMPACT CLIENT VIEW ===== */
+.appPage .sidebar{
+  width: 300px;
+}
+
+.appPage .top{
+  padding: 16px 0 4px;
+}
+
+.appPage .wrap,
+.appPage .brand{
+  width: min(1160px, 94vw);
+}
+
+.appPage .brand{
+  gap: 12px;
+  padding-bottom: 0;
+}
+
+.appPage .logo{
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+.appPage .brandText h1{
+  max-width: 720px;
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1;
+}
+
+.appPage .seoLine{
+  max-width: 720px;
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.appPage .frase{
+  margin-top: 7px;
+  font-size: 12px;
+}
+
+.appPage .workspaceBar{
+  margin-top: 10px;
+}
+
+.appPage .workspaceBar span{
+  padding: 5px 9px;
+}
+
+.appPage .card{
+  margin: 10px 0;
+}
+
+.appPage .toolCard{
+  padding: 18px;
+}
+
+.appPage .toolIntro{
+  padding-bottom: 12px;
+  margin-bottom: 14px;
+  gap: 14px;
+}
+
+.appPage h2{
+  font-size: 24px;
+  line-height: 1;
+}
+
+.appPage .toolIntro .muted{
+  max-width: 680px;
+  margin-bottom: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.appPage .requestGrid{
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 16px;
+}
+
+.appPage .label{
+  margin: 10px 0 5px;
+  font-size: 13px;
+}
+
+.appPage .textInput,
+.appPage textarea,
+.appPage .sbSearch input,
+.appPage .miniTest select{
+  padding: 10px 11px;
+  font-size: 14px;
+}
+
+.appPage textarea{
+  min-height: 96px;
+}
+
+.appPage .uploadDropzone{
+  margin-top: 10px;
+  padding: 13px;
+}
+
+.appPage .uploadDropIcon{
+  width: 36px;
+  height: 36px;
+  font-size: 20px;
+}
+
+.appPage .onboardingSteps{
+  margin-top: 10px;
+  gap: 7px;
+}
+
+.appPage .onboardingSteps div{
+  padding: 8px;
+  font-size: 11px;
+}
+
+.appPage .modeBar{
+  margin-top: 10px;
+}
+
+.appPage .modeBtn,
+.appPage .fileBtn,
+.appPage .ghost,
+.appPage .ghostLink,
+.appPage .ghostLinkBtn,
+.appPage .primary,
+.appPage .sbMiniBtn{
+  padding: 9px 11px;
+  font-size: 13px;
+}
+
+.appPage .previewBox,
+.appPage .panel,
+.appPage .precisionCard{
+  padding: 12px;
+}
+
+.appPage .previewImg{
+  max-height: min(42vh, 430px);
+}
+
+.appPage .precisionCard h3,
+.appPage .panel h3{
+  font-size: 15px;
+  margin-bottom: 8px;
+}
+
+.appPage .precisionOption{
+  padding: 7px 0;
+  font-size: 12px;
+}
+
+.appPage .precisionList{
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.appPage .resultGrid{
+  grid-template-columns: 310px minmax(0, 1fr);
+}
+
+.appPage .resultHeader h2{
+  font-size: 28px;
+}
+
+.appPage .reco{
+  min-height: 180px;
+  max-height: 270px;
+  font-size: 12px;
+}
+
+.appPage .imgResultadoSmall{
+  max-height: min(56vh, 520px);
+}
+
+.appPage .compareWrapper{
+  min-height: 260px;
+  max-height: 58vh;
+}
+
+.appPage .sbTop,
+.appPage .sbBottom{
+  padding: 10px;
+}
+
+.appPage .sbListWrap{
+  padding: 10px;
+}
+
+.appPage .sbPanel,
+.appPage .sbHelp{
+  margin-top: 10px;
+  padding: 10px;
+}
+
+.appPage .miniTest .label{
+  margin-top: 8px;
+}
+
 @media (max-width: 980px){
   .toolIntro,
   .requestGrid,

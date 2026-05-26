@@ -33,15 +33,15 @@ function buildStylePresetInstruction() {
   const value = stylePresetEl?.value || "";
   const presets = {
     mediterraneo:
-      "Aplicar estilo mediterraneo moderno: revoques claros calidos, maderas naturales, fibras, textiles beige, plantas mediterraneas e iluminacion calida sobria.",
+      "Aplicar estilo mediterráneo moderno: revoques claros cálidos, maderas naturales, fibras, textiles beige, plantas mediterráneas e iluminación cálida sobria.",
     japandi:
-      "Aplicar estilo Japandi calido: madera natural, tonos neutros, composicion limpia, materiales nobles, pocos objetos y sensacion serena.",
+      "Aplicar estilo Japandi cálido: madera natural, tonos neutros, composición limpia, materiales nobles, pocos objetos y sensación serena.",
     minimalista:
       "Aplicar estilo minimalista premium: lineas limpias, paleta neutra sofisticada, materiales de alta calidad, orden visual y detalles sobrios.",
     industrial:
-      "Aplicar estilo industrial elegante: metal oscuro, madera calida, superficies minerales, iluminacion puntual y terminaciones sobrias.",
+      "Aplicar estilo industrial elegante: metal oscuro, madera cálida, superficies minerales, iluminación puntual y terminaciones sobrias.",
     nordico:
-      "Aplicar estilo nordico soft: blancos calidos, madera clara, textiles suaves, luz natural y decoracion simple.",
+      "Aplicar estilo nórdico soft: blancos cálidos, madera clara, textiles suaves, luz natural y decoración simple.",
   };
 
   if (!presets[value]) return "";
@@ -51,8 +51,8 @@ ESTILO AUTOMATICO SELECCIONADO:
 ${presets[value]}
 
 REGLAS TECNICAS INTERNAS:
-- Mantener exactamente el mismo encuadre, proporcion y tamano final de la imagen original.
-- No acercar camara, no recortar, no expandir y no cambiar perspectiva.
+- Mantener exactamente el mismo encuadre, proporción y tamaño final de la imagen original.
+- No acercar cámara, no recortar, no expandir y no cambiar perspectiva.
 - Mantener arquitectura base, ubicacion de paredes, aberturas, estructura, techo, piso y escala.
 - Adaptar el estilo al espacio existente sin generar una escena nueva.
 `.trim();
@@ -189,8 +189,8 @@ function updatePrecisionSummary(extraMode = "") {
 
   const flags = [];
   if (editScopeEl?.value && editScopeEl.value !== "auto") flags.push(`alcance ${editScopeEl.value}`);
-  if (keepGeometryEl?.checked) flags.push("misma geometria");
-  if (keepDimensionsEl?.checked) flags.push("mismo tamano final");
+  if (keepGeometryEl?.checked) flags.push("misma geometría");
+  if (keepDimensionsEl?.checked) flags.push("mismo tamaño final");
   if (strictEditScopeEl?.checked) flags.push("cambio puntual");
   if (stylePresetEl?.value) flags.push(`estilo ${stylePresetEl.value}`);
   if (usePaint?.checked) flags.push("zona pintada");
@@ -559,13 +559,13 @@ function describeMaskZone() {
     `Zona pintada: sector ${v} ${h} de la imagen.`,
     `Caja aproximada: x ${Math.round((stats.minX / stats.width) * 100)}% a ${Math.round((stats.maxX / stats.width) * 100)}%, y ${Math.round((stats.minY / stats.height) * 100)}% a ${Math.round((stats.maxY / stats.height) * 100)}%.`,
     `Tamano de la zona: ${boxW}% del ancho por ${boxH}% del alto; area pintada aproximada ${stats.percent.toFixed(1)}%.`,
-    "Solo el area transparente de la mascara debe editarse; el resto debe quedar igual.",
+    "Solo el área transparente de la máscara debe editarse; el resto debe quedar igual.",
   ].join(" ");
 }
 
 function prepareMaskForUpload(targetWidth = maskCanvas.width, targetHeight = maskCanvas.height) {
   if (!maskCanvas.width || !maskCanvas.height) return null;
-  // GPT Image edita los pixeles totalmente transparentes de la mascara.
+  // GPT Image edita los píxeles totalmente transparentes de la máscara.
   if (targetWidth === maskCanvas.width && targetHeight === maskCanvas.height) return maskCanvas;
 
   const uploadCanvas = document.createElement("canvas");
@@ -663,7 +663,7 @@ const STYLE_LABELS = {
 
 const STYLE_LIBRARY = [
   {
-    name: "Japandi calido",
+    name: "Japandi cálido",
     matches: {
       color: ["claro", "tierra"],
       material: ["madera"],
@@ -676,7 +676,7 @@ const STYLE_LIBRARY = [
       "Composicion despejada con atmosfera calma.",
       "Muy bueno para livings y dormitorios con tono premium.",
     ],
-    prompt: "Aplicar un estilo Japandi calido con madera natural, paleta neutra y tonos tierra suaves, composicion limpia, textiles nobles y pocos acentos oscuros, manteniendo una lectura serena y elegante.",
+    prompt: "Aplicar un estilo Japandi cálido con madera natural, paleta neutra y tonos tierra suaves, composición limpia, textiles nobles y pocos acentos oscuros, manteniendo una lectura serena y elegante.",
   },
   {
     name: "Industrial elegante",
@@ -692,10 +692,10 @@ const STYLE_LIBRARY = [
       "Contraste alto sin perder orden visual.",
       "Ideal para oficinas y areas sociales con caracter.",
     ],
-    prompt: "Aplicar un estilo industrial elegante con metal negro, hormigon refinado, madera oscura y una composicion ordenada, sobria y contemporanea, sin sobrecargar el ambiente.",
+    prompt: "Aplicar un estilo industrial elegante con metal negro, hormigón refinado, madera oscura y una composición ordenada, sobria y contemporánea, sin sobrecargar el ambiente.",
   },
   {
-    name: "Nordico soft",
+    name: "Nórdico soft",
     matches: {
       color: ["pastel", "claro"],
       material: ["madera", "vidrio"],
@@ -721,10 +721,10 @@ const STYLE_LIBRARY = [
     summary: "Se apoya en materiales nobles de presencia fuerte para lograr una imagen sobria, solida y muy arquitectonica.",
     points: [
       "Piedra, marmol o superficies minerales bien definidas.",
-      "Menos decoracion, mas materialidad protagonista.",
+      "Menos decoración, más materialidad protagonista.",
       "Ideal para cocinas, banos y areas de recepcion.",
     ],
-    prompt: "Aplicar un estilo contemporaneo petreo con materiales minerales nobles, presencia de marmol u hormigon refinado, tonos profundos y una composicion arquitectonica sobria y precisa.",
+    prompt: "Aplicar un estilo contemporáneo pétreo con materiales minerales nobles, presencia de mármol u hormigón refinado, tonos profundos y una composición arquitectónica sobria y precisa.",
   },
   {
     name: "Clasico sereno",
@@ -740,7 +740,7 @@ const STYLE_LIBRARY = [
       "Materiales nobles con una paleta calma.",
       "Perfecto para una elegancia mas tradicional.",
     ],
-    prompt: "Aplicar un estilo clasico sereno con materiales nobles, detalles sutiles, paleta calida controlada y una composicion elegante sin exceso ornamental.",
+    prompt: "Aplicar un estilo clásico sereno con materiales nobles, detalles sutiles, paleta cálida controlada y una composición elegante sin exceso ornamental.",
   },
   {
     name: "Minimalismo ejecutivo",
@@ -1050,7 +1050,7 @@ function renderProjectHistory() {
   if (historyCount) historyCount.textContent = String(versions.length);
 
   if (!project || !versions.length) {
-    projectHistoryList.innerHTML = `<div class="muted small">Todavia no hay versiones guardadas.</div>`;
+    projectHistoryList.innerHTML = `<div class="muted small">Todavía no hay versiones guardadas.</div>`;
     return;
   }
 
@@ -1236,7 +1236,7 @@ function clearCurrentWorkspace() {
   textoEl.value = "";
   if (estado) estado.textContent = "";
   if (recomendacionEl) recomendacionEl.textContent = "-";
-  setMetaText(fileMeta, "Todavia no cargaste una imagen base.");
+  setMetaText(fileMeta, "Todavía no cargaste una imagen base.");
   setMetaText(referenceMeta, "Sin imagen de referencia adicional.");
 
   setImageVisibility(imagenResultadoEl, "");
@@ -1864,7 +1864,7 @@ inputImagen?.addEventListener("change", async () => {
       preview.src = "";
       preview.style.display = "none";
     }
-    setMetaText(fileMeta, "Todavia no cargaste una imagen base.");
+    setMetaText(fileMeta, "Todavía no cargaste una imagen base.");
     updateUploadDropzone(null);
     return;
   }
@@ -2464,7 +2464,7 @@ la imagen de referencia como guía visual.
 REGLAS:
 
 - La imagen original es la base principal.
-- La mascara pintada define la unica zona editable.
+- La máscara pintada define la única zona editable.
 - La imagen de referencia solo sirve como inspiración visual.
 - No copiar ni pegar partes de la referencia.
 - Aplicar únicamente los materiales, formas o estilo de la referencia.
@@ -2528,7 +2528,7 @@ ${texto}
         if (!maskHasEdits()) return niceError("Pintá una zona.");
         formData.append("maskContext", describeMaskZone());
         const mb = await maskBlobPNG(optimizedBase.uploadW, optimizedBase.uploadH);
-        if (!mb) return niceError("No se pudo preparar la mascara.");
+        if (!mb) return niceError("No se pudo preparar la máscara.");
         formData.append("mask", mb, "mask.png");
       }
 
@@ -2627,7 +2627,7 @@ btnMiniTest?.addEventListener("click", function () {
     estilo = "Industrial moderno";
   }
   else if (color === "pastel") {
-    estilo = "Nordico soft";
+    estilo = "Nórdico soft";
   }
   else if (color === "tierra" && espacio === "living") {
     estilo = "Boho natural";
