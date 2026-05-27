@@ -2171,6 +2171,75 @@ background: rgba(10,16,28,.30);
   margin-top: 8px;
 }
 
+/* ===== CLIENT / EXPERT MODES ===== */
+.viewModeToggle{
+  display:inline-flex;
+  overflow:hidden;
+  border:1px solid var(--app-line);
+  border-radius:10px;
+  background: rgba(25, 18, 13, .50);
+}
+
+.viewModeBtn{
+  border:0;
+  border-radius:0;
+  padding:9px 12px;
+  background:transparent;
+  color:var(--app-muted);
+  font-weight:800;
+}
+
+.viewModeBtn.active{
+  background: linear-gradient(135deg, #cf965e, #9b7048);
+  color:#17100b;
+}
+
+.clientMode .expertOnly,
+.clientMode .advancedOnly{
+  display:none !important;
+}
+
+.clientMode .sidebar{
+  display:none;
+}
+
+.clientMode .hamburger{
+  display:none;
+}
+
+.clientMode .mainCol{
+  width:100%;
+}
+
+.clientMode .requestGrid{
+  grid-template-columns: minmax(0, 1fr) 300px;
+}
+
+.clientMode .resultGrid{
+  grid-template-columns: 1fr;
+}
+
+.clientMode .resultHeader{
+  margin-top: 2px;
+}
+
+.clientMode .resultHeader h2{
+  font-size: 26px;
+}
+
+.clientMode .imgResultadoSmall{
+  max-height: min(62vh, 600px);
+}
+
+.clientMode .compareWrapper{
+  min-height: 300px;
+}
+
+.clientMode .precisionCard{
+  position: sticky;
+  top: 14px;
+}
+
 @media (max-width: 980px){
   .toolIntro,
   .requestGrid,

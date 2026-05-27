@@ -116,6 +116,9 @@ const sbZip = document.getElementById("sbZip");
 const btnToggleSidebar = document.getElementById("btnToggleSidebar");
 const sidebarEl = document.getElementById("sidebar");
 const SIDEBAR_KEY = "ulises_sidebar_collapsed_v1";
+const btnClientMode = document.getElementById("btnClientMode");
+const btnExpertMode = document.getElementById("btnExpertMode");
+const VIEW_MODE_KEY = "ulises_view_mode_v1";
 
 // Mobile drawer
 const btnOpenSidebar = document.getElementById("btnOpenSidebar");
@@ -238,6 +241,28 @@ function closeSidebarDrawer() {
   sidebarOverlay.setAttribute("aria-hidden", "true");
   unlockBodyScroll();
 }
+
+function setViewMode(mode) {
+  const isExpert = mode === "expert";
+  document.body.classList.toggle("expertMode", isExpert);
+  document.body.classList.toggle("clientMode", !isExpert);
+  btnClientMode?.classList.toggle("active", !isExpert);
+  btnExpertMode?.classList.toggle("active", isExpert);
+  localStorage.setItem(VIEW_MODE_KEY, isExpert ? "expert" : "client");
+
+  if (!isExpert) {
+    closeSidebarDrawer();
+    sidebarEl?.classList.remove("collapsed");
+    if (typeof usePaint !== "undefined" && usePaint?.checked) {
+      setMode(false);
+    }
+  } else {
+    applyCollapseFromStorage();
+  }
+}
+
+btnClientMode?.addEventListener("click", () => setViewMode("client"));
+btnExpertMode?.addEventListener("click", () => setViewMode("expert"));
 
 btnOpenSidebar?.addEventListener("click", openSidebarDrawer);
 btnCloseSidebar?.addEventListener("click", closeSidebarDrawer);
@@ -623,6 +648,7 @@ function setMode(paintOn) {
 btnModeSimple.addEventListener("click", () => setMode(false));
 btnModePaint.addEventListener("click", () => setMode(true));
 setMode(false);
+setViewMode(localStorage.getItem(VIEW_MODE_KEY) === "expert" ? "expert" : "client");
 
 [keepGeometryEl, keepDimensionsEl, strictEditScopeEl, editScopeEl, stylePresetEl].forEach((el) => {
   el?.addEventListener("change", () => {
