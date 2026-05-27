@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="/style.css" />
 </head>
 
-<body class="appPage clientMode">
+<body class="appPage">
 <div class="bg"></div>
 <div id="sidebarOverlay" class="sidebarOverlay"></div>
 
@@ -172,10 +172,6 @@ Cambios visuales controlados para conservar encuadre, escala y lectura arquitect
 
 <div class="ctaRow" style="margin-top:10px;">
 <a class="ghostLinkBtn" href="/">Volver a la portada</a>
-<div class="viewModeToggle" role="group" aria-label="Modo de uso">
-<button id="btnClientMode" class="viewModeBtn active" type="button">Cliente</button>
-<button id="btnExpertMode" class="viewModeBtn" type="button">Experto</button>
-</div>
 </div>
 
 <div class="workspaceBar">
@@ -204,7 +200,7 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 </p>
 </div>
 
-<div class="toolStatus expertOnly">
+<div class="toolStatus">
 <span class="toolStatusPill">Geometria protegida</span>
 <span class="toolStatusPill">Mismo encuadre</span>
 <span class="toolStatusPill">Cambio puntual</span>
@@ -220,7 +216,7 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <label class="label" for="texto">Cambio solicitado</label>
 <textarea id="texto" rows="4" placeholder="Ejemplo: cambiar balcon de vidrio por balcon de hierro negro sin modificar dimensiones, cantidad de panos ni perspectiva."></textarea>
 
-<div class="presetBar expertOnly">
+<div class="presetBar">
 <div class="previewTitle">Atajos profesionales</div>
 <div class="presetChips">
 <button class="chip" type="button" data-preset="Cambiar balcon de vidrio por balcon de hierro negro sin modificar dimensiones, cantidad de panos ni perspectiva.">Balcon de hierro</button>
@@ -245,20 +241,20 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
   </span>
 </label>
 
-<div class="onboardingSteps expertOnly" id="onboardingSteps">
+<div class="onboardingSteps" id="onboardingSteps">
   <div><span>1</span>Carga una foto</div>
   <div><span>2</span>Define el alcance</div>
   <div><span>3</span>Escribe el cambio</div>
   <div><span>4</span>Genera y compara</div>
 </div>
 
-<div class="row expertOnly" style="margin-top:10px;">
+<div class="row" style="margin-top:10px;">
   <button id="btnVaciar" class="ghost" type="button">
     Limpiar ambiente
   </button>
 </div>
 
-<div class="modeBar expertOnly">
+<div class="modeBar">
 <div class="modeToggle">
 <button id="btnModeSimple" class="modeBtn active" type="button">Simple</button>
 <button id="btnModePaint" class="modeBtn" type="button">Paint</button>
@@ -300,8 +296,8 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <aside class="precisionPanel">
 <div class="precisionCard">
 <h3>Estilo y alcance</h3>
-<label class="label advancedOnly" for="editScope">Alcance de edición</label>
-<select id="editScope" class="textInput scopeSelect advancedOnly">
+<label class="label" for="editScope">Alcance de edición</label>
+<select id="editScope" class="textInput scopeSelect">
 <option value="auto">Automático según el pedido</option>
 <option value="puntual">Cambio puntual</option>
 <option value="completo">Cambio completo</option>
@@ -319,21 +315,21 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 </select>
 <p class="muted small">El cliente puede escribir corto. La app agrega las reglas técnicas por detrás.</p>
 
-<label class="precisionOption advancedOnly">
+<label class="precisionOption">
 <input id="keepGeometry" type="checkbox" checked>
 <span>Bloquear geometría y proporciones</span>
 </label>
-<label class="precisionOption advancedOnly">
+<label class="precisionOption">
 <input id="keepDimensions" type="checkbox" checked>
 <span>Conservar el mismo tamaño final</span>
 </label>
-<label class="precisionOption advancedOnly">
+<label class="precisionOption">
 <input id="strictEditScope" type="checkbox" checked>
 <span>Modificar solo lo pedido</span>
 </label>
 </div>
 
-<div class="precisionCard expertOnly">
+<div class="precisionCard">
 <h3>Guía rápida</h3>
 <ul class="precisionList">
 <li>El cliente puede escribir simple: "hacerlo mediterráneo" o "más premium".</li>
@@ -371,7 +367,7 @@ Pintá exactamente la zona que querés cambiar. La IA recibirá esa selección c
   </div>
 
   <div class="resultGrid">
-    <div class="panel recommendationPanel expertOnly">
+    <div class="panel recommendationPanel">
       <h3>Recomendacion</h3>
       <pre id="recomendacion" class="reco">-</pre>
     </div>
@@ -397,6 +393,8 @@ Pintá exactamente la zona que querés cambiar. La IA recibirá esa selección c
              alt="Resultado"
              style="display:none;" />
       </div>
+
+      <div id="sizeCheck" class="sizeCheck" style="display:none;"></div>
 
       <div id="compareBox" class="compareBox" style="display:none;">
         <div class="compareWrapper" id="compareWrapper">
@@ -447,7 +445,7 @@ Pintá exactamente la zona que querés cambiar. La IA recibirá esa selección c
         </button>
       </div>
 
-      <div class="panel expertOnly" id="boxReferencia" style="margin-top:18px;">
+      <div class="panel" id="boxReferencia" style="margin-top:18px;">
         <h3>Corregir una parte del resultado</h3>
 
         <input type="file"
@@ -460,7 +458,7 @@ Pintá exactamente la zona que querés cambiar. La IA recibirá esa selección c
         </p>
       </div>
 
-      <div class="videoBlock expertOnly" style="margin-top:18px;">
+      <div class="videoBlock" style="margin-top:18px;">
         <div class="showcaseCard">
           <div class="showcaseHead">
             <div>
