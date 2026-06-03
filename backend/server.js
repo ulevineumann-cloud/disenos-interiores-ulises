@@ -237,6 +237,8 @@ REGLAS BASE, SIEMPRE OBLIGATORIAS:
 - No crear una escena nueva.
 - No inventar arquitectura, distribucion, aberturas, estructura, camara, horizonte, profundidad ni proporciones.
 - No mover, borrar, agregar ni transformar elementos fuera del alcance pedido.
+- Proteger todo texto legible, numeros, logos, isotipos, marcas de agua, carteles, pantallas, placas, senaletica y tipografias existentes salvo que el usuario pida explicitamente modificarlos.
+- Si hay texto o logos en la imagen, deben conservarse en la misma posicion, escala, forma, nitidez y contenido; no traducirlos, no corregirlos, no inventarlos y no reemplazarlos.
 - Mantener sombras, reflejos, textura, profundidad, escala y relaciones fisicas coherentes con la foto original.
 - Evitar cambios globales de exposicion, contraste, nitidez, color grading o estilo fotografico salvo que el usuario lo pida explicitamente.
 
@@ -261,6 +263,11 @@ BLOQUEO DE CANVAS:
 - No recortar.
 - No expandir.
 - No rotar.
+
+BLOQUEO DE TEXTO Y MARCA:
+- Cualquier texto visible, numeracion, logo, marca, sello, watermark, grafica comercial, cartel o interfaz dentro de la imagen es un elemento protegido.
+- No modificar letras, palabras, numeros, signos, logotipos ni marcas si el usuario no lo pidio literalmente.
+- Si el cambio pedido afecta una superficie cercana a texto o logos, integrar el material alrededor sin deformar ni reescribir esos elementos.
 
 ${strictEditScope ? `
 FIDELIDAD AL PEDIDO:
@@ -326,6 +333,7 @@ PROHIBIDO:
 - No cambiar arquitectura.
 - No cambiar encuadre, perspectiva ni lente.
 - No cambiar piso, paredes, ventanas, cortinas, zocalos, cielorraso, estructura ni iluminacion general.
+- No modificar texto legible, numeros, logos, marcas de agua, carteles, senaletica, pantallas ni graficas existentes salvo que el usuario lo pida explicitamente.
 - No reinterpretar la escena.
 - No generar una habitacion nueva.
 - No embellecer.

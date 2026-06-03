@@ -2200,6 +2200,204 @@ background: rgba(10,16,28,.30);
   background: rgba(98, 61, 31, .24);
 }
 
+/* ===== CLASSIC COMPACT APP LAYOUT ===== */
+.appPage{
+  background:
+    radial-gradient(820px 520px at 10% 0%, rgba(101, 74, 48, .36), transparent 58%),
+    linear-gradient(135deg, #22160f 0%, #17100b 46%, #0f0a07 100%);
+}
+
+.appPage .bg{
+  background:
+    linear-gradient(135deg, rgba(207, 150, 94, .13), transparent 42%),
+    linear-gradient(90deg, rgba(92, 62, 39, .24), rgba(25, 18, 13, .08));
+}
+
+.appPage .appShell{
+  display:block;
+}
+
+.appPage .sidebar{
+  position:fixed;
+  top:0;
+  left:0;
+  width:min(320px, 88vw);
+  height:100vh;
+  z-index:60;
+  transform:translateX(-105%);
+  transition:transform .18s ease;
+  border-right:1px solid rgba(236, 212, 183, .16);
+}
+
+.appPage .sidebar.open{
+  transform:translateX(0);
+}
+
+.appPage .sidebar.collapsed{
+  width:min(320px, 88vw);
+}
+
+.appPage .sidebar.collapsed .sbText,
+.appPage .sidebar.collapsed .sbSearch,
+.appPage .sidebar.collapsed .sbHelp,
+.appPage .sidebar.collapsed .sbPanel,
+.appPage .sidebar.collapsed .projMain,
+.appPage .sidebar.collapsed .projBtns,
+.appPage .sidebar.collapsed .sbActions{
+  display:block;
+}
+
+.appPage .sidebar.collapsed .projRow{
+  justify-content:flex-start;
+}
+
+.appPage .hamburger{
+  display:inline-flex;
+}
+
+.appPage .mainCol{
+  width:100%;
+}
+
+.appPage .top{
+  padding:24px 0 12px;
+}
+
+.appPage .wrap,
+.appPage .brand{
+  width:min(1080px, calc(100% - 56px));
+}
+
+.appPage .brand{
+  align-items:flex-start;
+}
+
+.appPage .brandText h1{
+  font-family:Manrope, Arial, sans-serif;
+  font-size:28px;
+  line-height:1.08;
+  font-weight:800;
+}
+
+.appPage .seoLine{
+  max-width:880px;
+  font-size:16px;
+  line-height:1.35;
+}
+
+.appPage .frase{
+  margin-top:12px;
+  font-size:14px;
+}
+
+.appPage .card{
+  margin:16px 0;
+  border-radius:20px;
+  background:
+    linear-gradient(135deg, rgba(75, 55, 39, .84), rgba(33, 47, 47, .38)),
+    rgba(28, 20, 15, .82);
+  border:1px solid rgba(236, 212, 183, .18);
+  box-shadow:0 18px 50px rgba(0,0,0,.24);
+}
+
+.appPage .toolCard{
+  padding:20px;
+}
+
+.appPage .toolIntro{
+  display:block;
+  padding-bottom:12px;
+  margin-bottom:14px;
+}
+
+.appPage .toolStatus{
+  margin-top:10px;
+  justify-content:flex-start;
+}
+
+.appPage h2{
+  font-family:Manrope, Arial, sans-serif;
+  font-size:24px;
+  font-weight:800;
+}
+
+.appPage .requestGrid{
+  grid-template-columns:minmax(0, 1fr) 288px;
+  gap:16px;
+}
+
+.appPage .textInput,
+.appPage textarea,
+.appPage .sbSearch input,
+.appPage .miniTest select{
+  background:rgba(13, 20, 31, .62);
+  border-color:rgba(236, 212, 183, .14);
+  border-radius:14px;
+}
+
+.appPage textarea{
+  min-height:108px;
+}
+
+.appPage .chip,
+.appPage .fileBtn,
+.appPage .ghost,
+.appPage .ghostLink,
+.appPage .ghostLinkBtn,
+.appPage .primary,
+.appPage .sbMiniBtn{
+  border-radius:14px;
+}
+
+.appPage .previewBox{
+  padding:14px;
+  border-style:dashed;
+}
+
+.appPage .previewImg{
+  max-height:min(62vh, 620px);
+}
+
+.appPage .paintBox,
+.appPage #paintBase{
+  max-height:min(68vh, 720px);
+}
+
+.appPage .resultGrid{
+  grid-template-columns:minmax(260px, .52fr) minmax(0, 1fr);
+  gap:16px;
+}
+
+.appPage .resultHeader h2{
+  font-family:Manrope, Arial, sans-serif;
+  font-size:24px;
+}
+
+.appPage .panel{
+  border-radius:18px;
+}
+
+.appPage .reco{
+  min-height:140px;
+  max-height:260px;
+}
+
+.appPage .imgResultadoSmall{
+  max-height:min(68vh, 680px);
+}
+
+.appPage .compareWrapper{
+  min-height:280px;
+  max-height:68vh;
+}
+
+.appPage .videoPreview{
+  width:100%;
+  max-height:72vh;
+  object-fit:contain;
+  background:#090604;
+}
+
 @media (max-width: 980px){
   .toolIntro,
   .requestGrid,

@@ -177,7 +177,7 @@ function collapseWhitespace(text) {
 function truncateText(text, max = 120) {
   const clean = collapseWhitespace(text);
   if (clean.length <= max) return clean;
-  return clean.slice(0, max - 1).trimEnd() + "…";
+  return clean.slice(0, max - 1).trimEnd() + "⬦";
 }
 
 function describeImageFile(file, label) {
@@ -228,7 +228,7 @@ function showSizeCheck(originalW, originalH, resultW, resultH) {
    MOBILE DRAWER HELPERS + SCROLL LOCK
 ========================= */
 function isMobile() {
-  return window.matchMedia("(max-width: 980px)").matches;
+  return document.body.classList.contains("appPage") || window.matchMedia("(max-width: 980px)").matches;
 }
 
 let _prevBodyOverflow = "";
@@ -280,6 +280,10 @@ function setSidebarCollapsed(on) {
 }
 
 btnToggleSidebar?.addEventListener("click", () => {
+  if (document.body.classList.contains("appPage")) {
+    closeSidebarDrawer();
+    return;
+  }
   if (isMobile()) return;
   const isCollapsed = sidebarEl.classList.contains("collapsed");
   setSidebarCollapsed(!isCollapsed);
@@ -994,8 +998,8 @@ function renderSidebar() {
           </div>
         </div>
         <div class="projBtns">
-          <button class="sbMiniBtn projFav" type="button" title="Favorito">${p.favorite ? "⭐" : "☆"}</button>
-          <button class="sbMiniBtn projDel" type="button" title="Borrar">🗑️</button>
+          <button class="sbMiniBtn projFav" type="button" title="Favorito">${p.favorite ? "Favorito" : "Marcar"}</button>
+          <button class="sbMiniBtn projDel" type="button" title="Borrar">Borrar</button>
         </div>
       </div>
     `;
@@ -1139,8 +1143,8 @@ function renderRequestChecklist() {
 
   requestChecklist.innerHTML = items
     .map((item) => `
-      <div class="checkItem ${item.done ? "done" : ""}">
-        <span class="checkDot">${item.done ? "✓" : ""}</span>
+      <div class="checkItem ${item.done ? "?" : ""}">
+        <span class="checkDot">${item.done ? "?" : ""}</span>
         <span>${escapeHtml(item.label)}</span>
       </div>
     `)
@@ -1155,7 +1159,7 @@ function renderSidebarImageInfo() {
     return;
   }
 
-  const dims = imgNaturalW && imgNaturalH ? `${imgNaturalW} × ${imgNaturalH}px` : "Dimensiones cargando";
+  const dims = imgNaturalW && imgNaturalH ? `${imgNaturalW} x ${imgNaturalH}px` : "Dimensiones cargando";
   const size = file?.size ? humanFileSize(file.size) : "peso no disponible";
   const name = file?.name || "imagen recuperada";
   const paint = usePaint?.checked ? "Paint activo" : "Paint apagado";
@@ -1529,7 +1533,7 @@ btnNewProject.addEventListener("click", () => {
   clearCurrentWorkspace();
 
   textoEl.value = "";
-  recomendacionEl.textContent = "—";
+  recomendacionEl.textContent = "-";
   imagenResultadoEl.style.display = "none";
   imagenResultadoEl.src = "";
   resultadoUrlFinal = "";
@@ -1606,35 +1610,35 @@ function generationErrorMessage(err) {
   const msg = raw.toLowerCase();
 
   if (!raw) {
-    return "No se pudo generar la imagen. Proba con una instruccion mas concreta.";
+    return "No se pudo generar la imagen. Probá con una instrucción más concreta.";
   }
 
   if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("load failed")) {
-    return "No se pudo conectar con el servidor. Revisa tu conexion y proba de nuevo.";
+    return "No se pudo conectar con el servidor. Revisá tu conexión y probá de nuevo.";
   }
 
   if (msg.includes("falta imagen") || msg.includes("seleccion")) {
-    return "Selecciona una imagen base antes de generar.";
+    return "Seleccioná una imagen base antes de generar.";
   }
 
   if (msg.includes("descripcion") || msg.includes("instruccion") || msg.includes("interpretar")) {
-    return "La IA no pudo interpretar el pedido. Proba escribirlo mas concreto, por ejemplo: cambiar solo la pared del fondo a microcemento claro.";
+    return "La IA no pudo interpretar el pedido. Probá escribirlo más concreto, por ejemplo: cambiar solo la pared del fondo a microcemento claro.";
   }
 
   if (msg.includes("mascara") || msg.includes("mask") || msg.includes("paint")) {
-    return "La zona pintada no se pudo procesar. Volve a pintar el area y proba otra vez.";
+    return "La zona pintada no se pudo procesar. Volvé a pintar el área y probá otra vez.";
   }
 
   if (msg.includes("pesada") || msg.includes("large") || msg.includes("maximum") || msg.includes("12mb")) {
-    return "La imagen es demasiado pesada. Proba con una version mas liviana.";
+    return "La imagen es demasiado pesada. Probá con una versión más liviana.";
   }
 
   if (msg.includes("limite") || msg.includes("quota") || msg.includes("rate limit")) {
-    return "La IA esta con limite de uso en este momento. Espera un poco y proba de nuevo.";
+    return "La IA está con límite de uso en este momento. Esperá un poco y probá de nuevo.";
   }
 
   if (msg.includes("openai_api_key") || msg.includes("clave")) {
-    return "La clave de IA del servidor no esta funcionando. Revisa la variable OPENAI_API_KEY en Render.";
+    return "La clave de IA del servidor no está funcionando. Revisá la variable OPENAI_API_KEY en Render.";
   }
 
   return raw;
@@ -2008,7 +2012,7 @@ async function usarResultadoComoBase() {
   };
   paintBase.src = originalObjectUrl;
 
-  // estás “arrancando de nuevo”, ocultamos comparador hasta que haya resultado nuevo
+  // Al usar el resultado como nueva base, ocultamos el comparador hasta generar otra versión.
   hideCompare();
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -2017,7 +2021,7 @@ async function usarResultadoComoBase() {
 btnUseResult?.addEventListener("click", () => {
   usarResultadoComoBase().catch((err) => {
     console.error(err);
-    niceError("No se pudo usar el resultado como base. Proba recargar y volver a intentar.");
+    niceError("No se pudo usar el resultado como base. Probá recargar y volver a intentar.");
   });
 });
 
@@ -2166,7 +2170,7 @@ function buildShowcaseLabel() {
   const prompt = truncateText(textoEl?.value || "", 120);
   return {
     title,
-    subtitle: prompt || "Edicion arquitectonica precisa, lista para presentar al cliente.",
+    subtitle: prompt || "Edición arquitectónica precisa, lista para presentar al cliente.",
   };
 }
 
@@ -2179,7 +2183,7 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
 
   const baseW = imgA.naturalWidth || imgA.width;
   const baseH = imgA.naturalHeight || imgA.height;
-  const maxSide = 1280;
+  const maxSide = 1920;
   const scale = Math.min(1, maxSide / Math.max(baseW, baseH));
   const w = Math.max(1, Math.round(baseW * scale));
   const h = Math.max(1, Math.round(baseH * scale));
@@ -2187,18 +2191,17 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
   canvas.width = w;
   canvas.height = h;
 
-  const fps = 30;
-  const seconds = 3.4;
+  const fps = 60;
+  const seconds = 4.2;
   const frames = Math.floor(fps * seconds);
-  const labels = buildShowcaseLabel();
 
   const stream = canvas.captureStream(fps);
   const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9") ? "video/webm;codecs=vp9" : "video/webm";
-
-  const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
+  const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
   const chunks = [];
-  recorder.ondataavailable = (e) => {
-    if (e.data && e.data.size) chunks.push(e.data);
+
+  recorder.ondataavailable = (event) => {
+    if (event.data && event.data.size) chunks.push(event.data);
   };
 
   const done = new Promise((resolve) => {
@@ -2209,153 +2212,55 @@ async function generarVideoTransicion(originalSrc, resultadoSrc) {
 
   for (let i = 0; i < frames; i++) {
     const t = frames <= 1 ? 1 : i / (frames - 1);
-    const intro = clamp(t / 0.18, 0, 1);
-    const reveal = clamp((t - 0.16) / 0.56, 0, 1);
+    const reveal = clamp((t - 0.12) / 0.76, 0, 1);
     const revealEase = easeInOut(reveal);
-    const finalHold = clamp((t - 0.76) / 0.24, 0, 1);
 
-    const bg = ctx.createLinearGradient(0, 0, w, h);
-    bg.addColorStop(0, "#1b1511");
-    bg.addColorStop(1, "#0f0d0b");
-    ctx.fillStyle = bg;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#120c08";
     ctx.fillRect(0, 0, w, h);
+    drawContainedImage(ctx, imgA, 0, 0, w, h, { alpha: 1 });
 
     ctx.save();
-    ctx.globalAlpha = 0.45;
-    ctx.fillStyle = "#8d6d4a";
     ctx.beginPath();
-    ctx.arc(w * 0.18, h * 0.12, Math.max(w, h) * 0.16, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#75875d";
-    ctx.beginPath();
-    ctx.arc(w * 0.82, h * 0.18, Math.max(w, h) * 0.14, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    const pad = Math.round(Math.min(w, h) * 0.055);
-    const infoH = Math.max(68, Math.round(h * 0.15));
-    const frameX = pad;
-    const frameY = pad + infoH;
-    const frameW = w - pad * 2;
-    const frameH = h - frameY - pad;
-    const radius = Math.max(18, Math.round(Math.min(frameW, frameH) * 0.03));
-
-    ctx.save();
-    ctx.globalAlpha = 0.95;
-    roundedRectPath(ctx, frameX, frameY, frameW, frameH, radius);
-    const stage = ctx.createLinearGradient(frameX, frameY, frameX, frameY + frameH);
-    stage.addColorStop(0, "rgba(42,33,25,.96)");
-    stage.addColorStop(1, "rgba(20,16,13,.98)");
-    ctx.fillStyle = stage;
-    ctx.fill();
-    ctx.strokeStyle = "rgba(244, 224, 196, .18)";
-    ctx.lineWidth = 2;
-    ctx.stroke();
+    ctx.rect(0, 0, w * revealEase, h);
     ctx.clip();
-
-    drawContainedImage(ctx, imgA, frameX, frameY, frameW, frameH, {
-      zoom: 1.018 - revealEase * 0.018,
-      alpha: 1,
-    });
-
-    if (reveal > 0) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(frameX, frameY, frameW * revealEase, frameH);
-      ctx.clip();
-      drawContainedImage(ctx, imgB, frameX, frameY, frameW, frameH, {
-        zoom: 1.006 + revealEase * 0.006,
-        alpha: 0.9 + revealEase * 0.1,
-      });
-      ctx.restore();
-    }
-
-    const shade = ctx.createLinearGradient(frameX, frameY, frameX, frameY + frameH);
-    shade.addColorStop(0, "rgba(0,0,0,.02)");
-    shade.addColorStop(1, "rgba(0,0,0,.20)");
-    ctx.fillStyle = shade;
-    ctx.fillRect(frameX, frameY, frameW, frameH);
+    drawContainedImage(ctx, imgB, 0, 0, w, h, { alpha: 1 });
     ctx.restore();
 
-    const sliderX = frameX + frameW * revealEase;
-    if (reveal > 0.02 && reveal < 0.985) {
-      ctx.fillStyle = "rgba(248, 240, 230, .92)";
-      ctx.fillRect(sliderX - 1.5, frameY, 3, frameH);
+    const sliderX = Math.round(w * revealEase);
+    if (reveal > 0.01 && reveal < 0.99) {
+      ctx.fillStyle = "rgba(246, 239, 229, .96)";
+      ctx.fillRect(sliderX - 1, 0, 2, h);
       ctx.beginPath();
-      ctx.fillStyle = "rgba(28, 22, 17, .90)";
-      ctx.arc(sliderX, frameY + frameH / 2, Math.max(14, Math.min(w, h) * 0.022), 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(23, 16, 11, .88)";
+      ctx.arc(sliderX, h / 2, Math.max(16, Math.min(w, h) * 0.024), 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = "rgba(244, 224, 196, .22)";
+      ctx.strokeStyle = "rgba(246, 239, 229, .42)";
+      ctx.lineWidth = 2;
       ctx.stroke();
-      ctx.fillStyle = "rgba(248, 240, 230, .92)";
-      ctx.font = `700 ${Math.max(12, Math.round(Math.min(w, h) * 0.024))}px Manrope, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("↔", sliderX, frameY + frameH / 2 + 1);
     }
 
-    ctx.textAlign = "left";
+    const labelPad = Math.max(14, Math.round(Math.min(w, h) * 0.025));
     ctx.textBaseline = "top";
-    ctx.fillStyle = `rgba(246, 239, 229, ${0.58 + intro * 0.42})`;
-    ctx.font = `700 ${Math.max(11, Math.round(w * 0.013))}px Manrope, sans-serif`;
-    ctx.fillText("ULISES · PRESENTACION", frameX, pad);
-
-    ctx.fillStyle = `rgba(246, 239, 229, ${0.82 + intro * 0.18})`;
-    ctx.font = `600 ${Math.max(26, Math.round(w * 0.04))}px "Cormorant Garamond", Georgia, serif`;
-    ctx.fillText(labels.title, frameX, pad + Math.max(18, h * 0.035));
-
-    ctx.fillStyle = `rgba(246, 239, 229, ${0.58 + intro * 0.24})`;
-    ctx.font = `500 ${Math.max(13, Math.round(w * 0.0155))}px Manrope, sans-serif`;
-    drawWrappedText(
-      ctx,
-      labels.subtitle,
-      frameX,
-      pad + Math.max(52, h * 0.08),
-      frameW * 0.76,
-      Math.max(16, Math.round(h * 0.03)),
-      2
-    );
-
-    const pillY = frameY + 14;
-    const leftPillW = Math.max(92, Math.round(frameW * 0.14));
-    const rightPillW = Math.max(102, Math.round(frameW * 0.16));
-
-    ctx.save();
-    ctx.globalAlpha = 0.92;
-    roundedRectPath(ctx, frameX + 14, pillY, leftPillW, 34, 17);
-    ctx.fillStyle = "rgba(18,15,12,.64)";
-    ctx.fill();
-    ctx.strokeStyle = "rgba(244, 224, 196, .12)";
-    ctx.stroke();
-
-    roundedRectPath(ctx, frameX + frameW - rightPillW - 14, pillY, rightPillW, 34, 17);
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
-
+    ctx.font = `700 ${Math.max(12, Math.round(Math.min(w, h) * 0.022))}px Manrope, sans-serif`;
     ctx.fillStyle = "rgba(246, 239, 229, .88)";
-    ctx.font = `700 ${Math.max(11, Math.round(w * 0.012))}px Manrope, sans-serif`;
-    ctx.fillText("ORIGINAL", frameX + 28, pillY + 11);
-    ctx.fillText("RESULTADO", frameX + frameW - rightPillW, pillY + 11);
+    ctx.fillText("ORIGINAL", labelPad, labelPad);
+    const resultText = "RESULTADO";
+    const resultW = ctx.measureText(resultText).width;
+    ctx.fillText(resultText, w - resultW - labelPad, labelPad);
 
-    const footerAlpha = 0.35 + 0.65 * Math.max(intro, finalHold);
-    ctx.fillStyle = `rgba(246, 221, 191, ${footerAlpha})`;
-    ctx.font = `600 ${Math.max(12, Math.round(w * 0.0135))}px Manrope, sans-serif`;
-    ctx.fillText("Cambio puntual. Misma lectura espacial. Misma foto.", frameX, h - pad + 4);
-
-    await new Promise((r) => setTimeout(r, 1000 / fps));
+    await new Promise((resolve) => setTimeout(resolve, 1000 / fps));
   }
 
   recorder.stop();
   return await done;
 }
-
 btnVideo.addEventListener("click", async () => {
   if (!originalObjectUrl || !resultadoUrlFinal) return;
 
   try {
     btnVideo.disabled = true;
-    videoInfo.textContent = "Generando video…";
+    videoInfo.textContent = "Generando video⬦";
 
     const blob = await generarVideoTransicion(originalObjectUrl, resultadoUrlFinal);
     const url = URL.createObjectURL(blob);
@@ -2371,7 +2276,7 @@ btnVideo.addEventListener("click", async () => {
   } catch (e) {
     console.error(e);
     videoInfo.textContent = "Error generando el video";
-    niceError("No se pudo generar el video. Proba con Chrome.");
+    niceError("No se pudo generar el video. Probá con Chrome.");
   } finally {
     btnVideo.disabled = false;
   }
@@ -2431,7 +2336,7 @@ btnZip.addEventListener("click", async () => {
     setTimeout(() => URL.revokeObjectURL(zipUrl), 2000);
   } catch (e) {
     console.error(e);
-    niceError("No se pudo generar el ZIP. Proba de nuevo.");
+    niceError("No se pudo generar el ZIP. Probá de nuevo.");
   } finally {
     btnZip.disabled = false;
   }
@@ -2503,7 +2408,7 @@ ${texto}
 
     if (estado) estado.textContent = "";
     clearError();
-    if (recomendacionEl) recomendacionEl.textContent = "—";
+    if (recomendacionEl) recomendacionEl.textContent = "-";
     updatePrecisionSummary();
     if (imagenResultadoEl) {
       imagenResultadoEl.style.display = "none";
