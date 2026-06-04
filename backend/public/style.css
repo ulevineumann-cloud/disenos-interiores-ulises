@@ -3222,3 +3222,233 @@ background: rgba(10,16,28,.30);
     font-size: 12px;
   }
 }
+
+/* ===== APP MOBILE ONLY ===== */
+@media (max-width: 700px){
+  html,
+  body{
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .appPage{
+    min-width: 0;
+  }
+
+  .appPage .appShell,
+  .appPage .mainCol,
+  .appPage main,
+  .appPage section{
+    width: 100%;
+    min-width: 0;
+  }
+
+  .appPage .top{
+    padding: 12px 0 4px;
+  }
+
+  .appPage .wrap,
+  .appPage .brand{
+    width: min(100% - 20px, 520px);
+    max-width: 520px;
+  }
+
+  .appPage .brand{
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 42px;
+    gap: 10px;
+    align-items: start;
+  }
+
+  .appPage .logo{
+    width: 38px;
+    height: 38px;
+  }
+
+  .appPage .hamburger{
+    display: inline-flex;
+    width: 42px;
+    min-width: 42px;
+    height: 42px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .appPage .brandText{
+    min-width: 0;
+  }
+
+  .appPage .brandText h1{
+    font-size: 24px;
+    line-height: 1.08;
+    overflow-wrap: anywhere;
+  }
+
+  .appPage .seoLine{
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .appPage .workspaceBar,
+  .appPage .frase,
+  .appPage .toolStatus,
+  .appPage .onboardingSteps{
+    display: none;
+  }
+
+  .appPage .ctaRow{
+    margin-top: 8px !important;
+  }
+
+  .appPage .card{
+    margin: 10px 0;
+    border-radius: 14px;
+  }
+
+  .appPage .toolCard,
+  .appPage .card,
+  .appPage .panel,
+  .appPage .precisionCard,
+  .appPage .previewBox,
+  .appPage .showcaseCard{
+    padding: 12px;
+  }
+
+  .appPage .toolIntro{
+    display: block;
+    padding-bottom: 10px;
+    margin-bottom: 10px;
+  }
+
+  .appPage h2{
+    font-size: 20px;
+    line-height: 1.05;
+  }
+
+  .appPage .toolIntro .muted{
+    font-size: 12px;
+  }
+
+  .appPage .requestGrid,
+  .appPage .resultGrid,
+  .appPage .previewRow{
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px;
+  }
+
+  .appPage .requestMain,
+  .appPage .precisionPanel,
+  .appPage .panel,
+  .appPage .previewBox,
+  .appPage .paintBox,
+  .appPage .compareBox,
+  .appPage .imgWrap{
+    min-width: 0;
+  }
+
+  .appPage .label{
+    font-size: 12px;
+    margin: 8px 0 5px;
+  }
+
+  .appPage .textInput,
+  .appPage textarea,
+  .appPage select{
+    width: 100%;
+    min-width: 0;
+    font-size: 14px;
+  }
+
+  .appPage textarea{
+    min-height: 104px;
+  }
+
+  .appPage .presetChips,
+  .appPage .uploadBar,
+  .appPage .row,
+  .appPage .videoRow,
+  .appPage .modeBar,
+  .appPage .toolMini{
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .appPage .chip,
+  .appPage .fileBtn,
+  .appPage .ghost,
+  .appPage .ghostLink,
+  .appPage .primary,
+  .appPage .modeBtn{
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .appPage .modeToggle{
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .appPage .modeToggle .modeBtn{
+    width: auto;
+  }
+
+  .appPage .uploadDropzone{
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .appPage .previewHeader{
+    display: block;
+  }
+
+  .appPage .modeInfo{
+    margin-top: 6px;
+    max-width: none;
+    text-align: left;
+    font-size: 11px;
+  }
+
+  .appPage .previewImg,
+  .appPage .imgResultadoSmall{
+    width: 100%;
+    max-height: 62vh;
+    border-radius: 10px;
+  }
+
+  .appPage .paintBox,
+  .appPage #paintBase{
+    max-height: 64vh;
+  }
+
+  .appPage .compareWrapper{
+    min-height: 200px;
+    max-height: 62vh;
+  }
+
+  .appPage .reco{
+    min-height: 120px;
+    max-height: 220px;
+  }
+
+  .appPage .showcaseHead{
+    align-items: flex-start;
+  }
+
+  .appPage .videoPreview{
+    max-height: 62vh;
+  }
+
+  .appPage .sidebar{
+    width: min(330px, 88vw);
+    max-width: 88vw;
+  }
+}
