@@ -155,6 +155,7 @@ function revokeIfBlobUrl(url) {
 
 function withCacheBust(url, stamp = Date.now()) {
   if (!url) return "";
+  if (String(url).startsWith("data:") || String(url).startsWith("blob:")) return url;
   return url.includes("?") ? `${url}&v=${stamp}` : `${url}?v=${stamp}`;
 }
 
@@ -1162,7 +1163,8 @@ function escapeHtml(s) {
 
 /* ===== Sidebar render ===== */
 function projectThumb(p) {
-  return projectLastVersion(p)?.originalThumb || "";
+  const latest = projectLastVersion(p);
+  return latest?.resultThumb || latest?.originalThumb || latest?.resultUrl || latest?.originalUrl || "";
 }
 
 function lastMeta(p) {
@@ -1272,7 +1274,7 @@ function renderSidebar() {
 }
 
 function versionThumb(version) {
-  return version?.resultUrl || version?.originalThumb || version?.originalUrl || "";
+  return version?.resultThumb || version?.resultUrl || version?.originalThumb || version?.originalUrl || "";
 }
 
 function renderProjectHistory() {
@@ -1443,7 +1445,7 @@ function syncCurrentProjectUI() {
 }
 
 
-function setImageVisibility(imgEl, src) {
+function setImageVisibility(imgEl, src, fallbackSrc = "") {
   if (!imgEl) return;
   if (!src) {
     imgEl.removeAttribute("src");
@@ -1458,6 +1460,19 @@ function setImageVisibility(imgEl, src) {
     if (imgEl === imagenResultadoEl) updateResultEmpty();
   };
   imgEl.onerror = () => {
+    if (fallbackSrc && fallbackSrc !== src) {
+      imgEl.onerror = () => {
+        imgEl.removeAttribute("src");
+        imgEl.style.display = "none";
+        if (imgEl === imagenResultadoEl) updateResultEmpty();
+      };
+      if (imgEl === imagenResultadoEl && resultadoUrlFinal === src) {
+        resultadoUrlFinal = fallbackSrc;
+        setDownloadResult(fallbackSrc);
+      }
+      imgEl.src = fallbackSrc;
+      return;
+    }
     imgEl.removeAttribute("src");
     imgEl.style.display = "none";
     if (imgEl === imagenResultadoEl) updateResultEmpty();
@@ -1567,15 +1582,17 @@ async function restoreCurrentProjectState() {
 
   const originalSrc = latest.originalUrl ? withCacheBust(latest.originalUrl, latest.createdAt || Date.now()) : "";
   const resultSrc = latest.resultUrl ? withCacheBust(latest.resultUrl, latest.createdAt || Date.now()) : "";
+  const resultFallback = latest.resultThumb || "";
+  const visibleResultSrc = resultSrc || resultFallback;
 
-  setImageVisibility(imagenResultadoEl, resultSrc);
-  resultadoUrlFinal = resultSrc;
-  setDownloadResult(resultSrc);
+  setImageVisibility(imagenResultadoEl, visibleResultSrc, resultFallback);
+  resultadoUrlFinal = visibleResultSrc;
+  setDownloadResult(visibleResultSrc);
   resetVideoUI();
 
-  if (btnUseResult) btnUseResult.disabled = !resultSrc;
-  if (btnVideo) btnVideo.disabled = !resultSrc;
-  if (btnZip) btnZip.disabled = !resultSrc;
+  if (btnUseResult) btnUseResult.disabled = !visibleResultSrc;
+  if (btnVideo) btnVideo.disabled = !visibleResultSrc;
+  if (btnZip) btnZip.disabled = !visibleResultSrc;
 
   currentOriginalThumb = latest.originalThumb || "";
   setImageVisibility(preview, originalSrc || latest.originalThumb || "");
@@ -1594,8 +1611,8 @@ async function restoreCurrentProjectState() {
     imgNaturalH = 0;
   }
 
-  if (originalSrc && resultSrc) {
-    showCompare(originalSrc, resultSrc);
+  if (originalSrc && visibleResultSrc) {
+    showCompare(originalSrc, visibleResultSrc);
   } else {
     hideCompare();
   }
@@ -1608,7 +1625,7 @@ async function restoreCurrentProjectState() {
 
   try {
     await hydrateInputFromStoredUrl(latest.originalUrl, latest.originalName || "proyecto-base.png");
-    if (resultSrc) showCompare(originalObjectUrl || originalSrc, resultSrc);
+    if (visibleResultSrc) showCompare(originalObjectUrl || originalSrc, visibleResultSrc);
   } catch (err) {
     console.error(err);
   }
@@ -1629,20 +1646,22 @@ async function restoreProjectVersion(versionId) {
 
   const originalSrc = version.originalUrl ? withCacheBust(version.originalUrl, version.createdAt || Date.now()) : "";
   const resultSrc = version.resultUrl ? withCacheBust(version.resultUrl, version.createdAt || Date.now()) : "";
+  const resultFallback = version.resultThumb || "";
+  const visibleResultSrc = resultSrc || resultFallback;
 
-  resultadoUrlFinal = resultSrc;
-  setImageVisibility(imagenResultadoEl, resultSrc);
-  setDownloadResult(resultSrc);
+  resultadoUrlFinal = visibleResultSrc;
+  setImageVisibility(imagenResultadoEl, visibleResultSrc, resultFallback);
+  setDownloadResult(visibleResultSrc);
   setImageVisibility(preview, originalSrc || version.originalThumb || "");
   currentOriginalThumb = version.originalThumb || "";
 
   resetVideoUI();
-  if (btnUseResult) btnUseResult.disabled = !resultSrc;
-  if (btnVideo) btnVideo.disabled = !resultSrc;
-  if (btnZip) btnZip.disabled = !resultSrc;
+  if (btnUseResult) btnUseResult.disabled = !visibleResultSrc;
+  if (btnVideo) btnVideo.disabled = !visibleResultSrc;
+  if (btnZip) btnZip.disabled = !visibleResultSrc;
 
-  if (originalSrc && resultSrc) {
-    showCompare(originalSrc, resultSrc);
+  if (originalSrc && visibleResultSrc) {
+    showCompare(originalSrc, visibleResultSrc);
   } else {
     hideCompare();
     clearSizeCheck();
@@ -1651,7 +1670,7 @@ async function restoreProjectVersion(versionId) {
   if (version.originalUrl) {
     try {
       await hydrateInputFromStoredUrl(version.originalUrl, version.originalName || "proyecto-base.png");
-      if (resultSrc) showCompare(originalObjectUrl || originalSrc, resultSrc);
+      if (visibleResultSrc) showCompare(originalObjectUrl || originalSrc, visibleResultSrc);
     } catch (err) {
       console.error(err);
     }
@@ -1704,6 +1723,7 @@ function saveCurrentVersion(versionData) {
     originalThumb: versionData.originalThumb || "",
     originalName: versionData.originalName || "",
     resultUrl: versionData.resultUrl || "",
+    resultThumb: versionData.resultThumb || "",
     mode: versionData.mode || "",
   });
   project.versions = project.versions.slice(0, 12);
@@ -1973,6 +1993,29 @@ function fileToThumbDataUrl(file, maxW = 420) {
       reject(e);
     };
     img.src = url;
+  });
+}
+
+function imageUrlToThumbDataUrl(src, maxW = 520) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      if (!w || !h) return resolve("");
+
+      const outW = Math.min(maxW, w);
+      const outH = Math.round((outW / w) * h);
+      const c = document.createElement("canvas");
+      c.width = outW;
+      c.height = outH;
+      const ctx = c.getContext("2d");
+      ctx.drawImage(img, 0, 0, outW, outH);
+      resolve(c.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = reject;
+    img.src = src;
   });
 }
 
@@ -2715,6 +2758,13 @@ ${texto}
           updatePrecisionSummary(data.modo || "");
         }
 
+        let resultThumb = "";
+        try {
+          resultThumb = await imageUrlToThumbDataUrl(url);
+        } catch {
+          resultThumb = "";
+        }
+
         saveCurrentVersion({
           prompt: textoBase,
           recommendation: data.recomendacion || "",
@@ -2722,6 +2772,7 @@ ${texto}
           originalThumb: currentOriginalThumb,
           originalName: imagen.name || "original.png",
           resultUrl: savedResultUrl,
+          resultThumb,
           mode: data.modo || "",
         });
         syncCurrentProjectUI();
