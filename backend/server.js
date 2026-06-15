@@ -140,6 +140,35 @@ async function restoreOriginalFrame(buffer, editCanvas, rect, outputWidth, outpu
     .toBuffer();
 }
 
+async function compositeMaskedEditOnOriginal(originalPath, editedBuffer, maskPath, outputWidth, outputHeight) {
+  if (!maskPath || !outputWidth || !outputHeight) return editedBuffer;
+
+  const editAlpha = await sharp(maskPath)
+    .resize(outputWidth, outputHeight, { fit: "fill", kernel: sharp.kernel.lanczos3 })
+    .ensureAlpha()
+    .extractChannel("alpha")
+    .negate()
+    .toBuffer();
+
+  const editedLayer = await sharp(editedBuffer)
+    .resize(outputWidth, outputHeight, { fit: "fill", kernel: sharp.kernel.lanczos3 })
+    .removeAlpha()
+    .joinChannel(editAlpha)
+    .png()
+    .toBuffer();
+
+  const originalLayer = await sharp(originalPath)
+    .rotate()
+    .resize(outputWidth, outputHeight, { fit: "fill", kernel: sharp.kernel.lanczos3 })
+    .png()
+    .toBuffer();
+
+  return sharp(originalLayer)
+    .composite([{ input: editedLayer, left: 0, top: 0 }])
+    .png()
+    .toBuffer();
+}
+
 function publicGenerationError(err) {
   const status = err?.status || err?.code || 500;
   const message = String(err?.message || "").toLowerCase();
@@ -241,6 +270,8 @@ REGLAS BASE, SIEMPRE OBLIGATORIAS:
 - Si hay texto o logos en la imagen, deben conservarse en la misma posicion, escala, forma, nitidez y contenido; no traducirlos, no corregirlos, no inventarlos y no reemplazarlos.
 - Mantener sombras, reflejos, textura, profundidad, escala y relaciones fisicas coherentes con la foto original.
 - Evitar cambios globales de exposicion, contraste, nitidez, color grading o estilo fotografico salvo que el usuario lo pida explicitamente.
+- Mantener la nitidez original. No suavizar, no desenfocar, no generar zonas borrosas, no aplicar efecto acuarela, no lavar texturas y no perder definicion en bordes, lineas, juntas, marcos, logos ni texto.
+- Si una zona no forma parte del cambio pedido, debe quedar con la misma definicion y microdetalle de la imagen base.
 
 ALCANCE SEGUN EL PEDIDO:
 - Si el usuario pide una cosa exacta o un elemento concreto, modificar solamente ese elemento o superficie concreta.
@@ -263,6 +294,8 @@ BLOQUEO DE CANVAS:
 - No recortar.
 - No expandir.
 - No rotar.
+- No reencuadrar ni ampliar como zoom digital.
+- No degradar nitidez ni resolucion perceptual.
 
 BLOQUEO DE TEXTO Y MARCA:
 - Cualquier texto visible, numeracion, logo, marca, sello, watermark, grafica comercial, cartel o interfaz dentro de la imagen es un elemento protegido.
@@ -284,6 +317,7 @@ USO DE MASCARA:
 - La mascara usa transparencia: los pixeles transparentes son la unica zona editable.
 - Modificar solamente la zona transparente de la mascara.
 - Todo lo que quede fuera de la mascara debe permanecer visualmente igual en composicion, color, luz, textura y geometria.
+- Todo lo que quede fuera de la mascara debe permanecer igual de nitido que la imagen original.
 - La mascara tiene prioridad sobre cualquier interpretacion amplia del texto.
 - Si el texto menciona un cambio amplio pero hay mascara, aplicar ese cambio solo dentro de la zona marcada.
 - Respetar el borde de la seleccion: integrar sombras, reflejos y textura sin expandir el cambio fuera del area editable.
@@ -339,12 +373,14 @@ PROHIBIDO:
 - No embellecer.
 - No agregar muebles, decoracion, plantas, luminarias, alfombras ni cambios de estilo.
 - No modificar elementos fijos salvo que esten cubiertos por basura u objetos retirados y sea necesario reconstruirlos.
+- No desenfocar, no suavizar texturas, no lavar la imagen y no perder nitidez en bordes, lineas, textos, logos ni detalles arquitectonicos.
 
 REGLA CENTRAL:
 - Debe verse como la misma foto, solamente mas limpia, despejada o vacia segun el pedido.
 - Conservar exactamente el mismo tamano y proporcion final de la imagen.
 - No recortar, no expandir, no rotar y no cambiar la perspectiva.
 - Las zonas que no son basura, objetos sueltos o desorden deben quedar intactas.
+- Las zonas intactas deben conservar la misma nitidez y definicion que la foto original.
 `.trim();
 }
 
@@ -381,7 +417,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage, limits: { fileSize: 12 * 1024 * 1024 } });
+const upload = multer({ storage, limits: { fileSize: 20 * 1024 * 1024 } });
 
 let openai = null;
 if (ENABLE_AI && OPENAI_API_KEY) {
@@ -464,8 +500,10 @@ app.post(
       );
 
       let maskFile = null;
+      let originalMaskPath = null;
       if (mask) {
         const maskPath = path.join(uploadsPath, mask.filename);
+        originalMaskPath = maskPath;
         const maskMeta = await sharp(maskPath).metadata();
         if (
           originalWidth &&
@@ -538,6 +576,15 @@ Generar una lista profesional, corta y accionable de materiales recomendados.
           outputBuffer,
           editInput.canvas,
           editInput.rect,
+          outputWidth,
+          outputHeight
+        );
+      }
+      if (maskFile && originalMaskPath && outputWidth && outputHeight) {
+        outputBuffer = await compositeMaskedEditOnOriginal(
+          imagePath,
+          outputBuffer,
+          originalMaskPath,
           outputWidth,
           outputHeight
         );

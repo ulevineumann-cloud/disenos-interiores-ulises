@@ -2264,16 +2264,16 @@ function loadImageFromFile(file) {
 }
 
 async function optimizeImageFile(file, options = {}) {
-  const maxSide = options.maxSide || 2200;
-  const quality = options.quality || 0.88;
+  const maxSide = options.maxSide || 3200;
+  const quality = options.quality || 0.96;
   const prefix = options.prefix || "optimized";
-  const maxUploadBytes = options.maxUploadBytes || 10.5 * 1024 * 1024;
+  const maxUploadBytes = options.maxUploadBytes || 18 * 1024 * 1024;
   const img = await loadImageFromFile(file);
   const sourceW = img.naturalWidth || img.width;
   const sourceH = img.naturalHeight || img.height;
   const shouldKeepOriginal =
     file.size <= maxUploadBytes &&
-    Math.max(sourceW, sourceH) <= (options.keepOriginalMaxSide || 5200) &&
+    Math.max(sourceW, sourceH) <= (options.keepOriginalMaxSide || 6500) &&
     !options.forceOptimize;
 
   if (shouldKeepOriginal) {
