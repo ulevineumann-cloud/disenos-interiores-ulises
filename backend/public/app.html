@@ -263,15 +263,36 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <span class="modeHint">Usa Paint cuando el cambio deba afectar solo una zona concreta.</span>
 </div>
 
-<div class="toolMini" id="paintTools" style="display:none;">
-<span class="paintToolLabel">Pincel</span>
-<input id="brush" type="range" min="6" max="70" value="22">
+<div class="toolMini paintToolbar" id="paintTools" style="display:none;">
+<div class="paintToolGroup paintShapeGroup" role="group" aria-label="Herramientas de marcado">
+<span class="paintToolLabel">Herramienta</span>
+<button class="ghost paintToolBtn active" type="button" data-paint-tool="pencil">Lápiz</button>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="marker">Marcador</button>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="line">Línea</button>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="circle">Círculo</button>
+</div>
+
+<div class="paintToolGroup">
+<span class="paintToolLabel">Tamaño</span>
+<input id="brush" type="range" min="6" max="90" value="22">
 <span id="brushVal" class="muted">22</span>
 <button id="btnBrushSmall" class="ghost iconGhost" type="button" title="Pincel fino">Fino</button>
 <button id="btnBrushLarge" class="ghost iconGhost" type="button" title="Pincel grande">Grande</button>
+</div>
+
+<div class="paintToolGroup paintColorGroup" role="group" aria-label="Colores de marcado">
+<span class="paintToolLabel">Color</span>
+<button class="paintColorBtn active" type="button" data-paint-color="red" style="--swatch:#ff4a60" title="Rojo: zona principal a modificar"></button>
+<button class="paintColorBtn" type="button" data-paint-color="yellow" style="--swatch:#f6c744" title="Amarillo: detalle o material a ajustar"></button>
+<button class="paintColorBtn" type="button" data-paint-color="blue" style="--swatch:#4aa8ff" title="Azul: conservar estructura o referencia"></button>
+<button class="paintColorBtn" type="button" data-paint-color="green" style="--swatch:#56d27b" title="Verde: agregar vegetación o elemento nuevo"></button>
+</div>
+
+<div class="paintToolGroup">
 <button id="btnErase" class="ghost" type="button">Borrar</button>
 <button id="btnUndoPaint" class="ghost" type="button">Deshacer</button>
 <button id="btnClear" class="ghost" type="button">Limpiar</button>
+</div>
 </div>
 
 <p id="estado" class="estado"></p>
@@ -350,6 +371,13 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <div class="paintAvisoText">
 Pintá exactamente la zona que querés cambiar. La IA recibirá esa selección como máscara real y una descripción automática de ubicación para interpretar mejor el sector.
 </div>
+</div>
+
+<div class="paintLegend">
+<span><b style="--swatch:#ff4a60"></b>Rojo: cambiar</span>
+<span><b style="--swatch:#f6c744"></b>Amarillo: ajustar detalle</span>
+<span><b style="--swatch:#4aa8ff"></b>Azul: conservar/referencia</span>
+<span><b style="--swatch:#56d27b"></b>Verde: agregar elemento</span>
 </div>
 
 <div class="paintBox">

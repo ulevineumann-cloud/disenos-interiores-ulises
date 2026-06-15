@@ -859,6 +859,63 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 .toolMini input[type="range"]{
   min-width: 180px;
 }
+.paintToolbar{
+  align-items: stretch;
+}
+.paintToolGroup{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:6px;
+  border-radius:12px;
+  background: rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.08);
+}
+.paintToolBtn.active{
+  border-color: rgba(214,179,126,.52);
+  background: rgba(214,179,126,.18);
+}
+.paintColorBtn{
+  width:34px;
+  height:34px;
+  padding:0;
+  border-radius:999px;
+  border:2px solid rgba(255,255,255,.18);
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 4px rgba(10,16,28,.22);
+}
+.paintColorBtn.active{
+  border-color: rgba(255,255,255,.9);
+  box-shadow:
+    0 0 0 3px rgba(214,179,126,.24),
+    inset 0 0 0 4px rgba(10,16,28,.16);
+}
+.paintLegend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:10px 0;
+}
+.paintLegend span{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
+  font-size:12px;
+  font-weight:700;
+}
+.paintLegend b{
+  width:10px;
+  height:10px;
+  border-radius:999px;
+  background: var(--swatch);
+  box-shadow:0 0 0 3px rgba(255,255,255,.08);
+}
 .iconGhost{
   padding-inline: 12px;
 }
