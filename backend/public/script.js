@@ -1473,11 +1473,46 @@ function setImageVisibility(imgEl, src, fallbackSrc = "") {
       imgEl.src = fallbackSrc;
       return;
     }
+    if (imgEl === imagenResultadoEl) {
+      resultadoUrlFinal = "";
+      setDownloadResult("");
+      if (btnUseResult) btnUseResult.disabled = true;
+      if (btnVideo) btnVideo.disabled = true;
+      if (btnZip) btnZip.disabled = true;
+    }
     imgEl.removeAttribute("src");
     imgEl.style.display = "none";
     if (imgEl === imagenResultadoEl) updateResultEmpty();
   };
   imgEl.src = src;
+}
+
+function setPaintBaseSource(src, fallbackSrc = "") {
+  const finalSrc = src || fallbackSrc;
+  if (!finalSrc) {
+    paintBase.removeAttribute("src");
+    imgNaturalW = 0;
+    imgNaturalH = 0;
+    return;
+  }
+
+  paintBase.onload = () => {
+    imgNaturalW = paintBase.naturalWidth;
+    imgNaturalH = paintBase.naturalHeight;
+    if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
+    updateSidebarWorkspaceControls();
+  };
+  paintBase.onerror = () => {
+    if (fallbackSrc && paintBase.src !== fallbackSrc) {
+      paintBase.src = fallbackSrc;
+      return;
+    }
+    paintBase.removeAttribute("src");
+    imgNaturalW = 0;
+    imgNaturalH = 0;
+    updateSidebarWorkspaceControls();
+  };
+  paintBase.src = finalSrc;
 }
 
 function clearCurrentWorkspace() {
@@ -1588,6 +1623,9 @@ async function restoreCurrentProjectState() {
   setImageVisibility(imagenResultadoEl, visibleResultSrc, resultFallback);
   resultadoUrlFinal = visibleResultSrc;
   setDownloadResult(visibleResultSrc);
+  if (resultSrc && !resultFallback) {
+    ensureStoredResultThumb(latest.id, resultSrc);
+  }
   resetVideoUI();
 
   if (btnUseResult) btnUseResult.disabled = !visibleResultSrc;
@@ -1595,24 +1633,12 @@ async function restoreCurrentProjectState() {
   if (btnZip) btnZip.disabled = !visibleResultSrc;
 
   currentOriginalThumb = latest.originalThumb || "";
-  setImageVisibility(preview, originalSrc || latest.originalThumb || "");
+  setImageVisibility(preview, originalSrc || currentOriginalThumb || "", currentOriginalThumb);
 
-  if (originalSrc) {
-    paintBase.onload = () => {
-      imgNaturalW = paintBase.naturalWidth;
-      imgNaturalH = paintBase.naturalHeight;
-      if (usePaint.checked) setTimeout(resizeCanvasesToImage, 0);
-      updateSidebarWorkspaceControls();
-    };
-    paintBase.src = originalSrc;
-  } else {
-    paintBase.removeAttribute("src");
-    imgNaturalW = 0;
-    imgNaturalH = 0;
-  }
+  setPaintBaseSource(originalSrc, currentOriginalThumb);
 
-  if (originalSrc && visibleResultSrc) {
-    showCompare(originalSrc, visibleResultSrc);
+  if ((originalSrc || currentOriginalThumb) && visibleResultSrc) {
+    showCompare(originalSrc || currentOriginalThumb, visibleResultSrc);
   } else {
     hideCompare();
   }
@@ -1621,13 +1647,13 @@ async function restoreCurrentProjectState() {
   originalBaseFile = null;
   if (btnBackToOriginal) btnBackToOriginal.disabled = true;
 
-  if (!latest.originalUrl) return;
-
-  try {
-    await hydrateInputFromStoredUrl(latest.originalUrl, latest.originalName || "proyecto-base.png");
-    if (visibleResultSrc) showCompare(originalObjectUrl || originalSrc, visibleResultSrc);
-  } catch (err) {
-    console.error(err);
+  if (latest.originalUrl) {
+    try {
+      await hydrateInputFromStoredUrl(latest.originalUrl, latest.originalName || "proyecto-base.png");
+      if (visibleResultSrc) showCompare(originalObjectUrl || originalSrc || currentOriginalThumb, visibleResultSrc);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   updatePrecisionSummary(latest.mode || "");
@@ -1652,16 +1678,21 @@ async function restoreProjectVersion(versionId) {
   resultadoUrlFinal = visibleResultSrc;
   setImageVisibility(imagenResultadoEl, visibleResultSrc, resultFallback);
   setDownloadResult(visibleResultSrc);
-  setImageVisibility(preview, originalSrc || version.originalThumb || "");
+  if (resultSrc && !resultFallback) {
+    ensureStoredResultThumb(version.id, resultSrc);
+  }
   currentOriginalThumb = version.originalThumb || "";
+  setImageVisibility(preview, originalSrc || currentOriginalThumb || "", currentOriginalThumb);
 
   resetVideoUI();
   if (btnUseResult) btnUseResult.disabled = !visibleResultSrc;
   if (btnVideo) btnVideo.disabled = !visibleResultSrc;
   if (btnZip) btnZip.disabled = !visibleResultSrc;
 
-  if (originalSrc && visibleResultSrc) {
-    showCompare(originalSrc, visibleResultSrc);
+  setPaintBaseSource(originalSrc, currentOriginalThumb);
+
+  if ((originalSrc || currentOriginalThumb) && visibleResultSrc) {
+    showCompare(originalSrc || currentOriginalThumb, visibleResultSrc);
   } else {
     hideCompare();
     clearSizeCheck();
@@ -1670,7 +1701,7 @@ async function restoreProjectVersion(versionId) {
   if (version.originalUrl) {
     try {
       await hydrateInputFromStoredUrl(version.originalUrl, version.originalName || "proyecto-base.png");
-      if (visibleResultSrc) showCompare(originalObjectUrl || originalSrc, visibleResultSrc);
+      if (visibleResultSrc) showCompare(originalObjectUrl || originalSrc || currentOriginalThumb, visibleResultSrc);
     } catch (err) {
       console.error(err);
     }
@@ -1729,6 +1760,33 @@ function saveCurrentVersion(versionData) {
   project.versions = project.versions.slice(0, 12);
 
   saveProjects(list);
+}
+
+async function ensureStoredResultThumb(versionId, src) {
+  if (!versionId || !src || String(src).startsWith("data:")) return;
+  const list = loadProjects();
+  let changed = false;
+
+  for (const project of list) {
+    const version = project.versions?.find((item) => item.id === versionId);
+    if (!version || version.resultThumb) continue;
+
+    try {
+      const thumb = await imageUrlToThumbDataUrl(src);
+      if (!thumb) return;
+      version.resultThumb = thumb;
+      changed = true;
+      break;
+    } catch {
+      return;
+    }
+  }
+
+  if (changed) {
+    saveProjects(list);
+    renderSidebar();
+    renderProjectHistory();
+  }
 }
 
 let renameTimer = 0;
