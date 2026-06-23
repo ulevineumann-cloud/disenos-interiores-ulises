@@ -350,6 +350,9 @@ const btnBrushSmall = document.getElementById("btnBrushSmall");
 const btnBrushLarge = document.getElementById("btnBrushLarge");
 const paintToolButtons = Array.from(document.querySelectorAll(".paintToolBtn"));
 const paintColorButtons = Array.from(document.querySelectorAll(".paintColorBtn"));
+const brushMeasureLabel = document.getElementById("brushMeasureLabel");
+const paintToolStatus = document.getElementById("paintToolStatus");
+const paintSelectionSummary = document.getElementById("paintSelectionSummary");
 
 let imgNaturalW = 0;
 let imgNaturalH = 0;
@@ -359,6 +362,7 @@ let eraseMode = false;
 let lastStrokePoint = null;
 let shapeStartPoint = null;
 let shapePreviewPoint = null;
+let hoverPaintPoint = null;
 let currentPaintTool = "pencil";
 let currentPaintColor = "red";
 const maskHistory = [];
@@ -380,7 +384,16 @@ const paintColorMeta = {
 const usedPaintColors = new Set();
 
 function setBrushUI() {
-  brushVal.textContent = String(brush.value);
+  if (brushMeasureLabel) {
+    brushMeasureLabel.textContent = currentPaintTool === "select" ? "Sensibilidad" : "Tamaño";
+  }
+  if (brushVal) {
+    brushVal.textContent = currentPaintTool === "select"
+      ? `${selectionTolerance()}`
+      : String(brush.value);
+  }
+  updatePaintToolStatus();
+  renderOverlay();
 }
 setBrushUI();
 brush.addEventListener("input", setBrushUI);
@@ -401,6 +414,7 @@ function setPaintTool(tool) {
   paintToolButtons.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.paintTool === currentPaintTool);
   });
+  setBrushUI();
 }
 
 function setPaintColor(color) {
@@ -408,6 +422,47 @@ function setPaintColor(color) {
   paintColorButtons.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.paintColor === currentPaintColor);
   });
+  updatePaintToolStatus();
+  renderOverlay();
+}
+
+function selectionTolerance() {
+  return Math.max(12, Math.min(82, Math.round((Number(brush?.value) || 22) * 0.9)));
+}
+
+function paintToolName() {
+  const names = {
+    select: "Seleccionar objeto",
+    pencil: "Lápiz preciso",
+    marker: "Marcador amplio",
+    line: "Línea recta",
+    rect: "Cuadro",
+    circle: "Círculo",
+  };
+  return names[currentPaintTool] || "Paint";
+}
+
+function updatePaintToolStatus(message = "") {
+  if (!paintToolStatus) return;
+  const meta = paintColorMeta[currentPaintColor] || paintColorMeta.red;
+  const action = eraseMode ? "Borrando selección" : `${paintToolName()} con ${meta.label}: ${meta.meaning}`;
+  const tip = currentPaintTool === "select"
+    ? `Tocá una ventana, puerta, mueble o paño. Sensibilidad ${selectionTolerance()}.`
+    : "Arrastrá sobre la zona exacta. Podés combinar colores para explicar intención.";
+  paintToolStatus.textContent = message || `${action}. ${tip}`;
+  paintToolStatus.style.display = usePaint?.checked ? "block" : "none";
+}
+
+function updatePaintSelectionSummary() {
+  if (!paintSelectionSummary) return;
+  const stats = getMaskStats();
+  if (!stats) {
+    paintSelectionSummary.textContent = "Sin zona marcada";
+    paintSelectionSummary.classList.remove("hasPaint");
+    return;
+  }
+  paintSelectionSummary.classList.add("hasPaint");
+  paintSelectionSummary.textContent = `Zona marcada: ${stats.percent.toFixed(1)}% de la imagen`;
 }
 
 paintToolButtons.forEach((btn) => {
@@ -460,6 +515,7 @@ function clearMask() {
   mctx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
   actx.clearRect(0, 0, annotationCanvas.width, annotationCanvas.height);
   usedPaintColors.clear();
+  updatePaintSelectionSummary();
 }
 
 function resizeCanvasesToImage() {
@@ -484,7 +540,7 @@ function renderOverlay() {
   const scaleY = paintCanvas.height / imgNaturalH;
   pctx.drawImage(annotationCanvas, 0, 0, paintCanvas.width, paintCanvas.height);
 
-  if (shapeStartPoint && shapePreviewPoint && (currentPaintTool === "line" || currentPaintTool === "circle")) {
+  if (shapeStartPoint && shapePreviewPoint && isShapeTool(currentPaintTool)) {
     pctx.save();
     pctx.scale(scaleX, scaleY);
     drawVisualShape(pctx, shapeStartPoint, shapePreviewPoint, Number(brush.value), {
@@ -494,6 +550,15 @@ function renderOverlay() {
     });
     pctx.restore();
   }
+
+  if (hoverPaintPoint && !drawing && (currentPaintTool === "pencil" || currentPaintTool === "marker" || currentPaintTool === "select")) {
+    pctx.save();
+    pctx.scale(scaleX, scaleY);
+    drawCursorPreview(pctx, hoverPaintPoint);
+    pctx.restore();
+  }
+
+  updatePaintSelectionSummary();
 }
 
 function getPosOnCanvas(evt) {
@@ -548,7 +613,28 @@ function toolRadius() {
   if (currentPaintTool === "pencil") return Math.max(3, base * 0.45);
   if (currentPaintTool === "marker") return base;
   if (currentPaintTool === "line") return Math.max(4, base * 0.55);
+  if (currentPaintTool === "rect") return Math.max(3, base * 0.5);
+  if (currentPaintTool === "select") return Math.max(8, base * 0.8);
   return Math.max(3, base * 0.5);
+}
+
+function isShapeTool(tool) {
+  return tool === "line" || tool === "circle" || tool === "rect";
+}
+
+function drawCursorPreview(ctx, point) {
+  const meta = eraseMode ? { solid: "#ffffff", rgba: "rgba(255,255,255,.08)" } : (paintColorMeta[currentPaintColor] || paintColorMeta.red);
+  const radius = currentPaintTool === "select" ? Math.max(18, selectionTolerance()) : toolRadius();
+  ctx.save();
+  ctx.lineWidth = Math.max(2, radius * 0.08);
+  ctx.strokeStyle = eraseMode ? "rgba(255,255,255,.86)" : meta.solid;
+  ctx.fillStyle = currentPaintTool === "select" ? "rgba(255,255,255,.05)" : meta.rgba;
+  ctx.setLineDash(currentPaintTool === "select" ? [8, 7] : [5, 6]);
+  ctx.beginPath();
+  ctx.arc(point.mx, point.my, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawAnnotationCircle(mx, my, radius) {
@@ -618,6 +704,15 @@ function drawVisualShape(ctx, from, to, radius, options = {}) {
     ctx.stroke();
   }
 
+  if (tool === "rect") {
+    const x = Math.min(from.mx, to.mx);
+    const y = Math.min(from.my, to.my);
+    const w = Math.abs(to.mx - from.mx);
+    const h = Math.abs(to.my - from.my);
+    ctx.fillRect(x, y, w, h);
+    ctx.strokeRect(x, y, w, h);
+  }
+
   ctx.restore();
 }
 
@@ -664,6 +759,153 @@ function commitShape(from, to) {
       actx.restore();
     }
   }
+
+  if (currentPaintTool === "rect") {
+    const x = Math.min(from.mx, to.mx);
+    const y = Math.min(from.my, to.my);
+    const w = Math.abs(to.mx - from.mx);
+    const h = Math.abs(to.my - from.my);
+    if (w < 2 || h < 2) return;
+
+    if (!eraseMode) {
+      mctx.save();
+      mctx.globalCompositeOperation = "destination-out";
+      mctx.fillRect(x, y, w, h);
+      mctx.restore();
+      drawVisualShape(actx, from, to, radius, { tool: "rect", color: currentPaintColor });
+      usedPaintColors.add(currentPaintColor);
+    } else {
+      mctx.save();
+      mctx.globalCompositeOperation = "source-over";
+      mctx.fillStyle = "rgba(0,0,0,1)";
+      mctx.fillRect(x, y, w, h);
+      mctx.restore();
+      actx.save();
+      actx.globalCompositeOperation = "destination-out";
+      actx.fillRect(x - radius, y - radius, w + radius * 2, h + radius * 2);
+      actx.restore();
+    }
+  }
+}
+
+function getBaseImageData() {
+  if (!imgNaturalW || !imgNaturalH || !paintBase?.complete) return null;
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = imgNaturalW;
+  sourceCanvas.height = imgNaturalH;
+  const sctx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+  try {
+    sctx.drawImage(paintBase, 0, 0, imgNaturalW, imgNaturalH);
+    return sctx.getImageData(0, 0, imgNaturalW, imgNaturalH);
+  } catch (err) {
+    console.warn("No se pudo leer la imagen para selección automática", err);
+    return null;
+  }
+}
+
+function colorDistance(data, idx, target) {
+  const dr = data[idx] - target.r;
+  const dg = data[idx + 1] - target.g;
+  const db = data[idx + 2] - target.b;
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+function magicSelectAt(point) {
+  const imageData = getBaseImageData();
+  if (!imageData) {
+    updatePaintToolStatus("No pude leer la imagen para seleccionar por toque. Usá lápiz o cuadro para marcar manualmente.");
+    return;
+  }
+
+  const { width, height, data } = imageData;
+  const sx = Math.max(0, Math.min(width - 1, Math.round(point.mx)));
+  const sy = Math.max(0, Math.min(height - 1, Math.round(point.my)));
+  const startIdx = (sy * width + sx) * 4;
+  const target = { r: data[startIdx], g: data[startIdx + 1], b: data[startIdx + 2] };
+  const tolerance = selectionTolerance();
+  const maxPixels = Math.round(width * height * 0.34);
+  const visited = new Uint8Array(width * height);
+  const selected = [];
+  const queue = [sy * width + sx];
+  visited[sy * width + sx] = 1;
+
+  for (let qi = 0; qi < queue.length; qi++) {
+    const current = queue[qi];
+    const x = current % width;
+    const y = Math.floor(current / width);
+    const idx = current * 4;
+    if (colorDistance(data, idx, target) > tolerance) continue;
+
+    selected.push(current);
+    if (selected.length > maxPixels) break;
+
+    if (x > 0 && !visited[current - 1]) {
+      visited[current - 1] = 1;
+      queue.push(current - 1);
+    }
+    if (x < width - 1 && !visited[current + 1]) {
+      visited[current + 1] = 1;
+      queue.push(current + 1);
+    }
+    if (y > 0 && !visited[current - width]) {
+      visited[current - width] = 1;
+      queue.push(current - width);
+    }
+    if (y < height - 1 && !visited[current + width]) {
+      visited[current + width] = 1;
+      queue.push(current + width);
+    }
+  }
+
+  if (!selected.length) {
+    drawMaskCircle(point.mx, point.my, toolRadius());
+    drawAnnotationCircle(point.mx, point.my, toolRadius());
+    updatePaintToolStatus("La selección automática fue muy chica; marqué un punto preciso en esa zona.");
+    return;
+  }
+
+  const maskData = mctx.getImageData(0, 0, width, height);
+  const annData = actx.getImageData(0, 0, width, height);
+  const meta = paintColorMeta[currentPaintColor] || paintColorMeta.red;
+  const rgb = meta.solid.match(/\w\w/g).map((hex) => parseInt(hex, 16));
+  let minX = width;
+  let minY = height;
+  let maxX = 0;
+  let maxY = 0;
+
+  selected.forEach((pixel) => {
+    const x = pixel % width;
+    const y = Math.floor(pixel / width);
+    minX = Math.min(minX, x);
+    minY = Math.min(minY, y);
+    maxX = Math.max(maxX, x);
+    maxY = Math.max(maxY, y);
+    const i = pixel * 4;
+    if (!eraseMode) {
+      maskData.data[i] = 0;
+      maskData.data[i + 1] = 0;
+      maskData.data[i + 2] = 0;
+      maskData.data[i + 3] = 0;
+      annData.data[i] = rgb[0];
+      annData.data[i + 1] = rgb[1];
+      annData.data[i + 2] = rgb[2];
+      annData.data[i + 3] = 138;
+    } else {
+      maskData.data[i] = 0;
+      maskData.data[i + 1] = 0;
+      maskData.data[i + 2] = 0;
+      maskData.data[i + 3] = 255;
+      annData.data[i + 3] = 0;
+    }
+  });
+
+  mctx.putImageData(maskData, 0, 0);
+  actx.putImageData(annData, 0, 0);
+  if (!eraseMode) usedPaintColors.add(currentPaintColor);
+
+  const areaPct = ((selected.length / (width * height)) * 100).toFixed(1);
+  const boxPct = `${Math.round(((maxX - minX) / width) * 100)}% x ${Math.round(((maxY - minY) / height) * 100)}%`;
+  updatePaintToolStatus(`Selección por toque aplicada: ${areaPct}% de la imagen, caja ${boxPct}. Ajustá sensibilidad si agarró de más o de menos.`);
 }
 
 paintCanvas.addEventListener("pointerdown", (e) => {
@@ -676,7 +918,16 @@ paintCanvas.addEventListener("pointerdown", (e) => {
   paintCanvas.setPointerCapture(e.pointerId);
   lastStrokePoint = getPosOnCanvas(e);
 
-  if (currentPaintTool === "line" || currentPaintTool === "circle") {
+  if (currentPaintTool === "select") {
+    magicSelectAt(lastStrokePoint);
+    drawing = false;
+    lastStrokePoint = null;
+    renderOverlay();
+    updateSidebarWorkspaceControls();
+    return;
+  }
+
+  if (isShapeTool(currentPaintTool)) {
     shapeStartPoint = lastStrokePoint;
     shapePreviewPoint = lastStrokePoint;
   } else {
@@ -689,11 +940,15 @@ paintCanvas.addEventListener("pointerdown", (e) => {
 });
 
 paintCanvas.addEventListener("pointermove", (e) => {
-  if (!drawing) return;
+  hoverPaintPoint = getPosOnCanvas(e);
+  if (!drawing) {
+    renderOverlay();
+    return;
+  }
   e.preventDefault();
   const point = getPosOnCanvas(e);
 
-  if (currentPaintTool === "line" || currentPaintTool === "circle") {
+  if (isShapeTool(currentPaintTool)) {
     shapePreviewPoint = point;
   } else {
     const radius = toolRadius();
@@ -706,7 +961,7 @@ paintCanvas.addEventListener("pointermove", (e) => {
 });
 
 paintCanvas.addEventListener("pointerup", (e) => {
-  if (drawing && shapeStartPoint && (currentPaintTool === "line" || currentPaintTool === "circle")) {
+  if (drawing && shapeStartPoint && isShapeTool(currentPaintTool)) {
     commitShape(shapeStartPoint, getPosOnCanvas(e));
   }
   drawing = false;
@@ -723,6 +978,11 @@ paintCanvas.addEventListener("pointercancel", () => {
   shapePreviewPoint = null;
   renderOverlay();
   updateSidebarWorkspaceControls();
+});
+
+paintCanvas.addEventListener("pointerleave", () => {
+  hoverPaintPoint = null;
+  renderOverlay();
 });
 
 function getMaskStats() {
@@ -849,6 +1109,8 @@ function setMode(paintOn) {
 
   paintSection.style.display = paintOn ? "block" : "none";
   paintTools.style.display = paintOn ? "flex" : "none";
+  updatePaintToolStatus();
+  updatePaintSelectionSummary();
   updatePrecisionSummary();
   updateSidebarWorkspaceControls();
 

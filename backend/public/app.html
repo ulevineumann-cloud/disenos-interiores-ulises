@@ -266,14 +266,16 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <div class="toolMini paintToolbar" id="paintTools" style="display:none;">
 <div class="paintToolGroup paintShapeGroup" role="group" aria-label="Herramientas de marcado">
 <span class="paintToolLabel">Herramienta</span>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="select" title="Tocar un objeto de la imagen para seleccionarlo por color y bordes">Seleccionar</button>
 <button class="ghost paintToolBtn active" type="button" data-paint-tool="pencil">Lápiz</button>
 <button class="ghost paintToolBtn" type="button" data-paint-tool="marker">Marcador</button>
 <button class="ghost paintToolBtn" type="button" data-paint-tool="line">Línea</button>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="rect">Cuadro</button>
 <button class="ghost paintToolBtn" type="button" data-paint-tool="circle">Círculo</button>
 </div>
 
 <div class="paintToolGroup">
-<span class="paintToolLabel">Tamaño</span>
+<span id="brushMeasureLabel" class="paintToolLabel">Tamaño</span>
 <input id="brush" type="range" min="6" max="90" value="22">
 <span id="brushVal" class="muted">22</span>
 <button id="btnBrushSmall" class="ghost iconGhost" type="button" title="Pincel fino">Fino</button>
@@ -294,6 +296,7 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <button id="btnClear" class="ghost" type="button">Limpiar</button>
 </div>
 </div>
+<div id="paintToolStatus" class="paintToolStatus" style="display:none;"></div>
 
 <p id="estado" class="estado"></p>
 <div id="errorBox" class="statusBox errorBox" style="display:none;"></div>
@@ -364,20 +367,26 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 </section>
 
 <section class="card" id="paintSection" style="display:none;">
+<div class="paintHead">
+<div>
+<p class="toolEyebrow">Selección precisa</p>
 <h2>Paint</h2>
+</div>
+<div id="paintSelectionSummary" class="paintSelectionSummary">Sin zona marcada</div>
+</div>
 
 <div class="paintAviso">
 <div class="paintAvisoTitle">Importante</div>
 <div class="paintAvisoText">
-Pintá exactamente la zona que querés cambiar. La IA recibirá esa selección como máscara real y una descripción automática de ubicación para interpretar mejor el sector.
+Usá <b>Seleccionar</b> para tocar una ventana, mueble o revestimiento de la foto. Si necesitás control manual, pintá con lápiz, marcador, línea, cuadro o círculo. La zona marcada es la única parte editable.
 </div>
 </div>
 
 <div class="paintLegend">
-<span><b style="--swatch:#ff4a60"></b>Rojo: cambiar</span>
-<span><b style="--swatch:#f6c744"></b>Amarillo: ajustar detalle</span>
-<span><b style="--swatch:#4aa8ff"></b>Azul: conservar/referencia</span>
-<span><b style="--swatch:#56d27b"></b>Verde: agregar elemento</span>
+<span><b style="--swatch:#ff4a60"></b><strong>Rojo</strong> Cambiar esa zona</span>
+<span><b style="--swatch:#f6c744"></b><strong>Amarillo</strong> Ajustar material o detalle</span>
+<span><b style="--swatch:#4aa8ff"></b><strong>Azul</strong> Conservar como referencia</span>
+<span><b style="--swatch:#56d27b"></b><strong>Verde</strong> Agregar elemento nuevo</span>
 </div>
 
 <div class="paintBox">

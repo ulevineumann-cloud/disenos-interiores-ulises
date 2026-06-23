@@ -876,6 +876,17 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   border-color: rgba(214,179,126,.52);
   background: rgba(214,179,126,.18);
 }
+.paintToolStatus{
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(214,179,126,.20);
+  background: rgba(214,179,126,.08);
+  color: rgba(246,239,229,.88);
+  font-size: 12px;
+  line-height: 1.45;
+}
 .paintColorBtn{
   width:34px;
   height:34px;
@@ -892,8 +903,8 @@ button:hover{ border-color: rgba(255,255,255,.28); }
     inset 0 0 0 4px rgba(10,16,28,.16);
 }
 .paintLegend{
-  display:flex;
-  flex-wrap:wrap;
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap:8px;
   margin:10px 0;
 }
@@ -908,6 +919,8 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   color: var(--muted);
   font-size:12px;
   font-weight:700;
+  min-width:0;
+  line-height:1.25;
 }
 .paintLegend b{
   width:10px;
@@ -915,6 +928,11 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   border-radius:999px;
   background: var(--swatch);
   box-shadow:0 0 0 3px rgba(255,255,255,.08);
+  flex:0 0 auto;
+}
+.paintLegend strong{
+  color: var(--text);
+  font-weight:900;
 }
 .iconGhost{
   padding-inline: 12px;
@@ -942,6 +960,36 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 }
 .paintAvisoTitle{ font-weight: 800; margin-bottom: 6px; }
 .paintAvisoText{ color: rgba(234,240,255,.85); line-height: 1.45; font-size: 14px; }
+.paintHead{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  align-items:flex-start;
+  margin-bottom:10px;
+}
+.paintHead .toolEyebrow{
+  margin:0 0 4px;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+  font-size:11px;
+}
+.paintSelectionSummary{
+  flex:0 0 auto;
+  max-width:220px;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.04);
+  color:var(--muted);
+  font-size:12px;
+  font-weight:800;
+  text-align:center;
+}
+.paintSelectionSummary.hasPaint{
+  border-color:rgba(143,165,112,.36);
+  background:rgba(143,165,112,.14);
+  color:rgba(246,239,229,.92);
+}
 
 .paintBox{
   position: relative;
@@ -968,6 +1016,9 @@ button:hover{ border-color: rgba(255,255,255,.28); }
   z-index: 10;
   touch-action:none;
   cursor: crosshair;
+}
+#paintCanvas:active{
+  cursor: none;
 }
 
 /* video */
@@ -2562,6 +2613,20 @@ background: rgba(10,16,28,.30);
   .toolMini input[type="range"]{
     width:100%;
     min-width:0;
+  }
+
+  .paintLegend{
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .paintHead{
+    display:block;
+  }
+
+  .paintSelectionSummary{
+    max-width:none;
+    margin-top:8px;
+    border-radius:12px;
   }
 
   .onboardingSteps{
