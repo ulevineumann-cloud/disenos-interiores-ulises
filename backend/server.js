@@ -169,6 +169,20 @@ async function compositeMaskedEditOnOriginal(originalPath, editedBuffer, maskPat
     .toBuffer();
 }
 
+async function finalizeOutputBuffer(buffer, outputWidth, outputHeight) {
+  let pipeline = sharp(buffer).rotate();
+  if (outputWidth && outputHeight) {
+    pipeline = pipeline.resize(outputWidth, outputHeight, {
+      fit: "fill",
+      kernel: sharp.kernel.lanczos3,
+    });
+  }
+  return pipeline
+    .sharpen({ sigma: 0.35, m1: 0.45, m2: 0.9 })
+    .png({ compressionLevel: 9, adaptiveFiltering: true })
+    .toBuffer();
+}
+
 function publicGenerationError(err) {
   const status = err?.status || err?.code || 500;
   const message = String(err?.message || "").toLowerCase();
@@ -280,6 +294,8 @@ ALCANCE SEGUN EL PEDIDO:
 - Si el usuario pide estilo general, rediseno visual o renovacion completa, transformar la apariencia de la escena de manera coherente, manteniendo la misma geometria, encuadre, escala y lectura espacial.
 - Si el usuario pide limpiar, vaciar o despejar, eliminar solamente basura, objetos sueltos, desorden y elementos temporales; reconstruir naturalmente lo que queda detras sin redisenar el ambiente.
 - Si el pedido es ambiguo, elegir la interpretacion mas conservadora que cumpla el texto.
+- Si no hay mascara pero el pedido menciona un objeto puntual como mueble, puerta, ventana, carpinteria, balcon, revestimiento, pared, piso, techo, mesada, baranda o luminaria, tratarlo como cambio puntual: modificar solo ese objeto o superficie y dejar el resto de la foto igual.
+- Nunca convertir un cambio puntual con referencia en una renovacion completa de la escena.
 
 ${keepGeometry ? `
 BLOQUEO DE GEOMETRIA:
@@ -330,7 +346,16 @@ USO DE REFERENCIA:
 - No copiar composicion, camara, perspectiva, objetos, geometria, distribucion, mobiliario ni iluminacion de la referencia.
 - Adaptar la referencia a la geometria real de la foto base.
 - Si hay mascara, aplicar la referencia solo dentro de la zona editable.
-- Si no hay mascara y el usuario pide un cambio completo con referencia, aplicar la referencia a las areas visibles que correspondan al pedido.
+- Si no hay mascara, usar la referencia solamente sobre el objeto o superficie nombrada por el usuario.
+- Si no hay mascara y el usuario pide un cambio completo con referencia, aplicar la referencia a las areas visibles que correspondan al pedido, sin cambiar camara, arquitectura ni nitidez general.
+` : ""}
+
+${!hasMask ? `
+CONTROL SIN MASCARA:
+- Al no existir mascara, actuar con extrema prudencia.
+- No modificar zonas que el texto no nombre directamente.
+- Si el cambio pedido puede resolverse sobre una superficie u objeto puntual, no tocar el resto.
+- Si la imagen de referencia se parece a otra escena, ignorar su composicion y conservar la foto base.
 ` : ""}
 
 JERARQUIA DE DECISION:
@@ -589,6 +614,7 @@ Generar una lista profesional, corta y accionable de materiales recomendados.
           outputHeight
         );
       }
+      outputBuffer = await finalizeOutputBuffer(outputBuffer, outputWidth, outputHeight);
 
       const outputName = `resultado_${Date.now()}.png`;
       fs.writeFileSync(path.join(uploadsPath, outputName), outputBuffer);

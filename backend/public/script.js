@@ -427,7 +427,7 @@ function setPaintColor(color) {
 }
 
 function selectionTolerance() {
-  return Math.max(12, Math.min(82, Math.round((Number(brush?.value) || 22) * 0.9)));
+  return Math.max(6, Math.min(48, Math.round((Number(brush?.value) || 22) * 0.55)));
 }
 
 function paintToolName() {
@@ -435,9 +435,6 @@ function paintToolName() {
     select: "Seleccionar objeto",
     pencil: "Lápiz preciso",
     marker: "Marcador amplio",
-    line: "Línea recta",
-    rect: "Cuadro",
-    circle: "Círculo",
   };
   return names[currentPaintTool] || "Paint";
 }
@@ -447,8 +444,8 @@ function updatePaintToolStatus(message = "") {
   const meta = paintColorMeta[currentPaintColor] || paintColorMeta.red;
   const action = eraseMode ? "Borrando selección" : `${paintToolName()} con ${meta.label}: ${meta.meaning}`;
   const tip = currentPaintTool === "select"
-    ? `Tocá una ventana, puerta, mueble o paño. Sensibilidad ${selectionTolerance()}.`
-    : "Arrastrá sobre la zona exacta. Podés combinar colores para explicar intención.";
+    ? `Tocá el centro del objeto. Si toma pared o piso, bajá sensibilidad o usá Marcador. Sensibilidad ${selectionTolerance()}.`
+    : "Arrastrá sobre la zona exacta. Marcador cubre rápido; Lápiz sirve para bordes finos.";
   paintToolStatus.textContent = message || `${action}. ${tip}`;
   paintToolStatus.style.display = usePaint?.checked ? "block" : "none";
 }
@@ -813,7 +810,7 @@ function colorDistance(data, idx, target) {
 function magicSelectAt(point) {
   const imageData = getBaseImageData();
   if (!imageData) {
-    updatePaintToolStatus("No pude leer la imagen para seleccionar por toque. Usá lápiz o cuadro para marcar manualmente.");
+    updatePaintToolStatus("No pude leer la imagen para seleccionar por toque. Usá Lápiz o Marcador para marcar manualmente.");
     return;
   }
 
@@ -823,11 +820,15 @@ function magicSelectAt(point) {
   const startIdx = (sy * width + sx) * 4;
   const target = { r: data[startIdx], g: data[startIdx + 1], b: data[startIdx + 2] };
   const tolerance = selectionTolerance();
-  const maxPixels = Math.round(width * height * 0.34);
+  const maxPixels = Math.max(350, Math.round(width * height * 0.075));
+  const maxRadius = Math.round(Math.min(width, height) * 0.42);
+  const maxRadiusSq = maxRadius * maxRadius;
+  const neighborTolerance = tolerance + 14;
   const visited = new Uint8Array(width * height);
   const selected = [];
   const queue = [sy * width + sx];
   visited[sy * width + sx] = 1;
+  let overflowed = false;
 
   for (let qi = 0; qi < queue.length; qi++) {
     const current = queue[qi];
@@ -835,25 +836,54 @@ function magicSelectAt(point) {
     const y = Math.floor(current / width);
     const idx = current * 4;
     if (colorDistance(data, idx, target) > tolerance) continue;
+    const dxSeed = x - sx;
+    const dySeed = y - sy;
+    if ((dxSeed * dxSeed + dySeed * dySeed) > maxRadiusSq) continue;
 
     selected.push(current);
-    if (selected.length > maxPixels) break;
+    if (selected.length > maxPixels) {
+      overflowed = true;
+      break;
+    }
 
-    if (x > 0 && !visited[current - 1]) {
-      visited[current - 1] = 1;
-      queue.push(current - 1);
-    }
-    if (x < width - 1 && !visited[current + 1]) {
-      visited[current + 1] = 1;
-      queue.push(current + 1);
-    }
-    if (y > 0 && !visited[current - width]) {
-      visited[current - width] = 1;
-      queue.push(current - width);
-    }
-    if (y < height - 1 && !visited[current + width]) {
-      visited[current + width] = 1;
-      queue.push(current + width);
+    const neighbors = [];
+    if (x > 0) neighbors.push(current - 1);
+    if (x < width - 1) neighbors.push(current + 1);
+    if (y > 0) neighbors.push(current - width);
+    if (y < height - 1) neighbors.push(current + width);
+
+    neighbors.forEach((next) => {
+      if (visited[next]) return;
+      const ni = next * 4;
+      if (colorDistance(data, ni, target) > tolerance) return;
+      if (colorDistance(data, ni, { r: data[idx], g: data[idx + 1], b: data[idx + 2] }) > neighborTolerance) return;
+      visited[next] = 1;
+      queue.push(next);
+    });
+  }
+
+  if (overflowed) {
+    updatePaintToolStatus("La selección se estaba yendo demasiado grande. Bajá Sensibilidad, tocá más al centro del mueble o usá Marcador para cubrirlo manualmente.");
+    return;
+  }
+
+  if (selected.length > 24) {
+    let minXTest = width;
+    let minYTest = height;
+    let maxXTest = 0;
+    let maxYTest = 0;
+    selected.forEach((pixel) => {
+      const x = pixel % width;
+      const y = Math.floor(pixel / width);
+      minXTest = Math.min(minXTest, x);
+      minYTest = Math.min(minYTest, y);
+      maxXTest = Math.max(maxXTest, x);
+      maxYTest = Math.max(maxYTest, y);
+    });
+    const boxAreaRatio = ((maxXTest - minXTest + 1) * (maxYTest - minYTest + 1)) / (width * height);
+    if (boxAreaRatio > 0.18) {
+      updatePaintToolStatus("La selección parece abarcar más que un objeto. Bajá Sensibilidad o marcá el mueble con Marcador para no tocar paredes/piso.");
+      return;
     }
   }
 
