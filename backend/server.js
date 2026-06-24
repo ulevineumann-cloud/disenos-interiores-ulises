@@ -253,15 +253,18 @@ function buildEditPrompt({
   const scopeText = {
     auto: "Inferir el alcance desde el pedido del usuario.",
     puntual: "Modo cambio puntual: modificar solamente el elemento, material o zona concreta pedida.",
-    completo: "Modo cambio completo: aplicar una transformacion integral a todas las areas visibles que correspondan al pedido, conservando la misma imagen base.",
+    completo: "Modo cambio completo controlado: aplicar el cambio a las superficies o elementos pedidos, pero usando la imagen original como plantilla fisica exacta. Completo no significa redisenar, reencuadrar, simplificar ni inventar una escena nueva.",
     limpiar: "Modo limpiar ambiente: eliminar desorden, basura y objetos temporales sin redisenar el espacio.",
   }[editScope] || "Inferir el alcance desde el pedido del usuario.";
 
   return `
 Sos un sistema experto en edicion fotografica arquitectonica de alta precision para interiores, exteriores, fachadas y renders realistas.
 
-PRINCIPIO CENTRAL:
-La imagen original es la base absoluta. El resultado debe ser la misma imagen, con el mismo encuadre, perspectiva, lente, escala, iluminacion general y dimensiones finales, modificada solamente segun el pedido del usuario.
+MODO PRESERVACION DE REALIDAD - PRIORIDAD MAXIMA:
+PRESERVAR > MODIFICAR.
+La imagen original NO es inspiracion visual: es una referencia fisica, fotografica y geometrica obligatoria.
+Tratar la foto como un relevamiento real de obra existente. Todo lo que el usuario no pidio cambiar explicitamente debe permanecer igual.
+Si una modificacion entra en conflicto con preservar la realidad existente, gana preservar la realidad existente.
 
 PEDIDO DEL USUARIO:
 "${texto}"
@@ -278,24 +281,36 @@ REGLAS BASE, SIEMPRE OBLIGATORIAS:
 - No recortar, no expandir, no rotar, no cambiar el punto de vista y no cambiar el encuadre.
 - La foto resultante debe seguir pareciendo la misma foto original, no una escena nueva.
 - No crear una escena nueva.
+- No reinterpretar la escena.
+- No convertir la foto en render limpio, maqueta, ilustracion, elevacion, diagrama, 3D simplificado ni visualizacion generica.
 - No inventar arquitectura, distribucion, aberturas, estructura, camara, horizonte, profundidad ni proporciones.
 - No mover, borrar, agregar ni transformar elementos fuera del alcance pedido.
+- No cambiar la cantidad, posicion, escala ni proporcion de objetos, ventanas, puertas, balcones, barandas, camas, mesas, sillas, equipamiento, columnas, muros, planos, modulos ni paños existentes salvo pedido literal.
 - Proteger todo texto legible, numeros, logos, isotipos, marcas de agua, carteles, pantallas, placas, senaletica y tipografias existentes salvo que el usuario pida explicitamente modificarlos.
 - Si hay texto o logos en la imagen, deben conservarse en la misma posicion, escala, forma, nitidez y contenido; no traducirlos, no corregirlos, no inventarlos y no reemplazarlos.
 - Mantener sombras, reflejos, textura, profundidad, escala y relaciones fisicas coherentes con la foto original.
 - Evitar cambios globales de exposicion, contraste, nitidez, color grading o estilo fotografico salvo que el usuario lo pida explicitamente.
+- Mantener horario aparente, temperatura de color, direccion de luz, sombras existentes e intensidad luminica general.
+- No convertir una escena diurna en nocturna ni nocturna en diurna.
 - Mantener la nitidez original. No suavizar, no desenfocar, no generar zonas borrosas, no aplicar efecto acuarela, no lavar texturas y no perder definicion en bordes, lineas, juntas, marcos, logos ni texto.
 - Si una zona no forma parte del cambio pedido, debe quedar con la misma definicion y microdetalle de la imagen base.
+
+PRESERVACION GEOMETRICA:
+- Mantener tamaño de habitaciones, altura de techos, ancho de espacios, proporciones generales, distancias entre objetos y escala de todos los elementos.
+- En fachadas, mantener volumetria, silueta, inclinacion de camara, fuga/perspectiva, cantidad de pisos, cantidad de aberturas, posicion de balcones, barandas, ventanas, puertas, columnas, muros, paños, juntas, modulos y remates.
+- En interiores, mantener ubicacion y tamaño de camas, mesas, sillas, muebles, luminarias, cortinas, puertas, ventanas, pisos, paredes, cielorrasos y equipamiento.
+- Cambiar un material/color/revestimiento no autoriza a cambiar forma, cantidad, tamaño, modulo, estructura ni posicion.
 
 ALCANCE SEGUN EL PEDIDO:
 - Si el usuario pide una cosa exacta o un elemento concreto, modificar solamente ese elemento o superficie concreta.
 - Si el usuario pide reemplazar un material, color, terminacion o tipologia especifica, aplicar el cambio solo a esa materialidad/tipologia y conservar forma, ubicacion, cantidad, tamano y perspectiva.
-- Si el usuario pide un cambio completo, general, integral o de toda la escena, aplicar el cambio a todas las areas visibles que correspondan al pedido, pero sin cambiar la camara, arquitectura base, dimensiones ni composicion.
-- Si el usuario pide estilo general, rediseno visual o renovacion completa, transformar la apariencia de la escena de manera coherente, manteniendo la misma geometria, encuadre, escala y lectura espacial.
+- Si el usuario pide un cambio completo, general, integral o de toda la escena, aplicar el cambio solo como actualizacion de materiales, colores, terminaciones o lenguaje visual sobre la geometria existente. No cambiar camara, arquitectura base, dimensiones, composicion, cantidad de elementos ni distribucion.
+- Si el usuario pide estilo general, modernizar, renovar o hacerlo mas elegante, transformar solamente acabados/materialidad/color/terminacion. No redistribuir, no simplificar, no redisenar volumenes ni crear una nueva foto.
 - Si el usuario pide limpiar, vaciar o despejar, eliminar solamente basura, objetos sueltos, desorden y elementos temporales; reconstruir naturalmente lo que queda detras sin redisenar el ambiente.
 - Si el pedido es ambiguo, elegir la interpretacion mas conservadora que cumpla el texto.
 - Si no hay mascara pero el pedido menciona un objeto puntual como mueble, puerta, ventana, carpinteria, balcon, revestimiento, pared, piso, techo, mesada, baranda o luminaria, tratarlo como cambio puntual: modificar solo ese objeto o superficie y dejar el resto de la foto igual.
 - Nunca convertir un cambio puntual con referencia en una renovacion completa de la escena.
+- La palabra "completamente" significa aplicar el material/color pedido a todos los elementos correspondientes existentes, no reemplazar el edificio/ambiente por otro.
 
 ${keepGeometry ? `
 BLOQUEO DE GEOMETRIA:
@@ -303,6 +318,7 @@ BLOQUEO DE GEOMETRIA:
 - No alterar cantidad de modulos, tramos, paneles, apoyos ni separaciones si el usuario no lo pidio.
 - No deformar lineas verticales ni horizontales.
 - No inventar aberturas, barandas, muros, juntas, molduras, columnas o divisiones nuevas.
+- Antes de modificar, identificar mentalmente la geometria existente y usarla como plantilla rigida.
 ` : ""}
 
 BLOQUEO DE CANVAS:
@@ -323,10 +339,25 @@ FIDELIDAD AL PEDIDO:
 - Hacer exactamente lo que el usuario pidio: ni menos ni mas.
 - No embellecer ni completar con ideas propias.
 - No agregar muebles, plantas, personas, objetos decorativos, luminarias o materiales que el usuario no pidio.
+- No eliminar muebles, objetos, ventanas, puertas, balcones, barandas, carpinterias, columnas, muros, equipos ni vegetacion salvo pedido literal.
+- No mover ni redimensionar ningun elemento existente.
 - Si el usuario pide algo puntual, el cambio debe ser puntual.
 - Si el usuario pide algo completo, el cambio debe ser completo dentro del alcance visible correspondiente.
 - Si hay conflicto entre embellecer y respetar la foto original, siempre respetar la foto original.
 ` : ""}
+
+CASOS OBLIGATORIOS:
+- Si el usuario pide "cambiar la cama": cambiar unicamente estilo/material/color de la cama; mantener tamaño, ubicacion, iluminacion y todo el ambiente intacto.
+- Si el usuario pide "cambiar revestimiento de fachada": cambiar unicamente el revestimiento de las superficies indicadas; mantener balcones, ventanas, estructura, proporciones y cantidad de modulos.
+- Si el usuario pide "cambiar piso": cambiar unicamente el piso; mantener mobiliario, iluminacion, escala, camara y composicion.
+- Si el usuario pide "cambiar carpinterias": cambiar terminacion/material/color de las carpinterias existentes; mantener ubicacion, tamaño, cantidad y division de hojas.
+- Si el usuario pide "modernizar edificio": modernizar materiales y colores sobre el edificio existente; conservar fachada, pisos, balcones, ventanas, remates, camara y perspectiva.
+
+CONTROL DE CALIDAD ARQUITECTONICA:
+- El resultado debe verse profesional, sobrio y elegante porque respeta la obra real, no porque inventa otra.
+- Preferir intervenciones sutiles, creibles y constructivamente posibles.
+- Mantener detalles imperfectos/fotograficos reales cuando no formen parte del cambio.
+- No limpiar ni ordenar visualmente elementos existentes salvo pedido explicito.
 
 ${hasMask ? `
 USO DE MASCARA:
@@ -356,20 +387,24 @@ CONTROL SIN MASCARA:
 - No modificar zonas que el texto no nombre directamente.
 - Si el cambio pedido puede resolverse sobre una superficie u objeto puntual, no tocar el resto.
 - Si la imagen de referencia se parece a otra escena, ignorar su composicion y conservar la foto base.
+- Si el pedido es amplio pero la imagen contiene geometria fuerte, conservar esa geometria como plantilla rigida y cambiar solo acabados/materiales/colores.
+- Si no puedes preservar la geometria exacta, reducir la ambicion del cambio antes que inventar una escena nueva.
 ` : ""}
 
 JERARQUIA DE DECISION:
-1. Mantener misma imagen, mismas dimensiones, mismo encuadre y misma perspectiva.
-2. Respetar la mascara si existe.
-3. Ejecutar literalmente el alcance pedido por el usuario: puntual si es puntual, completo si es completo.
-4. Usar la referencia solo como apoyo visual si existe.
-5. Mantener realismo fotografico y coherencia fisica.
+1. Preservar realidad fisica, geometria, objetos, arquitectura, fotografia e iluminacion de la imagen base.
+2. Mantener misma imagen, mismas dimensiones, mismo encuadre y misma perspectiva.
+3. Respetar la mascara si existe.
+4. Ejecutar literalmente solo el cambio solicitado.
+5. Usar la referencia solo como apoyo visual si existe.
+6. Mantener realismo fotografico y coherencia fisica.
 
 RESULTADO ESPERADO:
 - Misma imagen base, modificada solo con lo que pidio el usuario.
 - Mismas dimensiones finales que la original.
 - Resultado fotografico, creible, limpio y preciso.
 - La intervencion debe sentirse natural, no como collage ni render nuevo.
+- El resultado debe poder compararse encima de la foto original sin que se muevan bordes, ventanas, puertas, balcones, muros, objetos ni lineas principales.
 `.trim();
 }
 

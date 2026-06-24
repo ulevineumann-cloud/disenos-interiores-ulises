@@ -191,7 +191,7 @@ function updatePrecisionSummary(extraMode = "") {
 
   const flags = [];
   if (editScopeEl?.value && editScopeEl.value !== "auto") flags.push(`alcance ${editScopeEl.value}`);
-  if (keepGeometryEl?.checked) flags.push("misma geometría");
+  if (keepGeometryEl?.checked) flags.push("realidad preservada");
   if (keepDimensionsEl?.checked) flags.push("mismo tamaño final");
   if (strictEditScopeEl?.checked) flags.push("cambio puntual");
   if (stylePresetEl?.value) flags.push(`estilo ${stylePresetEl.value}`);
@@ -3020,16 +3020,18 @@ if (boton) {
     if (hayReferencia && hayMascara) {
       promptFinal = `
 El usuario quiere modificar la imagen original utilizando
-la imagen de referencia como guía visual.
+la imagen de referencia como guía de materialidad, color o terminación.
 
 REGLAS:
 
-- La imagen original es la base principal.
+- La imagen original es la base física, fotográfica y geométrica obligatoria.
 - La máscara pintada define la única zona editable.
-- La imagen de referencia solo sirve como inspiración visual.
+- La imagen de referencia solo sirve como materialidad, color, textura, terminación o lenguaje de detalle.
 - No copiar ni pegar partes de la referencia.
-- Aplicar únicamente los materiales, formas o estilo de la referencia.
-- Mantener perspectiva, iluminación y geometría de la imagen original.
+- No copiar composición, cámara, perspectiva, objetos, geometría, distribución ni iluminación de la referencia.
+- Aplicar únicamente la materialidad o terminación de la referencia sobre la geometría existente.
+- Mantener perspectiva, iluminación, escala, proporciones, cámara, encuadre y geometría de la imagen original.
+- Mantener todos los elementos fuera de la máscara visualmente intactos.
 - No extender el cambio fuera de la zona pintada.
 - Usar la referencia solo como materialidad, color, textura o terminacion dentro de esa zona.
 - Si hay conflicto entre la referencia y la imagen original, gana la imagen original.
