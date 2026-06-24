@@ -862,6 +862,38 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 .paintToolbar{
   align-items: stretch;
 }
+.paintAdvanced{
+  width:100%;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.025);
+}
+.paintAdvanced summary{
+  padding:9px 10px;
+  cursor:pointer;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:900;
+  list-style:none;
+}
+.paintAdvanced summary::-webkit-details-marker{
+  display:none;
+}
+.paintAdvanced summary::after{
+  content:"+";
+  float:right;
+  color:rgba(246,239,229,.82);
+}
+.paintAdvanced[open] summary::after{
+  content:"-";
+}
+.paintAdvancedGrid{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+  padding:0 8px 8px;
+}
 .paintToolGroup{
   display:flex;
   align-items:center;
@@ -875,6 +907,19 @@ button:hover{ border-color: rgba(255,255,255,.28); }
 .paintToolBtn.active{
   border-color: rgba(214,179,126,.52);
   background: rgba(214,179,126,.18);
+}
+.paintModeBtn.active{
+  border-color: rgba(143,165,112,.46);
+  background: rgba(143,165,112,.16);
+}
+.paintSelect{
+  min-height:36px;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(10,16,28,.55);
+  color:var(--text);
+  outline:none;
 }
 .paintToolStatus{
   width: 100%;

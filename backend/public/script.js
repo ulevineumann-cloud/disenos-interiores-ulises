@@ -343,13 +343,16 @@ const paintCanvas = document.getElementById("paintCanvas");
 
 const brush = document.getElementById("brush");
 const brushVal = document.getElementById("brushVal");
-const btnErase = document.getElementById("btnErase");
 const btnClear = document.getElementById("btnClear");
 const btnUndoPaint = document.getElementById("btnUndoPaint");
+const btnRedoPaint = document.getElementById("btnRedoPaint");
+const btnToggleMask = document.getElementById("btnToggleMask");
 const btnBrushSmall = document.getElementById("btnBrushSmall");
 const btnBrushLarge = document.getElementById("btnBrushLarge");
 const paintToolButtons = Array.from(document.querySelectorAll(".paintToolBtn"));
 const paintColorButtons = Array.from(document.querySelectorAll(".paintColorBtn"));
+const paintModeButtons = Array.from(document.querySelectorAll(".paintModeBtn"));
+const surfaceToleranceEl = document.getElementById("surfaceTolerance");
 const brushMeasureLabel = document.getElementById("brushMeasureLabel");
 const paintToolStatus = document.getElementById("paintToolStatus");
 const paintSelectionSummary = document.getElementById("paintSelectionSummary");
@@ -358,14 +361,17 @@ let imgNaturalW = 0;
 let imgNaturalH = 0;
 
 let drawing = false;
-let eraseMode = false;
 let lastStrokePoint = null;
 let shapeStartPoint = null;
 let shapePreviewPoint = null;
+let lassoPoints = [];
 let hoverPaintPoint = null;
-let currentPaintTool = "pencil";
+let currentPaintTool = "brush";
 let currentPaintColor = "red";
+let maskMode = "add";
+let maskVisible = true;
 const maskHistory = [];
+const maskRedoHistory = [];
 const MAX_MASK_HISTORY = 12;
 
 const pctx = paintCanvas.getContext("2d", { willReadFrequently: true });
@@ -384,13 +390,12 @@ const paintColorMeta = {
 const usedPaintColors = new Set();
 
 function setBrushUI() {
+  const selectionTool = currentPaintTool === "object" || currentPaintTool === "surface";
   if (brushMeasureLabel) {
-    brushMeasureLabel.textContent = currentPaintTool === "select" ? "Sensibilidad" : "Tamaño";
+    brushMeasureLabel.textContent = selectionTool ? "Sensibilidad" : "Tamaño";
   }
   if (brushVal) {
-    brushVal.textContent = currentPaintTool === "select"
-      ? `${selectionTolerance()}`
-      : String(brush.value);
+    brushVal.textContent = selectionTool ? `${objectTolerance()}` : String(brush.value);
   }
   updatePaintToolStatus();
   renderOverlay();
@@ -407,14 +412,19 @@ btnBrushSmall?.addEventListener("click", () => setBrushSize(14));
 btnBrushLarge?.addEventListener("click", () => setBrushSize(42));
 
 function setPaintTool(tool) {
-  currentPaintTool = tool || "pencil";
-  eraseMode = false;
-  btnErase.textContent = "Borrar";
-  btnErase.classList.remove("active");
+  currentPaintTool = tool || "brush";
   paintToolButtons.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.paintTool === currentPaintTool);
   });
   setBrushUI();
+}
+
+function setMaskMode(mode) {
+  maskMode = ["replace", "add", "subtract"].includes(mode) ? mode : "add";
+  paintModeButtons.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.maskMode === maskMode);
+  });
+  updatePaintToolStatus();
 }
 
 function setPaintColor(color) {
@@ -426,15 +436,30 @@ function setPaintColor(color) {
   renderOverlay();
 }
 
-function selectionTolerance() {
+function objectTolerance() {
   return Math.max(6, Math.min(48, Math.round((Number(brush?.value) || 22) * 0.55)));
+}
+
+function surfaceTolerance() {
+  const value = surfaceToleranceEl?.value || "medium";
+  if (value === "low") return 18;
+  if (value === "high") return 58;
+  return 34;
+}
+
+function activeOperation() {
+  if (currentPaintTool === "eraser") return "subtract";
+  return maskMode;
 }
 
 function paintToolName() {
   const names = {
-    select: "Seleccionar objeto",
-    pencil: "Lápiz preciso",
-    marker: "Marcador amplio",
+    brush: "Pincel",
+    object: "Seleccionar objeto",
+    surface: "Superficie similar",
+    lasso: "Lazo",
+    rect: "Rectángulo",
+    eraser: "Borrador",
   };
   return names[currentPaintTool] || "Paint";
 }
@@ -442,11 +467,19 @@ function paintToolName() {
 function updatePaintToolStatus(message = "") {
   if (!paintToolStatus) return;
   const meta = paintColorMeta[currentPaintColor] || paintColorMeta.red;
-  const action = eraseMode ? "Borrando selección" : `${paintToolName()} con ${meta.label}: ${meta.meaning}`;
-  const tip = currentPaintTool === "select"
-    ? `Tocá el centro del objeto. Si toma pared o piso, bajá sensibilidad o usá Marcador. Sensibilidad ${selectionTolerance()}.`
-    : "Arrastrá sobre la zona exacta. Marcador cubre rápido; Lápiz sirve para bordes finos.";
-  paintToolStatus.textContent = message || `${action}. ${tip}`;
+  const modeText = maskMode === "replace" ? "reemplazar" : maskMode === "subtract" ? "restar" : "sumar";
+  const tips = {
+    brush: "Pintá manualmente bordes, muebles, carpinterías o zonas puntuales.",
+    object: `Tocá el centro del elemento. Preparado para integrar segmentación real más adelante. Sensibilidad ${objectTolerance()}.`,
+    surface: `Tocá pared, piso, fachada, revestimiento o carpintería. Tolerancia ${surfaceToleranceEl?.value || "media"}.`,
+    lasso: "Dibujá a mano alzada alrededor de la zona y soltá para convertirla en máscara.",
+    rect: "Arrastrá un rectángulo sobre balcones, puertas, paños o áreas rápidas.",
+    eraser: "Borrá partes de la máscara sin tocar la imagen base.",
+  };
+  const action = currentPaintTool === "eraser"
+    ? "Borrador activo"
+    : `${paintToolName()} con ${meta.label}: ${meta.meaning}`;
+  paintToolStatus.textContent = message || `${action}. Modo: ${modeText}. ${tips[currentPaintTool] || ""}`;
   paintToolStatus.style.display = usePaint?.checked ? "block" : "none";
 }
 
@@ -466,44 +499,74 @@ paintToolButtons.forEach((btn) => {
   btn.addEventListener("click", () => setPaintTool(btn.dataset.paintTool));
 });
 
+paintModeButtons.forEach((btn) => {
+  btn.addEventListener("click", () => setMaskMode(btn.dataset.maskMode));
+});
+
 paintColorButtons.forEach((btn) => {
   btn.addEventListener("click", () => setPaintColor(btn.dataset.paintColor));
 });
 
-btnErase.addEventListener("click", () => {
-  eraseMode = !eraseMode;
-  btnErase.textContent = eraseMode ? "Pintar" : "Borrar";
-  btnErase.classList.toggle("active", eraseMode);
-});
+surfaceToleranceEl?.addEventListener("change", () => updatePaintToolStatus());
 
 btnClear.addEventListener("click", () => {
   saveMaskHistory();
   clearMask();
   renderOverlay();
+  updateSidebarWorkspaceControls();
 });
 
-btnUndoPaint?.addEventListener("click", () => {
-  restoreMaskHistory();
+btnUndoPaint?.addEventListener("click", restoreMaskHistory);
+btnRedoPaint?.addEventListener("click", redoMaskHistory);
+
+btnToggleMask?.addEventListener("click", () => {
+  maskVisible = !maskVisible;
+  btnToggleMask.textContent = maskVisible ? "Ocultar máscara" : "Mostrar máscara";
+  btnToggleMask.setAttribute("aria-pressed", String(maskVisible));
+  renderOverlay();
 });
 
-function saveMaskHistory() {
-  if (!maskCanvas.width || !maskCanvas.height) return;
-  maskHistory.push({
+function snapshotMaskState() {
+  if (!maskCanvas.width || !maskCanvas.height) return null;
+  return {
     mask: mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height),
     annotation: actx.getImageData(0, 0, annotationCanvas.width, annotationCanvas.height),
     colors: Array.from(usedPaintColors),
-  });
+  };
+}
+
+function saveMaskHistory() {
+  const state = snapshotMaskState();
+  if (!state) return;
+  maskHistory.push(state);
+  maskRedoHistory.length = 0;
   if (maskHistory.length > MAX_MASK_HISTORY) maskHistory.shift();
+}
+
+function restoreMaskState(state) {
+  if (!state) return;
+  mctx.putImageData(state.mask, 0, 0);
+  actx.putImageData(state.annotation, 0, 0);
+  usedPaintColors.clear();
+  state.colors.forEach((color) => usedPaintColors.add(color));
+  renderOverlay();
+  updateSidebarWorkspaceControls();
 }
 
 function restoreMaskHistory() {
   const previous = maskHistory.pop();
   if (!previous) return;
-  mctx.putImageData(previous.mask, 0, 0);
-  actx.putImageData(previous.annotation, 0, 0);
-  usedPaintColors.clear();
-  previous.colors.forEach((color) => usedPaintColors.add(color));
-  renderOverlay();
+  const current = snapshotMaskState();
+  if (current) maskRedoHistory.push(current);
+  restoreMaskState(previous);
+}
+
+function redoMaskHistory() {
+  const next = maskRedoHistory.pop();
+  if (!next) return;
+  const current = snapshotMaskState();
+  if (current) maskHistory.push(current);
+  restoreMaskState(next);
 }
 
 function clearMask() {
@@ -525,6 +588,7 @@ function resizeCanvasesToImage() {
   annotationCanvas.width = imgNaturalW;
   annotationCanvas.height = imgNaturalH;
   maskHistory.length = 0;
+  maskRedoHistory.length = 0;
   clearMask();
   renderOverlay();
 }
@@ -535,25 +599,22 @@ function renderOverlay() {
 
   const scaleX = paintCanvas.width / imgNaturalW;
   const scaleY = paintCanvas.height / imgNaturalH;
-  pctx.drawImage(annotationCanvas, 0, 0, paintCanvas.width, paintCanvas.height);
-
-  if (shapeStartPoint && shapePreviewPoint && isShapeTool(currentPaintTool)) {
-    pctx.save();
-    pctx.scale(scaleX, scaleY);
-    drawVisualShape(pctx, shapeStartPoint, shapePreviewPoint, Number(brush.value), {
-      preview: true,
-      tool: currentPaintTool,
-      color: currentPaintColor,
-    });
-    pctx.restore();
+  if (maskVisible) {
+    pctx.drawImage(annotationCanvas, 0, 0, paintCanvas.width, paintCanvas.height);
   }
 
-  if (hoverPaintPoint && !drawing && (currentPaintTool === "pencil" || currentPaintTool === "marker" || currentPaintTool === "select")) {
-    pctx.save();
-    pctx.scale(scaleX, scaleY);
+  pctx.save();
+  pctx.scale(scaleX, scaleY);
+  if (shapeStartPoint && shapePreviewPoint && currentPaintTool === "rect") {
+    drawRectPreview(pctx, shapeStartPoint, shapePreviewPoint);
+  }
+  if (lassoPoints.length > 1 && currentPaintTool === "lasso") {
+    drawLassoPreview(pctx, lassoPoints);
+  }
+  if (hoverPaintPoint && !drawing && ["brush", "object", "surface", "eraser"].includes(currentPaintTool)) {
     drawCursorPreview(pctx, hoverPaintPoint);
-    pctx.restore();
   }
+  pctx.restore();
 
   updatePaintSelectionSummary();
 }
@@ -562,92 +623,64 @@ function getPosOnCanvas(evt) {
   const rect = paintCanvas.getBoundingClientRect();
   const x = (evt.clientX - rect.left) / rect.width;
   const y = (evt.clientY - rect.top) / rect.height;
-  const mx = Math.max(0, Math.min(imgNaturalW, Math.round(x * imgNaturalW)));
-  const my = Math.max(0, Math.min(imgNaturalH, Math.round(y * imgNaturalH)));
+  const mx = Math.max(0, Math.min(imgNaturalW - 1, Math.round(x * imgNaturalW)));
+  const my = Math.max(0, Math.min(imgNaturalH - 1, Math.round(y * imgNaturalH)));
   return { mx, my };
 }
 
-function drawMaskCircle(mx, my, radius) {
-  if (!imgNaturalW || !imgNaturalH) return;
-
-  if (!eraseMode) {
-    mctx.save();
-    mctx.globalCompositeOperation = "destination-out";
-    mctx.beginPath();
-    mctx.arc(mx, my, radius, 0, Math.PI * 2);
-    mctx.fill();
-    mctx.restore();
-  } else {
-    mctx.save();
-    mctx.globalCompositeOperation = "source-over";
-    mctx.fillStyle = "rgba(0,0,0,1)";
-    mctx.beginPath();
-    mctx.arc(mx, my, radius, 0, Math.PI * 2);
-    mctx.fill();
-    mctx.restore();
-  }
+function operationForDraw() {
+  return activeOperation() === "subtract" ? "subtract" : "add";
 }
 
-function drawMaskLine(from, to, radius) {
-  if (!from) {
-    drawMaskCircle(to.mx, to.my, radius);
-    return;
-  }
-
-  const dx = to.mx - from.mx;
-  const dy = to.my - from.my;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  const steps = Math.max(1, Math.ceil(distance / Math.max(2, radius * 0.45)));
-
-  for (let i = 0; i <= steps; i++) {
-    const t = i / steps;
-    drawMaskCircle(from.mx + dx * t, from.my + dy * t, radius);
-  }
+function prepareReplaceIfNeeded() {
+  if (activeOperation() === "replace") clearMask();
 }
 
 function toolRadius() {
   const base = Number(brush.value) || 22;
-  if (currentPaintTool === "pencil") return Math.max(3, base * 0.45);
-  if (currentPaintTool === "marker") return base;
-  if (currentPaintTool === "line") return Math.max(4, base * 0.55);
-  if (currentPaintTool === "rect") return Math.max(3, base * 0.5);
-  if (currentPaintTool === "select") return Math.max(8, base * 0.8);
-  return Math.max(3, base * 0.5);
+  if (currentPaintTool === "brush") return Math.max(3, base * 0.45);
+  if (currentPaintTool === "eraser") return Math.max(4, base * 0.65);
+  return base;
 }
 
-function isShapeTool(tool) {
-  return tool === "line" || tool === "circle" || tool === "rect";
+function drawMaskCircle(mx, my, radius, operation = operationForDraw()) {
+  if (!imgNaturalW || !imgNaturalH) return;
+  mctx.save();
+  mctx.globalCompositeOperation = operation === "subtract" ? "source-over" : "destination-out";
+  mctx.fillStyle = "rgba(0,0,0,1)";
+  mctx.beginPath();
+  mctx.arc(mx, my, radius, 0, Math.PI * 2);
+  mctx.fill();
+  mctx.restore();
 }
 
-function drawCursorPreview(ctx, point) {
-  const meta = eraseMode ? { solid: "#ffffff", rgba: "rgba(255,255,255,.08)" } : (paintColorMeta[currentPaintColor] || paintColorMeta.red);
-  const radius = currentPaintTool === "select" ? Math.max(18, selectionTolerance()) : toolRadius();
-  ctx.save();
-  ctx.lineWidth = Math.max(2, radius * 0.08);
-  ctx.strokeStyle = eraseMode ? "rgba(255,255,255,.86)" : meta.solid;
-  ctx.fillStyle = currentPaintTool === "select" ? "rgba(255,255,255,.05)" : meta.rgba;
-  ctx.setLineDash(currentPaintTool === "select" ? [8, 7] : [5, 6]);
-  ctx.beginPath();
-  ctx.arc(point.mx, point.my, radius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
+function drawMaskLine(from, to, radius, operation = operationForDraw()) {
+  if (!from) {
+    drawMaskCircle(to.mx, to.my, radius, operation);
+    return;
+  }
+  const dx = to.mx - from.mx;
+  const dy = to.my - from.my;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const steps = Math.max(1, Math.ceil(distance / Math.max(2, radius * 0.45)));
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    drawMaskCircle(from.mx + dx * t, from.my + dy * t, radius, operation);
+  }
 }
 
-function drawAnnotationCircle(mx, my, radius) {
-  if (eraseMode) {
-    actx.save();
+function drawAnnotationCircle(mx, my, radius, operation = operationForDraw()) {
+  actx.save();
+  if (operation === "subtract") {
     actx.globalCompositeOperation = "destination-out";
     actx.beginPath();
-    actx.arc(mx, my, radius * 1.45, 0, Math.PI * 2);
+    actx.arc(mx, my, radius * 1.35, 0, Math.PI * 2);
     actx.fill();
     actx.restore();
     return;
   }
-
   const meta = paintColorMeta[currentPaintColor] || paintColorMeta.red;
   usedPaintColors.add(currentPaintColor);
-  actx.save();
   actx.globalCompositeOperation = "source-over";
   actx.fillStyle = meta.rgba;
   actx.beginPath();
@@ -656,133 +689,143 @@ function drawAnnotationCircle(mx, my, radius) {
   actx.restore();
 }
 
-function drawAnnotationLine(from, to, radius) {
+function drawAnnotationLine(from, to, radius, operation = operationForDraw()) {
   if (!from) {
-    drawAnnotationCircle(to.mx, to.my, radius);
+    drawAnnotationCircle(to.mx, to.my, radius, operation);
     return;
   }
-
   const dx = to.mx - from.mx;
   const dy = to.my - from.my;
   const distance = Math.sqrt(dx * dx + dy * dy);
   const steps = Math.max(1, Math.ceil(distance / Math.max(2, radius * 0.45)));
-
   for (let i = 0; i <= steps; i++) {
     const t = i / steps;
-    drawAnnotationCircle(from.mx + dx * t, from.my + dy * t, radius);
+    drawAnnotationCircle(from.mx + dx * t, from.my + dy * t, radius, operation);
   }
 }
 
-function drawVisualShape(ctx, from, to, radius, options = {}) {
-  const tool = options.tool || currentPaintTool;
-  const color = paintColorMeta[options.color || currentPaintColor] || paintColorMeta.red;
+function drawCursorPreview(ctx, point) {
+  const operation = activeOperation();
+  const meta = operation === "subtract" ? { solid: "#ffffff", rgba: "rgba(255,255,255,.08)" } : (paintColorMeta[currentPaintColor] || paintColorMeta.red);
+  const radius = currentPaintTool === "object" || currentPaintTool === "surface" ? Math.max(18, objectTolerance()) : toolRadius();
   ctx.save();
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.lineWidth = Math.max(4, radius * 1.4);
-  ctx.strokeStyle = color.solid;
-  ctx.fillStyle = color.rgba;
-  ctx.globalAlpha = options.preview ? 0.82 : 1;
-
-  if (tool === "line") {
-    ctx.beginPath();
-    ctx.moveTo(from.mx, from.my);
-    ctx.lineTo(to.mx, to.my);
-    ctx.stroke();
-  }
-
-  if (tool === "circle") {
-    const dx = to.mx - from.mx;
-    const dy = to.my - from.my;
-    const r = Math.max(radius, Math.sqrt(dx * dx + dy * dy));
-    ctx.beginPath();
-    ctx.arc(from.mx, from.my, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-  }
-
-  if (tool === "rect") {
-    const x = Math.min(from.mx, to.mx);
-    const y = Math.min(from.my, to.my);
-    const w = Math.abs(to.mx - from.mx);
-    const h = Math.abs(to.my - from.my);
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeRect(x, y, w, h);
-  }
-
+  ctx.lineWidth = Math.max(2, radius * 0.08);
+  ctx.strokeStyle = operation === "subtract" ? "rgba(255,255,255,.86)" : meta.solid;
+  ctx.fillStyle = currentPaintTool === "object" || currentPaintTool === "surface" ? "rgba(255,255,255,.05)" : meta.rgba;
+  ctx.setLineDash(currentPaintTool === "object" || currentPaintTool === "surface" ? [8, 7] : [5, 6]);
+  ctx.beginPath();
+  ctx.arc(point.mx, point.my, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
   ctx.restore();
 }
 
-function commitShape(from, to) {
-  const radius = toolRadius();
-  if (currentPaintTool === "line") {
-    drawMaskLine(from, to, radius);
-    if (eraseMode) {
-      drawAnnotationLine(from, to, radius * 1.45);
-    } else {
-      drawVisualShape(actx, from, to, radius, { tool: "line", color: currentPaintColor });
-      usedPaintColors.add(currentPaintColor);
-    }
-    return;
+function drawRectPreview(ctx, from, to) {
+  const meta = paintColorMeta[currentPaintColor] || paintColorMeta.red;
+  const x = Math.min(from.mx, to.mx);
+  const y = Math.min(from.my, to.my);
+  const w = Math.abs(to.mx - from.mx);
+  const h = Math.abs(to.my - from.my);
+  ctx.save();
+  ctx.setLineDash([10, 7]);
+  ctx.lineWidth = Math.max(3, toolRadius() * 0.25);
+  ctx.strokeStyle = activeOperation() === "subtract" ? "rgba(255,255,255,.92)" : meta.solid;
+  ctx.fillStyle = activeOperation() === "subtract" ? "rgba(255,255,255,.08)" : meta.rgba;
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeRect(x, y, w, h);
+  ctx.restore();
+}
+
+function drawLassoPreview(ctx, points) {
+  const meta = paintColorMeta[currentPaintColor] || paintColorMeta.red;
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.lineWidth = Math.max(3, toolRadius() * 0.22);
+  ctx.strokeStyle = activeOperation() === "subtract" ? "rgba(255,255,255,.92)" : meta.solid;
+  ctx.fillStyle = activeOperation() === "subtract" ? "rgba(255,255,255,.08)" : meta.rgba;
+  ctx.beginPath();
+  points.forEach((point, index) => {
+    if (index === 0) ctx.moveTo(point.mx, point.my);
+    else ctx.lineTo(point.mx, point.my);
+  });
+  ctx.stroke();
+  if (points.length > 2) {
+    ctx.closePath();
+    ctx.globalAlpha = 0.5;
+    ctx.fill();
   }
+  ctx.restore();
+}
 
-  if (currentPaintTool === "circle") {
-    const dx = to.mx - from.mx;
-    const dy = to.my - from.my;
-    const circleRadius = Math.max(radius, Math.sqrt(dx * dx + dy * dy));
-
-    if (!eraseMode) {
-      mctx.save();
-      mctx.globalCompositeOperation = "destination-out";
-      mctx.beginPath();
-      mctx.arc(from.mx, from.my, circleRadius, 0, Math.PI * 2);
-      mctx.fill();
-      mctx.restore();
-      drawVisualShape(actx, from, to, radius, { tool: "circle", color: currentPaintColor });
-      usedPaintColors.add(currentPaintColor);
-    } else {
-      mctx.save();
-      mctx.globalCompositeOperation = "source-over";
-      mctx.fillStyle = "rgba(0,0,0,1)";
-      mctx.beginPath();
-      mctx.arc(from.mx, from.my, circleRadius + radius, 0, Math.PI * 2);
-      mctx.fill();
-      mctx.restore();
-      actx.save();
-      actx.globalCompositeOperation = "destination-out";
-      actx.beginPath();
-      actx.arc(from.mx, from.my, circleRadius + radius * 1.4, 0, Math.PI * 2);
-      actx.fill();
-      actx.restore();
-    }
+function applySelectionPixels(pixels, operation = activeOperation()) {
+  if (!pixels?.length) return false;
+  if (operation === "replace") {
+    clearMask();
+    operation = "add";
   }
-
-  if (currentPaintTool === "rect") {
-    const x = Math.min(from.mx, to.mx);
-    const y = Math.min(from.my, to.my);
-    const w = Math.abs(to.mx - from.mx);
-    const h = Math.abs(to.my - from.my);
-    if (w < 2 || h < 2) return;
-
-    if (!eraseMode) {
-      mctx.save();
-      mctx.globalCompositeOperation = "destination-out";
-      mctx.fillRect(x, y, w, h);
-      mctx.restore();
-      drawVisualShape(actx, from, to, radius, { tool: "rect", color: currentPaintColor });
-      usedPaintColors.add(currentPaintColor);
-    } else {
-      mctx.save();
-      mctx.globalCompositeOperation = "source-over";
-      mctx.fillStyle = "rgba(0,0,0,1)";
-      mctx.fillRect(x, y, w, h);
-      mctx.restore();
-      actx.save();
-      actx.globalCompositeOperation = "destination-out";
-      actx.fillRect(x - radius, y - radius, w + radius * 2, h + radius * 2);
-      actx.restore();
+  const maskData = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+  const annData = actx.getImageData(0, 0, annotationCanvas.width, annotationCanvas.height);
+  const meta = paintColorMeta[currentPaintColor] || paintColorMeta.red;
+  const rgb = meta.solid.match(/\w\w/g).map((hex) => parseInt(hex, 16));
+  pixels.forEach((pixel) => {
+    const i = pixel * 4;
+    if (operation === "subtract") {
+      maskData.data[i] = 0;
+      maskData.data[i + 1] = 0;
+      maskData.data[i + 2] = 0;
+      maskData.data[i + 3] = 255;
+      annData.data[i + 3] = 0;
+      return;
     }
+    maskData.data[i] = 0;
+    maskData.data[i + 1] = 0;
+    maskData.data[i + 2] = 0;
+    maskData.data[i + 3] = 0;
+    annData.data[i] = rgb[0];
+    annData.data[i + 1] = rgb[1];
+    annData.data[i + 2] = rgb[2];
+    annData.data[i + 3] = 138;
+  });
+  mctx.putImageData(maskData, 0, 0);
+  actx.putImageData(annData, 0, 0);
+  if (operation !== "subtract") usedPaintColors.add(currentPaintColor);
+  return true;
+}
+
+function applyRectSelection(from, to) {
+  const x1 = Math.max(0, Math.min(from.mx, to.mx));
+  const y1 = Math.max(0, Math.min(from.my, to.my));
+  const x2 = Math.min(maskCanvas.width - 1, Math.max(from.mx, to.mx));
+  const y2 = Math.min(maskCanvas.height - 1, Math.max(from.my, to.my));
+  if (x2 - x1 < 2 || y2 - y1 < 2) return false;
+  const pixels = [];
+  for (let y = y1; y <= y2; y++) {
+    for (let x = x1; x <= x2; x++) pixels.push(y * maskCanvas.width + x);
   }
+  return applySelectionPixels(pixels);
+}
+
+function applyLassoSelection(points) {
+  if (points.length < 3) return false;
+  const tmp = document.createElement("canvas");
+  tmp.width = maskCanvas.width;
+  tmp.height = maskCanvas.height;
+  const tctx = tmp.getContext("2d", { willReadFrequently: true });
+  tctx.fillStyle = "#fff";
+  tctx.beginPath();
+  points.forEach((point, index) => {
+    if (index === 0) tctx.moveTo(point.mx, point.my);
+    else tctx.lineTo(point.mx, point.my);
+  });
+  tctx.closePath();
+  tctx.fill();
+  const img = tctx.getImageData(0, 0, tmp.width, tmp.height);
+  const pixels = [];
+  for (let i = 3; i < img.data.length; i += 4) {
+    if (img.data[i] > 0) pixels.push((i - 3) / 4);
+  }
+  return applySelectionPixels(pixels);
 }
 
 function getBaseImageData() {
@@ -807,20 +850,19 @@ function colorDistance(data, idx, target) {
   return Math.sqrt(dr * dr + dg * dg + db * db);
 }
 
-function magicSelectAt(point) {
+function objectSelectAt(point) {
   const imageData = getBaseImageData();
   if (!imageData) {
-    updatePaintToolStatus("No pude leer la imagen para seleccionar por toque. Usá Lápiz o Marcador para marcar manualmente.");
+    updatePaintToolStatus("No pude leer la imagen para seleccionar por objeto. Usá Pincel o Lazo.");
     return;
   }
-
   const { width, height, data } = imageData;
   const sx = Math.max(0, Math.min(width - 1, Math.round(point.mx)));
   const sy = Math.max(0, Math.min(height - 1, Math.round(point.my)));
   const startIdx = (sy * width + sx) * 4;
   const target = { r: data[startIdx], g: data[startIdx + 1], b: data[startIdx + 2] };
-  const tolerance = selectionTolerance();
-  const maxPixels = Math.max(350, Math.round(width * height * 0.075));
+  const tolerance = objectTolerance();
+  const maxPixels = Math.max(350, Math.round(width * height * 0.08));
   const maxRadius = Math.round(Math.min(width, height) * 0.42);
   const maxRadiusSq = maxRadius * maxRadius;
   const neighborTolerance = tolerance + 14;
@@ -839,19 +881,16 @@ function magicSelectAt(point) {
     const dxSeed = x - sx;
     const dySeed = y - sy;
     if ((dxSeed * dxSeed + dySeed * dySeed) > maxRadiusSq) continue;
-
     selected.push(current);
     if (selected.length > maxPixels) {
       overflowed = true;
       break;
     }
-
     const neighbors = [];
     if (x > 0) neighbors.push(current - 1);
     if (x < width - 1) neighbors.push(current + 1);
     if (y > 0) neighbors.push(current - width);
     if (y < height - 1) neighbors.push(current + width);
-
     neighbors.forEach((next) => {
       if (visited[next]) return;
       const ni = next * 4;
@@ -862,94 +901,51 @@ function magicSelectAt(point) {
     });
   }
 
-  if (overflowed) {
-    updatePaintToolStatus("La selección se estaba yendo demasiado grande. Bajá Sensibilidad, tocá más al centro del mueble o usá Marcador para cubrirlo manualmente.");
+  if (overflowed || !selected.length) {
+    updatePaintToolStatus("La selección por objeto no fue confiable. Probá bajar sensibilidad, tocá el centro o usá Lazo/Pincel.");
     return;
   }
-
-  if (selected.length > 24) {
-    let minXTest = width;
-    let minYTest = height;
-    let maxXTest = 0;
-    let maxYTest = 0;
-    selected.forEach((pixel) => {
-      const x = pixel % width;
-      const y = Math.floor(pixel / width);
-      minXTest = Math.min(minXTest, x);
-      minYTest = Math.min(minYTest, y);
-      maxXTest = Math.max(maxXTest, x);
-      maxYTest = Math.max(maxYTest, y);
-    });
-    const boxAreaRatio = ((maxXTest - minXTest + 1) * (maxYTest - minYTest + 1)) / (width * height);
-    if (boxAreaRatio > 0.18) {
-      updatePaintToolStatus("La selección parece abarcar más que un objeto. Bajá Sensibilidad o marcá el mueble con Marcador para no tocar paredes/piso.");
-      return;
-    }
-  }
-
-  if (!selected.length) {
-    drawMaskCircle(point.mx, point.my, toolRadius());
-    drawAnnotationCircle(point.mx, point.my, toolRadius());
-    updatePaintToolStatus("La selección automática fue muy chica; marqué un punto preciso en esa zona.");
-    return;
-  }
-
-  const maskData = mctx.getImageData(0, 0, width, height);
-  const annData = actx.getImageData(0, 0, width, height);
-  const meta = paintColorMeta[currentPaintColor] || paintColorMeta.red;
-  const rgb = meta.solid.match(/\w\w/g).map((hex) => parseInt(hex, 16));
-  let minX = width;
-  let minY = height;
-  let maxX = 0;
-  let maxY = 0;
-
-  selected.forEach((pixel) => {
-    const x = pixel % width;
-    const y = Math.floor(pixel / width);
-    minX = Math.min(minX, x);
-    minY = Math.min(minY, y);
-    maxX = Math.max(maxX, x);
-    maxY = Math.max(maxY, y);
-    const i = pixel * 4;
-    if (!eraseMode) {
-      maskData.data[i] = 0;
-      maskData.data[i + 1] = 0;
-      maskData.data[i + 2] = 0;
-      maskData.data[i + 3] = 0;
-      annData.data[i] = rgb[0];
-      annData.data[i + 1] = rgb[1];
-      annData.data[i + 2] = rgb[2];
-      annData.data[i + 3] = 138;
-    } else {
-      maskData.data[i] = 0;
-      maskData.data[i + 1] = 0;
-      maskData.data[i + 2] = 0;
-      maskData.data[i + 3] = 255;
-      annData.data[i + 3] = 0;
-    }
-  });
-
-  mctx.putImageData(maskData, 0, 0);
-  actx.putImageData(annData, 0, 0);
-  if (!eraseMode) usedPaintColors.add(currentPaintColor);
-
+  applySelectionPixels(selected);
   const areaPct = ((selected.length / (width * height)) * 100).toFixed(1);
-  const boxPct = `${Math.round(((maxX - minX) / width) * 100)}% x ${Math.round(((maxY - minY) / height) * 100)}%`;
-  updatePaintToolStatus(`Selección por toque aplicada: ${areaPct}% de la imagen, caja ${boxPct}. Ajustá sensibilidad si agarró de más o de menos.`);
+  updatePaintToolStatus(`Objeto seleccionado: ${areaPct}% de la imagen. Podés sumar/restar con Pincel o Lazo.`);
+}
+
+function surfaceSelectAt(point) {
+  const imageData = getBaseImageData();
+  if (!imageData) {
+    updatePaintToolStatus("No pude leer la imagen para seleccionar superficie. Usá Pincel o Lazo.");
+    return;
+  }
+  const { width, height, data } = imageData;
+  const sx = Math.max(0, Math.min(width - 1, Math.round(point.mx)));
+  const sy = Math.max(0, Math.min(height - 1, Math.round(point.my)));
+  const startIdx = (sy * width + sx) * 4;
+  const target = { r: data[startIdx], g: data[startIdx + 1], b: data[startIdx + 2] };
+  const tolerance = surfaceTolerance();
+  const pixels = [];
+  for (let pixel = 0; pixel < width * height; pixel++) {
+    const idx = pixel * 4;
+    if (colorDistance(data, idx, target) <= tolerance) pixels.push(pixel);
+  }
+  const ratio = pixels.length / (width * height);
+  if (!pixels.length || ratio > 0.58) {
+    updatePaintToolStatus("La superficie similar es demasiado amplia. Bajá tolerancia o usá Lazo/Pincel para una zona más precisa.");
+    return;
+  }
+  applySelectionPixels(pixels);
+  updatePaintToolStatus(`Superficie similar seleccionada: ${(ratio * 100).toFixed(1)}% de la imagen.`);
 }
 
 paintCanvas.addEventListener("pointerdown", (e) => {
-  if (!imgNaturalW) return;
-  if (!usePaint.checked) return;
-
+  if (!imgNaturalW || !usePaint.checked) return;
   e.preventDefault();
   saveMaskHistory();
   drawing = true;
   paintCanvas.setPointerCapture(e.pointerId);
   lastStrokePoint = getPosOnCanvas(e);
 
-  if (currentPaintTool === "select") {
-    magicSelectAt(lastStrokePoint);
+  if (currentPaintTool === "object") {
+    objectSelectAt(lastStrokePoint);
     drawing = false;
     lastStrokePoint = null;
     renderOverlay();
@@ -957,15 +953,33 @@ paintCanvas.addEventListener("pointerdown", (e) => {
     return;
   }
 
-  if (isShapeTool(currentPaintTool)) {
-    shapeStartPoint = lastStrokePoint;
-    shapePreviewPoint = lastStrokePoint;
-  } else {
-    const radius = toolRadius();
-    drawMaskCircle(lastStrokePoint.mx, lastStrokePoint.my, radius);
-    drawAnnotationCircle(lastStrokePoint.mx, lastStrokePoint.my, radius);
+  if (currentPaintTool === "surface") {
+    surfaceSelectAt(lastStrokePoint);
+    drawing = false;
+    lastStrokePoint = null;
+    renderOverlay();
+    updateSidebarWorkspaceControls();
+    return;
   }
 
+  if (currentPaintTool === "rect") {
+    shapeStartPoint = lastStrokePoint;
+    shapePreviewPoint = lastStrokePoint;
+    renderOverlay();
+    return;
+  }
+
+  if (currentPaintTool === "lasso") {
+    lassoPoints = [lastStrokePoint];
+    renderOverlay();
+    return;
+  }
+
+  prepareReplaceIfNeeded();
+  const radius = toolRadius();
+  const operation = operationForDraw();
+  drawMaskCircle(lastStrokePoint.mx, lastStrokePoint.my, radius, operation);
+  drawAnnotationCircle(lastStrokePoint.mx, lastStrokePoint.my, radius, operation);
   renderOverlay();
 });
 
@@ -978,34 +992,52 @@ paintCanvas.addEventListener("pointermove", (e) => {
   e.preventDefault();
   const point = getPosOnCanvas(e);
 
-  if (isShapeTool(currentPaintTool)) {
+  if (currentPaintTool === "rect") {
     shapePreviewPoint = point;
-  } else {
-    const radius = toolRadius();
-    drawMaskLine(lastStrokePoint, point, radius);
-    drawAnnotationLine(lastStrokePoint, point, radius);
-    lastStrokePoint = point;
+    renderOverlay();
+    return;
   }
 
+  if (currentPaintTool === "lasso") {
+    const last = lassoPoints[lassoPoints.length - 1];
+    const dx = point.mx - last.mx;
+    const dy = point.my - last.my;
+    if (Math.sqrt(dx * dx + dy * dy) > 3) lassoPoints.push(point);
+    renderOverlay();
+    return;
+  }
+
+  const radius = toolRadius();
+  const operation = operationForDraw();
+  drawMaskLine(lastStrokePoint, point, radius, operation);
+  drawAnnotationLine(lastStrokePoint, point, radius, operation);
+  lastStrokePoint = point;
   renderOverlay();
 });
 
 paintCanvas.addEventListener("pointerup", (e) => {
-  if (drawing && shapeStartPoint && isShapeTool(currentPaintTool)) {
-    commitShape(shapeStartPoint, getPosOnCanvas(e));
+  const point = getPosOnCanvas(e);
+  if (drawing && shapeStartPoint && currentPaintTool === "rect") {
+    applyRectSelection(shapeStartPoint, point);
+  }
+  if (drawing && currentPaintTool === "lasso") {
+    applyLassoSelection(lassoPoints);
   }
   drawing = false;
   lastStrokePoint = null;
   shapeStartPoint = null;
   shapePreviewPoint = null;
+  lassoPoints = [];
   renderOverlay();
   updateSidebarWorkspaceControls();
 });
+
 paintCanvas.addEventListener("pointercancel", () => {
   drawing = false;
   lastStrokePoint = null;
   shapeStartPoint = null;
   shapePreviewPoint = null;
+  lassoPoints = [];
   renderOverlay();
   updateSidebarWorkspaceControls();
 });

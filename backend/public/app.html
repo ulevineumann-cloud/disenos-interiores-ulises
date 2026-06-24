@@ -266,9 +266,12 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <div class="toolMini paintToolbar" id="paintTools" style="display:none;">
 <div class="paintToolGroup paintShapeGroup" role="group" aria-label="Herramientas de marcado">
 <span class="paintToolLabel">Herramienta</span>
-<button class="ghost paintToolBtn" type="button" data-paint-tool="select" title="Tocar un objeto de la imagen para seleccionarlo por color y bordes">Seleccionar</button>
-<button class="ghost paintToolBtn active" type="button" data-paint-tool="pencil">Lápiz</button>
-<button class="ghost paintToolBtn" type="button" data-paint-tool="marker">Marcador</button>
+<button class="ghost paintToolBtn active" type="button" data-paint-tool="brush">Pincel</button>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="object" title="Tocar un elemento para intentar seleccionarlo">Objeto</button>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="surface" title="Seleccionar superficie o material similar">Superficie</button>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="lasso">Lazo</button>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="rect">Rectángulo</button>
+<button class="ghost paintToolBtn" type="button" data-paint-tool="eraser">Borrador</button>
 </div>
 
 <div class="paintToolGroup">
@@ -279,6 +282,32 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <button id="btnBrushLarge" class="ghost iconGhost" type="button" title="Pincel grande">Grande</button>
 </div>
 
+<div class="paintToolGroup">
+<button id="btnUndoPaint" class="ghost" type="button">Deshacer</button>
+<button id="btnRedoPaint" class="ghost" type="button">Rehacer</button>
+<button id="btnClear" class="ghost" type="button">Limpiar</button>
+<button id="btnToggleMask" class="ghost" type="button" aria-pressed="true">Ocultar máscara</button>
+</div>
+
+<details class="paintAdvanced">
+<summary>Opciones Paint</summary>
+<div class="paintAdvancedGrid">
+<div class="paintToolGroup paintModeGroup" role="group" aria-label="Modo de máscara">
+<span class="paintToolLabel">Modo</span>
+<button class="ghost paintModeBtn" type="button" data-mask-mode="replace">Reemplazar</button>
+<button class="ghost paintModeBtn active" type="button" data-mask-mode="add">Sumar</button>
+<button class="ghost paintModeBtn" type="button" data-mask-mode="subtract">Restar</button>
+</div>
+
+<div class="paintToolGroup">
+<span class="paintToolLabel">Tolerancia</span>
+<select id="surfaceTolerance" class="paintSelect">
+<option value="low">Baja</option>
+<option value="medium" selected>Media</option>
+<option value="high">Alta</option>
+</select>
+</div>
+
 <div class="paintToolGroup paintColorGroup" role="group" aria-label="Colores de marcado">
 <span class="paintToolLabel">Color</span>
 <button class="paintColorBtn active" type="button" data-paint-color="red" style="--swatch:#ff4a60" title="Rojo: zona principal a modificar"></button>
@@ -286,12 +315,8 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <button class="paintColorBtn" type="button" data-paint-color="blue" style="--swatch:#4aa8ff" title="Azul: conservar estructura o referencia"></button>
 <button class="paintColorBtn" type="button" data-paint-color="green" style="--swatch:#56d27b" title="Verde: agregar vegetación o elemento nuevo"></button>
 </div>
-
-<div class="paintToolGroup">
-<button id="btnErase" class="ghost" type="button">Borrar</button>
-<button id="btnUndoPaint" class="ghost" type="button">Deshacer</button>
-<button id="btnClear" class="ghost" type="button">Limpiar</button>
 </div>
+</details>
 </div>
 <div id="paintToolStatus" class="paintToolStatus" style="display:none;"></div>
 
@@ -375,7 +400,7 @@ Cargá la imagen original, definí el alcance y describí solo el cambio que que
 <div class="paintAviso">
 <div class="paintAvisoTitle">Importante</div>
 <div class="paintAvisoText">
-Usá <b>Seleccionar</b> para tocar una ventana, mueble o revestimiento de la foto. Si necesitás control manual, pintá con lápiz o marcador. La zona marcada es la única parte editable.
+Usá Paint para marcar solo lo que querés modificar: interiores, fachadas, balcones, carpinterías, pisos, paredes, muebles, accesos o vegetación. Podés pintar manualmente, tocar un objeto, seleccionar superficies similares o dibujar una zona con lazo/rectángulo.
 </div>
 </div>
 
